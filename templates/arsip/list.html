@@ -336,7 +336,7 @@
 
     function openEditModal(id, nama, linkUrl, aksesTipe, userIdsStr, isAktif) {
         const form = document.getElementById('form-edit');
-        form.action = `/arsip/edit/${id}`;
+        form.action = `{{ url_for('arsip.list') }}edit/${id}`;
 
         document.getElementById('edit-nama').value = nama;
         document.getElementById('edit-link-input').value = linkUrl;

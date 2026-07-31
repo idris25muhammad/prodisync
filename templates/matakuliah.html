@@ -461,7 +461,7 @@
         const form = document.getElementById('form-edit');
         if (!modal) return;
 
-        form.action = `/matakuliah/edit/${id}`;
+        form.action = `{{ url_for('matakuliah.list') }}edit/${id}`;
         document.getElementById('edit-nama').value = nama;
         document.getElementById('edit-kode').value = kode;
         document.getElementById('edit-sks').value = sks;

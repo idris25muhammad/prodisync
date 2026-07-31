@@ -633,7 +633,7 @@
     // ── Modal Edit Metadata ───────────────────────────────────────────────────
     function openEditMetaModal(id, sks, semester, taId, dosenId, dosenNama, prasyarat, tglKaprodi, qrKaprodi) {
         const form = document.getElementById('form-edit-meta');
-        form.action = `/rps/edit/${id}`;
+        form.action = `{{ url_for('rps.list') }}edit/${id}`;
         document.getElementById('edit-sks').value = sks;
 
         if (editPrasyaratWidget) {

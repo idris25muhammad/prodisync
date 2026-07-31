@@ -328,7 +328,7 @@
 
 <script>
     function openEditModal(id, kode, nama, kurikulum, deskripsi, tipe, tglKaprodi, qrKaprodi) {
-        document.getElementById('form-edit').action = `/matakuliah/edit/${id}`;
+        document.getElementById('form-edit').action = `{{ url_for('matakuliah.list') }}edit/${id}`;
         document.getElementById('edit-kode').value      = kode;
         document.getElementById('edit-nama').value      = nama;
         document.getElementById('edit-kurikulum').value = kurikulum;

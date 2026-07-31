@@ -450,7 +450,7 @@
         const modal = document.getElementById('modal-edit');
         if (!modal) return;
 
-        document.getElementById('form-edit').action = `/agenda/edit/${ev.id}`;
+        document.getElementById('form-edit').action = `{{ url_for('agenda.index') }}edit/${ev.id}`;
         document.getElementById('edit-judul').value = ev.judul;
         document.getElementById('edit-tanggal').value = ev.tanggal;
         document.getElementById('edit-waktu-mulai').value = ev.waktu_mulai;
@@ -465,7 +465,7 @@
             document.getElementById('edit-aktif-false').checked = true;
         }
 
-        document.getElementById('btn-delete-agenda').href = `/agenda/delete/${ev.id}`;
+        document.getElementById('btn-delete-agenda').href = `{{ url_for('agenda.index') }}delete/${ev.id}`;
         modal.classList.remove('hidden');
     }
 

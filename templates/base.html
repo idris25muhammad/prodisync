@@ -133,7 +133,7 @@
                                         Pengguna & Informasi</h4>
                                     <div class="space-y-1">
                                         {% if current_user.is_kaprodi %}
-                                        <a href="/users"
+                                        <a href="{{ url_for('user.list') }}"
                                             class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
                                             <svg class="w-5 h-5 stroke-current opacity-70" fill="none"
                                                 stroke="currentColor" viewBox="0 0 24 24">
@@ -179,7 +179,7 @@
                             <div
                                 class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl p-4">
                                 <div class="space-y-1">
-                                    <a href="/panduan"
+                                    <a href="{{ url_for('panduan.list') }}"
                                         class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
                                         <svg class="w-5 h-5 stroke-current opacity-70" fill="none" stroke="currentColor"
                                             viewBox="0 0 24 24">
@@ -309,7 +309,7 @@
                             <a href="{{ url_for('user.ganti_password') }}"
                                 class="block px-4 py-2 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800">Ganti
                                 Password</a>
-                            <a href="/logout"
+                            <a href="{{ url_for('auth.logout') }}"
                                 class="block px-4 py-2 text-xs font-bold text-red-500 hover:bg-slate-50 dark:hover:bg-slate-800">Logout</a>
                         </div>
                     </div>
@@ -401,7 +401,7 @@
                             Informasi</p>
                         <div class="grid grid-cols-2 gap-2">
                             {% if current_user.is_kaprodi %}
-                            <a href="/users"
+                            <a href="{{ url_for('user.list') }}"
                                 class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 block text-xs font-bold text-slate-800 dark:text-white">
                                 Dosen
                             </a>
@@ -417,7 +417,7 @@
                         <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Berkas
                         </p>
                         <div class="grid grid-cols-2 gap-2">
-                            <a href="/panduan"
+                            <a href="{{ url_for('panduan.list') }}"
                                 class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 block text-xs font-bold text-slate-800 dark:text-white">
                                 Panduan Akademik
                             </a>
@@ -476,7 +476,7 @@
                         class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 text-xs font-bold text-slate-700 dark:text-slate-200 block">
                         Ganti Password
                     </a>
-                    <a href="/logout"
+                    <a href="{{ url_for('auth.logout') }}"
                         class="p-3 rounded-xl bg-red-50 dark:bg-red-950/30 text-xs font-bold text-red-600 dark:text-red-400 block">
                         Logout
                     </a>

@@ -446,7 +446,7 @@
 
     function openEditModal(user) {
         document.getElementById('modal-user-title').textContent = 'Edit User';
-        document.getElementById('user-form').action = `/users/edit/${user.id}`;
+        document.getElementById('user-form').action = `{{ url_for('user.list') }}edit/${user.id}`;
         document.getElementById('user-nama').value = user.nama || '';
         document.getElementById('user-username').value = user.username || '';
         document.getElementById('user-email').value = user.email || '';
@@ -486,7 +486,7 @@
     }
 
     function openDeleteModal(id, nama) {
-        document.getElementById('hapus-form').action = `/users/delete/${id}`;
+        document.getElementById('hapus-form').action = `{{ url_for('user.list') }}delete/${id}`;
         document.getElementById('hapus-nama').textContent = '"' + nama + '" akan dihapus permanen.';
         openModal('modal-hapus');
     }
