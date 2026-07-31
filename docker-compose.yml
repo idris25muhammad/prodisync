@@ -45,7 +45,10 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    command: "sh -c 'sleep 10 && flask db upgrade && gunicorn --bind 0.0.0.0:8000 --workers 4 --timeout 120 --access-logfile - --error-logfile - app:create_app()'"
+    command:
+      - sh
+      - -c
+      - "sleep 10 && flask db upgrade && gunicorn --bind 0.0.0.0:8000 --workers 4 --timeout 120 --access-logfile - --error-logfile - 'app:create_app()'"
 
   # ──────────────────────────────────────────
   # Container 3: Nginx (Reverse Proxy)
