@@ -67,7 +67,7 @@ def create_app():
             print('⚠️ Data user sudah ada, seed dilewati.')
 
         if not TahunAjaran.query.first():
-            ta = TahunAjaran(nama='2026-2027 - Ganjil', is_aktif=True)
+            ta = TahunAjaran(tahun='2026/2027', semester='Ganjil', is_aktif=True)
             db.session.add(ta)
             db.session.commit()
             print('✅ Data Tahun Ajaran berhasil diseed.')
