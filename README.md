@@ -1,4 +1,4 @@
-﻿# ProdiSync
+# ProdiSync
 
 **ProdiSync** adalah sistem manajemen program studi berbasis web yang dirancang untuk memudahkan pengelolaan **Rencana Pembelajaran Semester (RPS)**, kurikulum, pengumuman, agenda, dan arsip dokumen secara terstruktur dan kolaboratif.
 
@@ -208,22 +208,192 @@ sudo systemctl status prodisync
 
 ---
 
+## 🐳 Deployment dengan Docker (Direkomendasikan untuk Production)
+
+Setup ini menggunakan **3 container** yang dikelola Docker Compose:
+
+| Container | Image | Peran |
+|-----------|-------|-------|
+| `prodisync_db` | `mysql:8.0` | Database MySQL |
+| `prodisync_app` | Build dari Dockerfile | Flask + Gunicorn |
+| `prodisync_nginx` | `nginx:1.25-alpine` | Reverse Proxy |
+
+```
+Browser → [Nginx :80] → [Flask/Gunicorn :8000] → [MySQL :3306]
+```
+
+### Prasyarat
+
+- Ubuntu Server 22.04 / 24.04 LTS
+- Docker Engine + Docker Compose Plugin
+
+### 1. Install Docker di Ubuntu Server
+
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y ca-certificates curl gnupg
+
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+  https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Jalankan Docker tanpa sudo
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
+### 2. Clone Repository ke Server
+
+```bash
+cd /opt
+sudo git clone https://github.com/idris25muhammad/prodisync.git
+sudo chown -R $USER:$USER /opt/prodisync
+cd /opt/prodisync
+```
+
+### 3. Setup File `.env`
+
+```bash
+cp .env.example .env
+nano .env
+```
+
+Isi `.env` untuk production:
+
+```env
+SECRET_KEY=isi_dengan_random_string_panjang_tanpa_karakter_dolar
+FLASK_DEBUG=False
+
+DB_USER=root
+DB_PASSWORD=password_kuat_anda
+DB_HOST=db
+DB_PORT=3306
+DB_NAME=prodisync_db
+```
+
+> **Penting:** `DB_HOST` wajib diisi `db` (bukan `localhost`) agar container Flask bisa terhubung ke container MySQL.
+
+Generate `SECRET_KEY` yang aman:
+```bash
+python3 -c "import secrets; print(secrets.token_hex(32))"
+```
+
+### 4. Buat Direktori Storage
+
+```bash
+mkdir -p storage && chmod 755 storage
+```
+
+### 5. Build & Jalankan Semua Container
+
+```bash
+docker compose up --build -d
+```
+
+### 6. Verifikasi
+
+```bash
+docker compose ps
+```
+
+Semua container harus berstatus `running`. Akses aplikasi di: `http://IP_SERVER_ANDA`
+
+### Perintah Berguna
+
+```bash
+# Lihat log real-time
+docker compose logs -f
+
+# Restart container app
+docker compose restart app
+
+# Jalankan migrasi manual
+docker compose exec app flask db upgrade
+
+# Masuk ke shell container
+docker compose exec app bash
+
+# Stop semua container
+docker compose down
+```
+
+---
+
+## ⚙️ CI/CD Otomatis dengan GitHub Actions
+
+Setiap `git push` ke branch `main` akan otomatis deploy ke server production.
+
+### Setup (Sekali Saja)
+
+**1. Buat SSH Key di Server**
+
+```bash
+ssh-keygen -t ed25519 -C "github-deploy" -f ~/.ssh/deploy_key -N ""
+cat ~/.ssh/deploy_key.pub >> ~/.ssh/authorized_keys
+
+# Tampilkan private key (copy untuk disimpan di GitHub)
+cat ~/.ssh/deploy_key
+```
+
+**2. Tambah Secrets di GitHub**
+
+Buka: **GitHub repo → Settings → Secrets and variables → Actions → New repository secret**
+
+| Secret Name | Value |
+|-------------|-------|
+| `SSH_HOST` | IP server Ubuntu |
+| `SSH_USER` | Username Ubuntu (misal: `ubuntu`) |
+| `SSH_PRIVATE_KEY` | Isi private key dari langkah 1 |
+
+### Alur Kerja
+
+```
+git push origin main
+       ↓
+GitHub Actions berjalan otomatis
+       ↓
+SSH ke server → git pull → docker build → flask db upgrade
+       ↓
+Aplikasi production terupdate! 🎉
+```
+
+Pantau status deploy di tab **Actions** pada GitHub repository.
+
+---
+
 ## Struktur Direktori
 
-`
+```
 prodisync/
 ├── app.py                  # Application factory & CLI commands
 ├── config.py               # Konfigurasi aplikasi
 ├── extensions.py           # Inisialisasi ekstensi Flask
 ├── requirements.txt        # Daftar dependensi Python
 ├── .env.example            # Template environment variables
+├── Dockerfile              # Docker image untuk Flask app
+├── docker-compose.yml      # Orkestrasi 3 container
+├── .dockerignore           # Exclude files dari Docker build
+├── nginx/
+│   └── nginx.conf          # Konfigurasi Nginx reverse proxy
+├── .github/
+│   └── workflows/
+│       └── deploy.yml      # GitHub Actions CI/CD workflow
 ├── migrations/             # File migrasi database (Alembic)
 ├── models/                 # SQLAlchemy Models
 ├── routes/                 # Flask Blueprints (Controllers)
 ├── templates/              # Jinja2 HTML Templates
 ├── static/                 # CSS, JS, Gambar
 └── storage/                # File upload (dokumen, dll)
-`
+```
 
 ---
 
