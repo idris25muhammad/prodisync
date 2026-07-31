@@ -51,8 +51,8 @@ services:
       - sh
       - -c
       - |
-        echo "==> Membuat semua tabel database..."
-        flask init-db
+        echo "==> Menjalankan migrasi database (Flask-Migrate)..."
+        flask db upgrade
         echo "==> Seed data pengguna & tahun ajaran..."
         flask seed-db || true
         echo "==> Seed katalog mata kuliah..."
