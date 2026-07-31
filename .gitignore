@@ -22,3 +22,6 @@ storage/
 # IDE
 .vscode/
 .idea/
+
+# Database Migrations
+migrations/
