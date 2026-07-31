@@ -1,0 +1,339 @@
+<div class="kurikulum-map space-y-6 w-full overflow-hidden">
+    <div
+        class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 overflow-hidden">
+        <div class="relative w-full overflow-x-auto overflow-y-hidden">
+            <div id="kurikulumMainWrapper"
+                class="km-wrapper relative w-max min-w-max max-w-none rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+                <div class="km-grid">
+                    <div class="km-cell km-semester">Semester 8</div>
+                    <div class="km-cell km-course-container">
+                        <div class="km-course-box" id="final-project">Final Project</div>
+                        <div class="km-course-box">English for Workspace Communication</div>
+                        <div class="km-course-box" id="internship-report">Internship Report</div>
+                    </div>
+
+                    <div class="km-cell km-semester">Semester 7</div>
+                    <div class="km-cell km-course-container">
+                        <div class="km-course-box" id="internship">Industrial Internship</div>
+                        <div class="km-course-box" id="scientific">Scientific Writing</div>
+                        <div class="km-course-box" id="proposal">Final Project Proposal</div>
+                    </div>
+
+                    <div class="km-cell km-semester">Semester 6</div>
+                    <div class="km-cell km-course-container">
+                        <div class="km-course-box">Cyber Security Project</div>
+                        <div class="km-course-box" id="iot">IoT Security</div>
+                        <div class="km-course-box" id="statistic">Statistic and Probability</div>
+                        <div class="km-course-box">Cyber Security Law and Ethics</div>
+                        <div class="km-course-box" id="metho">Research Methodology</div>
+                        <div class="km-course-box" id="policy">Cyber Security Policy and Audit</div>
+                        <div class="km-course-box">AI for Cybersecurity</div>
+                    </div>
+
+                    <div class="km-cell km-semester">Semester 5</div>
+                    <div class="km-cell km-course-container">
+                        <div class="km-course-box" id="hacking">Ethical Hacking</div>
+                        <div class="km-course-box" id="mobile">Mobile Security</div>
+                        <div class="km-course-box" id="cloudsec">Cloud Computing Security</div>
+                        <div class="km-course-box" id="forensic">Digital Forensic</div>
+                        <div class="km-course-box" id="bcm">Business Continuity Management</div>
+                        <div class="km-course-box">English Communication</div>
+                        <div class="km-course-box">Entrepreneurship</div>
+                    </div>
+
+                    <div class="km-cell km-semester">Semester 4</div>
+                    <div class="km-cell km-course-container">
+                        <div class="km-course-box" id="web-pentest">Web Application Pentest</div>
+                        <div class="km-course-box" id="database">Database Security</div>
+                        <div class="km-course-box" id="devsecops">DevSecOps</div>
+                        <div class="km-course-box" id="threat">Threat Intelligence Essential</div>
+                        <div class="km-course-box" id="risk">Cyber Security Risk and Management</div>
+                        <div class="km-course-box">General English</div>
+                    </div>
+
+                    <div class="km-cell km-semester">Semester 3</div>
+                    <div class="km-cell km-course-container">
+                        <div class="km-course-box" id="soc">SOC Essential</div>
+                        <div class="km-course-box" id="internetworking">Internetworking</div>
+                        <div class="km-course-box" id="net-def">Network Defender Essentials</div>
+                        <div class="km-course-box" id="web-fund">Web Fundamental</div>
+                        <div class="km-course-box" id="devops">DevOps</div>
+                        <div class="km-course-box">Bahasa Indonesia</div>
+                        <div class="km-course-box">Religious Education</div>
+                    </div>
+
+                    <div class="km-cell km-semester">Semester 2</div>
+                    <div class="km-cell km-course-container">
+                        <div class="km-course-box" id="sysadmin">Computer System Administration</div>
+                        <div class="km-course-box" id="network">Computer Network</div>
+                        <div class="km-course-box" id="windows">Windows Fundamental</div>
+                        <div class="km-course-box" id="calculus">Calculus</div>
+                        <div class="km-course-box" id="crypto">Applied Cryptography</div>
+                        <div class="km-course-box">Civic Education</div>
+                    </div>
+
+                    <div class="km-cell km-semester">Semester 1</div>
+                    <div class="km-cell km-course-container km-last-row">
+                        <div class="km-course-box">Fundamental of Cyber Security</div>
+                        <div class="km-course-box" id="linux">Linux Fundamental</div>
+                        <div class="km-course-box" id="alpro">Programming and Algorithm</div>
+                        <div class="km-course-box">Fundamental of Physics</div>
+                        <div class="km-course-box" id="discrete">Discrete Mathematics</div>
+                        <div class="km-course-box">Pancasila Education</div>
+                    </div>
+                </div>
+
+                <svg id="kurikulumConnectionLayer" class="km-connection-layer"></svg>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .kurikulum-map {
+        --km-course-color: #1e40af;
+        --km-text-light: #ffffff;
+        --km-border-color: #e2e8f0;
+        --km-semester-bg: #1e293b;
+        --km-surface: #ffffff;
+    }
+
+    .dark .kurikulum-map {
+        --km-border-color: #334155;
+        --km-semester-bg: #0f172a;
+        --km-surface: #0f172a;
+    }
+
+    .kurikulum-map .km-connection-layer {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 10;
+    }
+
+    .kurikulum-map .km-grid {
+        display: grid;
+        grid-template-columns: 120px auto;
+    }
+
+    .kurikulum-map .km-cell {
+        padding: 15px;
+        border-bottom: 1px solid var(--km-border-color);
+        border-right: 1px solid var(--km-border-color);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 11px;
+    }
+
+    .kurikulum-map .km-semester {
+        font-weight: 800;
+        background-color: var(--km-semester-bg);
+        color: #fff;
+        border-right: none;
+        text-align: center;
+    }
+
+    .kurikulum-map .km-course-container {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 25px;
+        justify-content: flex-start;
+        background-color: var(--km-surface);
+    }
+
+    .kurikulum-map .km-last-row,
+    .kurikulum-map .km-grid>.km-cell:nth-last-child(-n+2) {
+        border-bottom: none;
+    }
+
+    .kurikulum-map .km-course-box {
+        width: 130px;
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px;
+        border-radius: 8px;
+        font-size: 10px;
+        font-weight: 600;
+        line-height: 1.2;
+        text-align: center;
+        background-color: var(--km-course-color);
+        color: var(--km-text-light);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        position: relative;
+        z-index: 5;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .kurikulum-map .km-course-box:hover {
+        transform: translateY(-2px);
+    }
+
+    .kurikulum-map .km-connector-line {
+        stroke-width: 2;
+        fill: none;
+        stroke-dasharray: 6, 3;
+        opacity: 0.6;
+        transition: all 0.3s;
+    }
+
+    .kurikulum-map .km-endpoint-diamond {
+        stroke: white;
+        stroke-width: 1;
+        opacity: 0.6;
+        transition: all 0.3s;
+    }
+
+    .kurikulum-map .km-wrapper.is-active .km-connector-line,
+    .kurikulum-map .km-wrapper.is-active .km-endpoint-diamond {
+        opacity: 0.1;
+    }
+
+    .kurikulum-map .km-wrapper.is-active .km-course-box {
+        opacity: 0.2;
+        filter: grayscale(0.5);
+    }
+
+    .kurikulum-map .km-connector-line.highlight {
+        opacity: 1 !important;
+        stroke-width: 3;
+        stroke-dasharray: none;
+    }
+
+    .kurikulum-map .km-endpoint-diamond.highlight {
+        opacity: 1 !important;
+    }
+
+    .kurikulum-map .km-course-box.highlight {
+        opacity: 1 !important;
+        filter: grayscale(0) !important;
+        transform: scale(1.05);
+        z-index: 20;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+</style>
+
+<script>
+    (function () {
+        const wrapper = document.getElementById('kurikulumMainWrapper');
+        const svg = document.getElementById('kurikulumConnectionLayer');
+        if (!wrapper || !svg) return;
+
+        const categoryColors = {
+            math: '#9333ea',
+            system: '#ea580c',
+            network: '#0ea5e9',
+            devops: '#ca8a04',
+            appsec: '#16a34a',
+            grc: '#475569',
+            research: '#0d9488'
+        };
+
+        const connections = [
+            { ids: ['discrete', 'calculus'], cat: 'math' },
+            { ids: ['discrete', 'crypto'], cat: 'math' },
+            { ids: ['linux', 'sysadmin'], cat: 'system' },
+            { ids: ['linux', 'forensic'], cat: 'system' },
+            { ids: ['windows', 'forensic'], cat: 'system' },
+            { ids: ['devops', 'devsecops'], cat: 'devops' },
+            { ids: ['devsecops', 'cloudsec'], cat: 'devops' },
+            { ids: ['network', 'internetworking'], cat: 'network' },
+            { ids: ['network', 'net-def'], cat: 'network' },
+            { ids: ['sysadmin', 'soc'], cat: 'network' },
+            { ids: ['soc', 'threat'], cat: 'network' },
+            { ids: ['alpro', 'web-fund'], cat: 'appsec' },
+            { ids: ['alpro', 'mobile'], cat: 'appsec' },
+            { ids: ['alpro', 'iot'], cat: 'appsec' },
+            { ids: ['web-fund', 'database'], cat: 'appsec' },
+            { ids: ['web-fund', 'web-pentest'], cat: 'appsec' },
+            { ids: ['web-pentest', 'hacking'], cat: 'appsec' },
+            { ids: ['risk', 'bcm'], cat: 'grc' },
+            { ids: ['bcm', 'policy'], cat: 'grc' },
+            { ids: ['metho', 'scientific'], cat: 'research' },
+            { ids: ['proposal', 'final-project'], cat: 'research' },
+            { ids: ['internship', 'internship-report'], cat: 'research' }
+        ];
+
+        function drawLines(focusId = null) {
+            svg.innerHTML = '';
+            const wrapperRect = wrapper.getBoundingClientRect();
+            const activeNodes = new Set();
+            const activeLines = new Set();
+
+            if (focusId) {
+                wrapper.classList.add('is-active');
+                activeNodes.add(focusId);
+
+                connections.forEach((conn, index) => {
+                    if (conn.ids[0] === focusId) {
+                        activeNodes.add(conn.ids[1]);
+                        activeLines.add(index);
+                    } else if (conn.ids[1] === focusId) {
+                        activeNodes.add(conn.ids[0]);
+                        activeLines.add(index);
+                    }
+                });
+            } else {
+                wrapper.classList.remove('is-active');
+            }
+
+            connections.forEach((conn, index) => {
+                const startEl = document.getElementById(conn.ids[0]);
+                const endEl = document.getElementById(conn.ids[1]);
+                if (!startEl || !endEl) return;
+
+                const isHighlighted = activeLines.has(index);
+                const startRect = startEl.getBoundingClientRect();
+                const endRect = endEl.getBoundingClientRect();
+                const color = categoryColors[conn.cat];
+
+                const x1 = (startRect.left + startRect.width / 2) - wrapperRect.left;
+                const y1 = startRect.bottom - wrapperRect.top;
+                const x2 = (endRect.left + endRect.width / 2) - wrapperRect.left;
+                const y2 = endRect.top - wrapperRect.top;
+                const cpY = y1 + (y2 - y1) / 2;
+
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', `M ${x1} ${y1} C ${x1} ${cpY}, ${x2} ${cpY}, ${x2} ${y2}`);
+                path.setAttribute('class', 'km-connector-line' + (isHighlighted ? ' highlight' : ''));
+                path.style.stroke = color;
+                svg.appendChild(path);
+
+                const diamond = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                const size = 5;
+                diamond.setAttribute('points', `${x2},${y2 - size} ${x2 + size},${y2} ${x2},${y2 + size} ${x2 - size},${y2}`);
+                diamond.setAttribute('class', 'km-endpoint-diamond' + (isHighlighted ? ' highlight' : ''));
+                diamond.style.fill = color;
+                svg.appendChild(diamond);
+            });
+
+            wrapper.querySelectorAll('.km-course-box').forEach(box => {
+                box.classList.toggle('highlight', activeNodes.has(box.id));
+            });
+        }
+
+        drawLines();
+
+        wrapper.querySelectorAll('.km-course-box').forEach(box => {
+            box.addEventListener('click', function (e) {
+                e.stopPropagation();
+                drawLines(this.id || null);
+            });
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!wrapper.contains(e.target)) drawLines(null);
+        });
+
+        window.addEventListener('resize', function () {
+            drawLines(null);
+        });
+    })();
+</script>

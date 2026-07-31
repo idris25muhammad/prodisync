@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}Isi RPS - {{ matkul.matkul }}{% endblock %}
+
+{% block content %}
+
+<script>
+    const savedRpsDetail = {% if matkul.rps_detail %}{{ matkul.rps_detail | tojson | safe }}{% else %}null{% endif %};
+</script>
+
+<div class="space-y-6">
+    <div>
+        <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white">RPS Editor</h1>
+        <p class="text-slate-500 dark:text-slate-400 mt-1">
+            Edit RPS disini lebih mudah. Gak pusing sama word.
+        </p>
+    </div>
+
+    <div class="flex flex-col md:flex-row">
+
+        {# ── Sidebar Quick Nav ── #}
+        <aside
+            class="w-full md:w-64 shrink-0 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-4 md:min-h-screen flex flex-col gap-4">
+
+            {% set progress = hitung_progress_rps(matkul) %}
+            <div class="px-2 pt-2 mb-2">
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wide">Progress Pengisian</span>
+                    <span id="progress-label"
+                        class="text-xs font-black {% if progress == 100 %}text-green-600 dark:text-green-400{% else %}text-blue-600 dark:text-blue-400{% endif %}">{{
+                        progress }}%</span>
+                </div>
+                <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden mb-3">
+                    <div id="progress-bar"
+                        class="h-2 rounded-full transition-all duration-500 ease-out {% if progress == 100 %}bg-green-500{% else %}bg-blue-600 dark:bg-blue-500{% endif %}"
+                        style="width: {{ progress }}%">
+                    </div>
+                </div>
+
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wide mt-4">Navigasi Cepat</h3>
+                <p class="text-[10px] text-slate-400 mt-1">Lompat langsung ke bagian yang ingin diisi.</p>
+            </div>
+
+            <nav class="flex flex-col gap-1 px-2 pb-4 overflow-y-auto">
+                {% set quicknav = [
+                ('Identitas Mata Kuliah', 'tab-1', 'head-1'),
+                ('Deskripsi Mata Kuliah', 'tab-1', 'head-2'),
+                ('Tujuan Pembelajaran', 'tab-2', 'head-3'),
+                ('Rencana Mingguan', 'tab-3', 'head-5'),
+                ('Sarana & Prasarana', 'tab-4', 'head-6'),
+                ('Rencana Evaluasi', 'tab-4', 'head-7'),
+                ('Kriteria Penilaian', 'tab-5', 'head-9'),
+                ('Kesepakatan', 'tab-5', 'head-10'),
+                ('Pustaka & QR Koor', 'tab-5', 'head-11')
+                ] %}
+                {% for label, tid, headId in quicknav %}
+                <button type="button" onclick="jumpToSection('{{ tid }}', '{{ headId }}')"
+                    class="quicknav-btn text-left flex items-start px-3 py-2 rounded-lg transition-all text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-600">
+                    <span class="text-xs font-medium">{{ label }}</span>
+                </button>
+                {% endfor %}
+            </nav>
+        </aside>
+
+        {# ── Main Form ── #}
+        <div class="flex-1 p-8">
+            <div
+                class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-8">
+                <form method="POST" enctype="multipart/form-data">
+                    {% include 'rps/tab1_identitas.html' %}
+                    {% include 'rps/tab2_tp.html' %}
+                    {% include 'rps/tab3_mingguan.html' %}
+                    {% include 'rps/tab4_evaluasi.html' %}
+                    {% include 'rps/tab5_penilaian.html' %}
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/rps-core.js') }}"></script>
+<script src="{{ url_for('static', filename='js/rps-render.js') }}"></script>
+<script src="{{ url_for('static', filename='js/rps-bobot.js') }}"></script>
+{% endblock %}

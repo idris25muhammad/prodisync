@@ -1,0 +1,390 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="space-y-8">
+    <div class="flex justify-between items-end flex-wrap gap-4">
+        <div>
+            <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white">
+                Dashboard
+            </h1>
+
+        </div>
+
+        {# ── Toolbar Manajemen Tahun Ajaran ── #}
+        <div
+            class="flex items-center gap-3 bg-white dark:bg-slate-900 p-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div class="flex items-center gap-1">
+                {% if semua_ta %}
+                <select id="ta-select" onchange="syncSetAktifBtn()"
+                    class="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer font-medium min-w-[160px]">
+                    {% for ta in semua_ta %}
+                    <option value="{{ ta.id }}" {% if ta.is_aktif %}selected data-aktif="true" {% else
+                        %}data-aktif="false" {% endif %}>
+                        {{ ta.tahun }} - {{ ta.semester }} {% if ta.is_aktif %}(Aktif){% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+
+                {% if current_user.is_kaprodi %}
+                <div class="flex items-center border-slate-200 dark:border-slate-700 pl-2">
+                    <button id="btn-set-aktif" onclick="setAktifManual()"
+                        class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-bold transition-all shadow-md shadow-blue-600/10 ml-2"
+                        title="Set Aktif">
+                        Aktifkan
+                    </button>
+                    <button onclick="openEditModalFromSelect()"
+                        class="p-2 text-blue-200 hover:text-blue-400 transition-colors" title="Edit TA">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                    </button>
+                    <button onclick="deleteSelectedTA()" class="p-2 text-red-200 hover:text-red-400 transition-colors"
+                        title="Hapus TA">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </button>
+                </div>
+                {% endif %}
+                {% else %}
+                <span class="px-3 py-2 text-sm text-slate-400 italic bg-slate-50 dark:bg-slate-800 rounded-lg">Belum ada
+                    TA</span>
+                {% endif %}
+
+                {% if current_user.is_kaprodi %}
+                <button onclick="document.getElementById('modal-ta').classList.remove('hidden')"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-bold transition-all shadow-md shadow-blue-600/10 ml-2">
+                    + Tambah TA
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# ── Cards Statistik ── #}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Card 1: Total RPS -->
+        <div
+            class="relative overflow-hidden bg-white dark:bg-slate-900 p-6 rounded-2xl border border-blue-100 dark:border-blue-900/40 shadow-sm hover:shadow-md transition-all group">
+            <div class="relative z-10 flex items-center justify-between">
+                <div>
+                    <p class="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider mb-1">Total
+                        RPS</p>
+                    <p class="text-3xl font-black text-blue-600 dark:text-blue-400">{{ total_mk }}</p>
+                </div>
+                <div
+                    class="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                    <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                        <path
+                            d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM3.82 9L12 4.54 20.18 9 12 13.46 3.82 9zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z" />
+                    </svg>
+                </div>
+            </div>
+            <svg class="absolute -right-4 -bottom-4 w-32 h-32 text-blue-500/10 dark:text-blue-400/10 fill-current pointer-events-none transform -rotate-12 transition-transform group-hover:scale-110 group-hover:-rotate-6"
+                viewBox="0 0 24 24">
+                <path
+                    d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM3.82 9L12 4.54 20.18 9 12 13.46 3.82 9zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z" />
+            </svg>
+        </div>
+
+        <!-- Card 2: RPS Lengkap -->
+        <div
+            class="relative overflow-hidden bg-white dark:bg-slate-900 p-6 rounded-2xl border border-emerald-100 dark:border-emerald-900/40 shadow-sm hover:shadow-md transition-all group">
+            <div class="relative z-10 flex items-center justify-between">
+                <div>
+                    <p class="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider mb-1">RPS
+                        Lengkap</p>
+                    <p class="text-3xl font-black text-emerald-600 dark:text-emerald-400">{{ rps_selesai }}</p>
+                </div>
+                <div
+                    class="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                    <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                        <path
+                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                    </svg>
+                </div>
+            </div>
+            <svg class="absolute -right-4 -bottom-4 w-32 h-32 text-emerald-500/10 dark:text-emerald-400/10 fill-current pointer-events-none transform -rotate-12 transition-transform group-hover:scale-110 group-hover:-rotate-6"
+                viewBox="0 0 24 24">
+                <path
+                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+            </svg>
+        </div>
+
+        <!-- Card 3: Masih Draft -->
+        <div
+            class="relative overflow-hidden bg-white dark:bg-slate-900 p-6 rounded-2xl border border-amber-100 dark:border-amber-900/40 shadow-sm hover:shadow-md transition-all group">
+            <div class="relative z-10 flex items-center justify-between">
+                <div>
+                    <p class="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider mb-1">Masih
+                        Draft</p>
+                    <p class="text-3xl font-black text-amber-600 dark:text-amber-400">{{ rps_draft }}</p>
+                </div>
+                <div
+                    class="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                    <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                        <path
+                            d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a.996.996 0 0 0 0-1.41l-2.34-2.34a.996.996 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
+                    </svg>
+                </div>
+            </div>
+            <svg class="absolute -right-4 -bottom-4 w-32 h-32 text-amber-500/10 dark:text-amber-400/10 fill-current pointer-events-none transform -rotate-12 transition-transform group-hover:scale-110 group-hover:-rotate-6"
+                viewBox="0 0 24 24">
+                <path
+                    d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a.996.996 0 0 0 0-1.41l-2.34-2.34a.996.996 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
+            </svg>
+        </div>
+
+        <!-- Card 4: Belum Diisi -->
+        <div
+            class="relative overflow-hidden bg-white dark:bg-slate-900 p-6 rounded-2xl border border-purple-100 dark:border-purple-900/40 shadow-sm hover:shadow-md transition-all group">
+            <div class="relative z-10 flex items-center justify-between">
+                <div>
+                    <p class="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider mb-1">Belum
+                        Diisi</p>
+                    <p class="text-3xl font-black text-purple-600 dark:text-purple-400">{{ rps_belum }}</p>
+                </div>
+                <div
+                    class="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+                    <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                        <path
+                            d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
+                    </svg>
+                </div>
+            </div>
+            <svg class="absolute -right-4 -bottom-4 w-32 h-32 text-purple-500/10 dark:text-purple-400/10 fill-current pointer-events-none transform -rotate-12 transition-transform group-hover:scale-110 group-hover:-rotate-6"
+                viewBox="0 0 24 24">
+                <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
+            </svg>
+        </div>
+    </div>
+
+    {# ── Agenda Terdekat Banner ── #}
+    {% if agenda_terdekat %}
+    <div
+        class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 rounded-2xl shadow-lg shadow-blue-600/15 flex items-center justify-between flex-wrap gap-4">
+        <div class="flex items-center gap-4">
+            <div
+                class="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-2xl shrink-0">
+                📅
+            </div>
+            <div>
+                <div class="flex items-center gap-2 mb-1">
+                    <span
+                        class="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-white/20 text-white tracking-wider">
+                        Agenda Terdekat
+                    </span>
+                    <span class="text-xs text-blue-100 font-semibold">
+                        • {{ agenda_terdekat.tanggal.strftime('%d/%m/%Y') }} {% if agenda_terdekat.waktu_mulai %}({{
+                        agenda_terdekat.waktu_mulai.strftime('%H:%M') }}){% endif %}
+                    </span>
+                </div>
+                <h3 class="font-extrabold text-lg text-white leading-tight">
+                    {{ agenda_terdekat.judul }}
+                </h3>
+                {% if agenda_terdekat.lokasi %}
+                <p class="text-xs text-blue-100 mt-1 flex items-center gap-1 font-medium">
+                    <span>📍 Lokasi:</span> {{ agenda_terdekat.lokasi }}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+        <a href="{{ url_for('agenda.index') }}"
+            class="px-4 py-2 bg-white text-blue-700 hover:bg-blue-50 rounded-xl text-xs font-bold transition-all shadow-sm shrink-0">
+            Lihat Kalender →
+        </a>
+    </div>
+    {% endif %}
+
+    {# ── Grafik Section ── #}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        <!-- Chart 1: Distribusi Status RPS -->
+        <div
+            class="lg:col-span-1 bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group">
+            <!-- Decorative Glow -->
+            <div
+                class="absolute -top-20 -right-20 w-64 h-64 bg-emerald-500/10 dark:bg-emerald-500/5 rounded-full blur-[60px] pointer-events-none group-hover:bg-emerald-500/20 transition-all duration-700">
+            </div>
+
+            <h2 class="font-bold text-lg mb-6 text-slate-900 dark:text-white relative z-10">Distribusi Status RPS</h2>
+
+            <div
+                class="relative h-[320px] flex items-center justify-center bg-slate-50 dark:bg-slate-950/50 rounded-3xl p-4 border border-slate-100 dark:border-slate-800/60 shadow-inner z-10">
+                {% if rps_selesai + rps_draft + rps_belum > 0 %}
+                <canvas id="statusChart"></canvas>
+                {% else %}
+                <p class="text-slate-400 dark:text-slate-500 italic">Belum ada data</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Chart 2: Progres Kelengkapan -->
+        <div
+            class="lg:col-span-2 bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group">
+            <!-- Decorative Glow -->
+            <div
+                class="absolute -bottom-20 -left-20 w-64 h-64 bg-blue-600/10 dark:bg-blue-600/5 rounded-full blur-[60px] pointer-events-none group-hover:bg-blue-600/20 transition-all duration-700">
+            </div>
+
+            <h2 class="font-bold text-lg mb-6 text-slate-900 dark:text-white relative z-10">Progres Kelengkapan RPS</h2>
+
+            <div
+                class="relative h-[320px] flex items-center justify-center bg-slate-50 dark:bg-slate-950/50 rounded-3xl p-4 border border-slate-100 dark:border-slate-800/60 shadow-inner z-10">
+                {% if progress_values %}
+                <canvas id="progressChart"></canvas>
+                {% else %}
+                <p class="text-slate-400 dark:text-slate-500 italic">Belum ada data</p>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{# ── Modal Tambah/Edit TA ── #}
+<div id="modal-ta" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div
+        class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-sm p-6 border border-slate-200 dark:border-slate-700 shadow-xl">
+        <h2 id="modal-ta-title" class="text-lg font-bold mb-4">Tambah Tahun Ajaran</h2>
+        <form id="form-ta" method="POST" action="{{ url_for('tahun_ajaran.add') }}">
+            <div class="space-y-4">
+                <input type="text" name="tahun" id="input-tahun" placeholder="Contoh: 2025/2026" required
+                    class="w-full p-2.5 border rounded-lg dark:bg-slate-800">
+                <select name="semester" id="input-semester" class="w-full p-2.5 border rounded-lg dark:bg-slate-800">
+                    <option value="Ganjil">Ganjil</option>
+                    <option value="Genap">Genap</option>
+                </select>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button type="button" onclick="document.getElementById('modal-ta').classList.add('hidden')"
+                    class="flex-1 py-2  rounded-lg text-sm font-semibold bg-red-400">Batal</button>
+                <button type="submit"
+                    class="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function syncSetAktifBtn() {
+        const select = document.getElementById('ta-select');
+        const btn = document.getElementById('btn-set-aktif');
+        if (!select || !btn) return;
+        const selectedOpt = select.options[select.selectedIndex];
+        const sudahAktif = selectedOpt && selectedOpt.dataset.aktif === 'true';
+        btn.style.display = sudahAktif ? 'none' : '';
+    }
+
+    // Jalankan saat halaman load agar state awal sudah sinkron
+    document.addEventListener('DOMContentLoaded', syncSetAktifBtn);
+
+    function setAktifManual() {
+        const id = document.getElementById('ta-select').value;
+        if (id) window.location.href = '/tahun-ajaran/set-aktif/' + id;
+    }
+
+    function deleteSelectedTA() {
+        const id = document.getElementById('ta-select').value;
+        if (id && confirm('Yakin ingin menghapus TA yang terpilih?')) {
+            window.location.href = '/tahun-ajaran/' + id + '/delete';
+        }
+    }
+
+    function openEditModalFromSelect() {
+        const select = document.getElementById('ta-select');
+        if (!select.value) return;
+        const selectedOption = select.options[select.selectedIndex];
+        const text = selectedOption.text.split(' - ');
+        openEditModal(select.value, text[0].trim(), text[1].replace('(Aktif)', '').trim());
+    }
+
+    function openEditModal(id, tahun, semester) {
+        const form = document.getElementById('form-ta');
+        form.action = '/tahun-ajaran/' + id + '/edit';
+        document.getElementById('modal-ta-title').textContent = 'Edit Tahun Ajaran';
+        document.getElementById('input-tahun').value = tahun;
+        document.getElementById('input-semester').value = semester;
+        document.getElementById('modal-ta').classList.remove('hidden');
+    }
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Set text colors normally adapting to the theme
+    const isDarkBody = document.documentElement.classList.contains('dark');
+    const chartTextColor = isDarkBody ? '#94a3b8' : '#64748b'; // slate-400 for dark, slate-500 for light
+    const chartGridColor = isDarkBody ? '#1e293b' : '#f1f5f9'; // slate-800 for dark, slate-100 for light
+
+    Chart.defaults.color = chartTextColor;
+    Chart.defaults.font.family = "'Inter', 'sans-serif'";
+
+    {% if rps_selesai + rps_draft + rps_belum > 0 %}
+    new Chart(document.getElementById('statusChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Lengkap', 'Draft', 'Belum'],
+            datasets: [{
+                data: [{{ rps_selesai }}, {{ rps_draft }}, {{ rps_belum }}],
+        backgroundColor: ['#10b981', '#f59e0b', '#64748b'],
+        borderWidth: 0,
+        hoverOffset: 8
+            }]
+        },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '72%',
+        layout: { padding: 10 },
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: { color: chartTextColor, padding: 20, usePointStyle: true, pointStyle: 'circle' }
+            }
+        }
+    }
+    });
+    {% endif %}
+
+    {% if progress_values %}
+    new Chart(document.getElementById('progressChart'), {
+        type: 'bar',
+        data: {
+            labels: {{ progress_labels | tojson }},
+        datasets: [{
+            label: 'Progress (%)',
+            data: {{ progress_values | tojson }},
+        backgroundColor: '#3b82f6',
+        borderRadius: 6,
+        borderWidth: 0,
+        barPercentage: 0.6
+            }]
+        },
+        options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: { padding: { left: 10, right: 20, top: 10, bottom: 10 } },
+        scales: {
+            x: {
+                beginAtZero: true,
+                max: 100,
+                grid: { color: chartGridColor, drawBorder: false },
+                ticks: { color: chartTextColor }
+            },
+            y: {
+                grid: { display: false },
+                ticks: { color: chartTextColor }
+            }
+        },
+        plugins: {
+            legend: { display: false } // Hide legend for single dataset bar chart
+        }
+    }
+    });
+    {% endif %}
+</script>
+{% endblock %}

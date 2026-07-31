@@ -1,0 +1,153 @@
+<div id="tab-1" class="tab-content space-y-6">
+    <h2 id="head-1" class="text-xl font-bold border-b border-slate-200 dark:border-slate-700 pb-3">I. Identitas Mata Kuliah</h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase">Kode Mata Kuliah</label>
+            <input type="text" name="kode" value="{{ matkul.matakuliah.kode or '' }}" readonly
+                class="mt-1 w-full p-2.5 border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg outline-none cursor-not-allowed">
+        </div>
+        <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase">Nama Mata Kuliah</label>
+            <input type="text" name="nama" value="{{ matkul.matakuliah.nama or '' }}" readonly
+                class="mt-1 w-full p-2.5 border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg outline-none cursor-not-allowed">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase">SKS</label>
+                <input type="number" name="sks" value="{{ matkul.sks or 0 }}" readonly
+                    class="mt-1 w-full p-2.5 border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg outline-none cursor-not-allowed">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase">Tahun Ajaran</label>
+                <input type="text" name="tahun_ajaran"
+                    value="{{ matkul.tahun_ajaran.tahun ~ ' - ' ~ matkul.tahun_ajaran.semester if matkul.tahun_ajaran else '-' }}"
+                    readonly
+                    class="mt-1 w-full p-2.5 border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg outline-none cursor-not-allowed">
+            </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase">Kurikulum</label>
+                <input type="text" name="kurikulum" value="{{ matkul.matakuliah.kurikulum or '-' }}" readonly
+                    class="mt-1 w-full p-2.5 border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg outline-none cursor-not-allowed">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase">Prasyarat</label>
+                <input type="text" name="prasyarat" value="{{ matkul.prasyarat or '-' }}" readonly
+                    class="mt-1 w-full p-2.5 border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg outline-none cursor-not-allowed">
+            </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase">Dosen Pengampu</label>
+                <input type="text" value="{{ current_user.nama }}" readonly
+                    class="mt-1 w-full p-2.5 border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg outline-none cursor-not-allowed">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase">Email Dosen</label>
+                <input type="text" value="{{ current_user.email }}" readonly
+                    class="mt-1 w-full p-2.5 border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg outline-none cursor-not-allowed">
+            </div>
+        </div>
+    </div>
+
+    {# ── Bagian Deskripsi dengan WYSIWYG Editor ── #}
+    <h2 id="head-2" class="text-xl font-bold border-b border-slate-200 dark:border-slate-700 pb-3 mt-8">II. Deskripsi Mata Kuliah
+    </h2>
+    <div class="space-y-2">
+        <div id="wysiwyg-editor"
+            class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg overflow-hidden text-sm text-slate-900 dark:text-slate-100">
+        </div>
+        <textarea name="deskripsi" id="deskripsi-hidden"
+            class="hidden">{{ matkul.matakuliah.deskripsi or '' }}</textarea>
+    </div>
+
+
+    <div class="flex justify-end pt-6">
+        <button type="button" onclick="saveDraftAndNext('tab-2', this)"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-bold shadow-lg shadow-blue-500/30 transition-all">
+            Save Draft & Ke Tujuan Pembelajaran &rarr;
+        </button>
+    </div>
+</div>
+
+{# ── Dependensi & Script Initialization Pell Editor ── #}
+<link rel="stylesheet" href="https://unpkg.com/pell/dist/pell.min.css">
+<script src="https://unpkg.com/pell/dist/pell.min.js"></script>
+
+<style>
+    /* Styling agar Pell Editor menyatu dengan tema Tailwind (Light & Dark Mode) */
+    .pell-actionbar {
+        background-color: rgb(248 250 252) !important;
+        border-bottom: 1px solid rgb(226 232 240) !important;
+    }
+
+    .dark .pell-actionbar {
+        background-color: rgb(30 41 59) !important;
+        border-bottom: 1px solid rgb(71 85 105) !important;
+    }
+
+    .pell-button {
+        color: rgb(100 116 139) !important;
+        background-color: transparent !important;
+    }
+
+    .dark .pell-button {
+        color: rgb(203 213 225) !important;
+    }
+
+    .pell-button-selected {
+        background-color: rgb(219 234 254) !important;
+        color: rgb(29 78 216) !important;
+    }
+
+    .dark .pell-button-selected {
+        background-color: rgb(30 58 138) !important;
+        color: rgb(96 165 250) !important;
+    }
+
+    .pell-content {
+        min-height: 150px !important;
+        padding: 12px !important;
+        outline: none !important;
+    }
+
+    .dark .pell-content {
+        background-color: rgb(30 41 59) !important;
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const hiddenTextarea = document.getElementById('deskripsi-hidden');
+        const editorContainer = document.getElementById('wysiwyg-editor');
+
+        if (editorContainer && hiddenTextarea) {
+            // Inisialisasi Pell Editor
+            const editor = pell.init({
+                element: editorContainer,
+                onChange: html => {
+                    hiddenTextarea.value = html; // Sinkronisasi otomatis ke textarea tersembunyi saat mengetik
+                },
+                defaultParagraphSeparator: 'p',
+                actions: [
+                    'bold',
+                    'italic',
+                    'underline',
+                    'strikethrough',
+                    'heading1',
+                    'heading2',
+                    'paragraph',
+                    'olist',
+                    'ulist',
+                    'line'
+                ]
+            });
+
+            // Memasukkan data awal dari database ke dalam editor
+            editor.content.innerHTML = hiddenTextarea.value;
+        }
+    });
+</script>

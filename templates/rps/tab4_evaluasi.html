@@ -1,0 +1,74 @@
+<div id="tab-4" class="tab-content hidden space-y-6">
+    <div class="flex justify-between items-end border-b border-slate-200 dark:border-slate-700 pb-3">
+        <h2 id="head-6" class="text-xl font-bold">VI. Sarana & Prasarana</h2>
+        <button type="button" onclick="addSarana()"
+            class="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 px-3 py-1.5 rounded-md font-bold text-sm hover:bg-blue-200 dark:hover:bg-blue-900/60">
+            + Perangkat
+        </button>
+    </div>
+
+    <div id="sarana-container"
+        class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+        {% if matkul.rps_detail and matkul.rps_detail.sarana_prasarana %}
+        {% for s in matkul.rps_detail.sarana_prasarana %}
+        <div class="flex gap-3 items-center">
+            <div class="w-8/12">
+                <input type="text" name="sarana_nama[]" value="{{ s.nama }}"
+                    class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
+            </div>
+            <div class="w-4/12">
+                <input type="text" name="sarana_jumlah[]" value="{{ s.jumlah }}"
+                    class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
+            </div>
+            <button type="button" onclick="this.parentElement.remove()" class="text-red-400 hover:text-red-600 dark:hover:text-red-400 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-all" title="Hapus">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+                    <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                </svg>
+            </button>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="flex gap-3">
+            <div class="w-8/12">
+                <input type="text" name="sarana_nama[]" value="VirtualBox/VMware"
+                    class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
+            </div>
+            <div class="w-4/12">
+                <input type="text" name="sarana_jumlah[]" value="31"
+                    class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="border-b border-slate-200 dark:border-slate-700 pb-3 mt-8">
+        <h2 id="head-7" class="text-xl font-bold">VII & VIII. Rencana Evaluasi</h2>
+    </div>
+
+    <div>
+        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Deskripsi Metode Evaluasi (Bab VII)</label>
+        <textarea name="metode_evaluasi" rows="3"
+            class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm dark:bg-slate-800 dark:border-slate-600">{{ matkul.rps_detail.metode_evaluasi if matkul.rps_detail else 'Mahasiswa diberikan tugas mandiri...' }}</textarea>
+    </div>
+
+    <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+        <div
+            class="flex gap-4 pb-3 border-b border-slate-300 dark:border-slate-600 font-bold text-[11px] text-slate-500 uppercase px-4">
+            <div class="w-1/12 text-center">Minggu</div>
+            <div class="w-4/12 pl-4">Tujuan Pembelajaran</div>
+            <div class="w-7/12 pl-2">Metode Evaluasi</div>
+        </div>
+        <div id="reneval-container" class="space-y-3 mt-4"></div>
+    </div>
+
+    <div class="flex justify-between pt-6">
+        <button type="button" onclick="showTab('tab-3')"
+            class="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-6 py-2.5 rounded-lg font-semibold">
+            &larr; Kembali
+        </button>
+        <button type="button" onclick="saveDraftAndNext('tab-5', this)"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-bold shadow-lg shadow-blue-500/30 transition-all">
+            Save Draft & Ke Penilaian & Pustaka &rarr;
+        </button>
+    </div>
+</div>

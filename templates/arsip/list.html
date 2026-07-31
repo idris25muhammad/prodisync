@@ -1,0 +1,384 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-center flex-wrap gap-4">
+        <div>
+            <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2.5">
+                Manajemen Arsip Dokumen
+            </h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-1">Kelola tautan dokumen arsip akademik prodi via cloud link
+                beserta kontrol hak akses user.</p>
+        </div>
+
+        {% if current_user.is_kaprodi %}
+        <button onclick="openTambahModal()"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-md shadow-blue-600/10 flex items-center gap-2">
+            <span>+ Tambah Arsip</span>
+        </button>
+        {% endif %}
+    </div>
+
+    {# Search Bar #}
+    <form method="GET" action="{{ url_for('arsip.list') }}" class="flex gap-3 max-w-md">
+        <input type="search" name="q" value="{{ q or '' }}" placeholder="Cari nama arsip dokumen..."
+            class="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:bg-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+        <button type="submit"
+            class="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 transition-all">
+            Cari
+        </button>
+        {% if q %}
+        <a href="{{ url_for('arsip.list') }}"
+            class="px-3 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-xs font-bold text-slate-500 flex items-center">
+            Reset
+        </a>
+        {% endif %}
+    </form>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for a in semua_arsip %}
+        <div
+            class="bg-white dark:bg-slate-900 p-5 rounded-2xl border {% if not a.is_aktif %}border-red-300 dark:border-red-900/50 bg-red-50/10{% else %}border-slate-200 dark:border-slate-800{% endif %} shadow-sm flex flex-col justify-between transition-all">
+            <div>
+                <div class="flex justify-between items-center mb-3">
+                    <div class="flex gap-2 items-center">
+                        {% if a.akses_tipe == 'custom' %}
+                        <span
+                            class="px-2.5 py-1 text-[10px] font-black rounded-md bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400"
+                            title="Izin akses khusus untuk user tertentu">
+                            🔒 CUSTOM ({{ a.allowed_users | length }} USER)
+                        </span>
+                        {% else %}
+                        <span
+                            class="px-2.5 py-1 text-[10px] font-black rounded-md bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400"
+                            title="Dapat diakses oleh seluruh Dosen">
+                            🌐 SEMUA USER
+                        </span>
+                        {% endif %}
+
+                        {% if not a.is_aktif %}
+                        <span
+                            class="px-2.5 py-1 text-[10px] font-black rounded-md bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400">NONAKTIF</span>
+                        {% endif %}
+                    </div>
+                    <span class="text-xs text-slate-400">{{ a.created_at.strftime('%d/%m/%Y') if a.created_at else '—'
+                        }}</span>
+                </div>
+
+                <h3 class="font-bold text-slate-800 dark:text-white text-base line-clamp-2 mb-1" title="{{ a.nama }}">{{
+                    a.nama }}</h3>
+
+                {% if a.akses_tipe == 'custom' and a.allowed_users %}
+                <div class="mt-2 mb-3">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Pengguna Diizinkan:</p>
+                    <div class="flex flex-wrap gap-1">
+                        {% for u in a.allowed_users %}
+                        <span
+                            class="px-2 py-0.5 rounded text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold">
+                            👤 {{ u.nama }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <p class="text-[11px] text-slate-400 dark:text-slate-500 font-medium mb-4 flex items-center gap-1">
+                    <span>🔄 Diupdate:</span>
+                    <span>{{ a.updated_at.strftime('%d/%m/%Y %H:%M') if a.updated_at else
+                        (a.created_at.strftime('%d/%m/%Y %H:%M') if a.created_at else '—') }}</span>
+                </p>
+            </div>
+
+            <div class="flex gap-2 mt-2 pt-4 border-t border-slate-100 dark:border-slate-800/60">
+                <a href="{{ a.url }}" target="_blank" rel="noopener noreferrer"
+                    class="flex-1 py-2 text-center bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold border border-slate-200 dark:border-slate-700 transition-all flex items-center justify-center gap-1.5">
+                    <span>🔗</span> Buka Link External
+                </a>
+
+                {% if current_user.is_kaprodi %}
+                {% set user_ids_str = a.allowed_users | map(attribute='id') | join(',') %}
+                <button
+                    onclick="openEditModal('{{ a.id }}', '{{ a.nama | replace("'", "\\'") }}', '{{ a.url | replace("'", "\\'") }}', '{{ a.akses_tipe }}', '{{ user_ids_str }}', {{ 'true' if a.is_aktif else 'false' }})"
+                    class="p-2 text-amber-600 bg-amber-50 dark:bg-amber-950/20 hover:bg-amber-100 rounded-lg text-xs transition-all"
+                    title="Edit">✏️</button>
+                <button
+                    onclick="confirmDelete('{{ url_for('arsip.delete', id=a.id) }}', '{{ a.nama | replace("'", "\\'") }}')"
+                    class="p-2 text-red-600 bg-red-50 dark:bg-red-950/20 hover:bg-red-100 rounded-lg text-xs transition-all"
+                    title="Hapus">🗑️</button>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div
+            class="col-span-full p-12 text-center bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+            <div class="text-4xl mb-2">📭</div>
+            <p class="text-slate-400 text-sm font-medium">Belum ada dokumen arsip yang dapat Anda lihat.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{# ── MODAL TAMBAH ARSIP ── #}
+<div id="modal-tambah"
+    class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div
+        class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-xl p-6 border border-slate-200 dark:border-slate-700 shadow-xl max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span>📁</span> Tambah Arsip Dokumen Baru
+            </h2>
+            <button onclick="closeModal('modal-tambah')"
+                class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl font-bold">&times;</button>
+        </div>
+        <form method="POST" action="{{ url_for('arsip.add') }}" class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nama / Judul Dokumen <span
+                        class="text-red-500">*</span></label>
+                <input type="text" name="nama" required placeholder="Misal: SK Dekan tentang Pengesahan RPS 2026"
+                    class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Link Tautan Cloud (Google Drive /
+                    OneDrive) <span class="text-red-500">*</span></label>
+                <input type="url" name="link_url" required placeholder="https://drive.google.com/file/d/..."
+                    class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            {# Hak Akses User #}
+            <div
+                class="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-200/60 dark:border-slate-800 space-y-3">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Hak Akses Melihat Arsip <span
+                        class="text-red-500">*</span></label>
+                <div class="grid grid-cols-2 gap-3">
+                    <label
+                        class="flex items-center gap-2 p-2.5 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer bg-white dark:bg-slate-900 hover:bg-slate-100">
+                        <input type="radio" name="akses_tipe" value="semua" checked
+                            onchange="toggleAksesCustom('tambah', 'semua')" class="text-blue-600 focus:ring-blue-500">
+                        <span class="text-xs font-bold text-slate-700 dark:text-slate-300">🌐 Semua User</span>
+                    </label>
+                    <label
+                        class="flex items-center gap-2 p-2.5 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer bg-white dark:bg-slate-900 hover:bg-slate-100">
+                        <input type="radio" name="akses_tipe" value="custom"
+                            onchange="toggleAksesCustom('tambah', 'custom')" class="text-blue-600 focus:ring-blue-500">
+                        <span class="text-xs font-bold text-slate-700 dark:text-slate-300">🔒 Custom (Pilih User)</span>
+                    </label>
+                </div>
+
+                {# Container User Selection for Custom Access #}
+                <div id="tambah-custom-users-container"
+                    class="hidden pt-2 border-t border-slate-200 dark:border-slate-700">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Pilih User Yang
+                        Diizinkan:</label>
+                    <div
+                        class="max-h-40 overflow-y-auto space-y-1.5 p-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
+                        {% for user in all_users %}
+                        <label
+                            class="flex items-center gap-2 text-xs p-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 rounded cursor-pointer">
+                            <input type="checkbox" name="allowed_user_ids" value="{{ user.id }}"
+                                class="w-4 h-4 accent-blue-600 rounded">
+                            <span class="font-medium text-slate-800 dark:text-slate-200">{{ user.nama }}</span>
+                            <span class="text-[10px] text-slate-400">({{ user.role }})</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status Publikasi Arsip</label>
+                <div class="flex gap-4 mt-1.5">
+                    <label class="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                        <input type="radio" name="is_aktif" value="true" checked
+                            class="text-blue-600 focus:ring-blue-500">
+                        <span class="text-slate-700 dark:text-slate-300">Aktif</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                        <input type="radio" name="is_aktif" value="false" class="text-blue-600 focus:ring-blue-500">
+                        <span class="text-slate-700 dark:text-slate-300">Sembunyikan</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex gap-3 mt-6 pt-3 border-t dark:border-slate-800">
+                <button type="button" onclick="closeModal('modal-tambah')"
+                    class="flex-1 py-2 rounded-lg text-sm font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200">Batal</button>
+                <button type="submit"
+                    class="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold shadow-md">Simpan
+                    Arsip</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ── MODAL EDIT ARSIP ── #}
+<div id="modal-edit"
+    class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div
+        class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-xl p-6 border border-slate-200 dark:border-slate-700 shadow-xl max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span>✏️</span> Ubah Data Arsip Dokumen
+            </h2>
+            <button onclick="closeModal('modal-edit')"
+                class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl font-bold">&times;</button>
+        </div>
+        <form id="form-edit" method="POST" class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nama / Judul Dokumen <span
+                        class="text-red-500">*</span></label>
+                <input type="text" name="nama" id="edit-nama" required
+                    class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Link Tautan URL <span
+                        class="text-red-500">*</span></label>
+                <input type="url" name="link_url" id="edit-link-input" required
+                    class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            {# Hak Akses User Edit #}
+            <div
+                class="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-200/60 dark:border-slate-800 space-y-3">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Hak Akses Melihat Arsip <span
+                        class="text-red-500">*</span></label>
+                <div class="grid grid-cols-2 gap-3">
+                    <label
+                        class="flex items-center gap-2 p-2.5 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer bg-white dark:bg-slate-900 hover:bg-slate-100">
+                        <input type="radio" name="akses_tipe" id="edit-akses-semua" value="semua"
+                            onchange="toggleAksesCustom('edit', 'semua')" class="text-blue-600 focus:ring-blue-500">
+                        <span class="text-xs font-bold text-slate-700 dark:text-slate-300">🌐 Semua User</span>
+                    </label>
+                    <label
+                        class="flex items-center gap-2 p-2.5 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer bg-white dark:bg-slate-900 hover:bg-slate-100">
+                        <input type="radio" name="akses_tipe" id="edit-akses-custom" value="custom"
+                            onchange="toggleAksesCustom('edit', 'custom')" class="text-blue-600 focus:ring-blue-500">
+                        <span class="text-xs font-bold text-slate-700 dark:text-slate-300">🔒 Custom (Pilih User)</span>
+                    </label>
+                </div>
+
+                <div id="edit-custom-users-container"
+                    class="hidden pt-2 border-t border-slate-200 dark:border-slate-700">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Pilih User Yang
+                        Diizinkan:</label>
+                    <div
+                        class="max-h-40 overflow-y-auto space-y-1.5 p-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
+                        {% for user in all_users %}
+                        <label
+                            class="flex items-center gap-2 text-xs p-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 rounded cursor-pointer">
+                            <input type="checkbox" name="allowed_user_ids" value="{{ user.id }}"
+                                id="edit-user-chk-{{ user.id }}" class="w-4 h-4 accent-blue-600 rounded edit-user-chk">
+                            <span class="font-medium text-slate-800 dark:text-slate-200">{{ user.nama }}</span>
+                            <span class="text-[10px] text-slate-400">({{ user.role }})</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status Publikasi Arsip</label>
+                <div class="flex gap-4 mt-1.5">
+                    <label class="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                        <input type="radio" name="is_aktif" id="edit-aktif-true" value="true"
+                            class="text-blue-600 focus:ring-blue-500">
+                        <span class="text-slate-700 dark:text-slate-300">Aktif</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                        <input type="radio" name="is_aktif" id="edit-aktif-false" value="false"
+                            class="text-blue-600 focus:ring-blue-500">
+                        <span class="text-slate-700 dark:text-slate-300">Sembunyikan</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex gap-3 mt-6 pt-3 border-t dark:border-slate-800">
+                <button type="button" onclick="closeModal('modal-edit')"
+                    class="flex-1 py-2 rounded-lg text-sm font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200">Batal</button>
+                <button type="submit"
+                    class="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold shadow-md">Simpan
+                    Perubahan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ── MODAL HAPUS ── #}
+<div id="modal-hapus"
+    class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div
+        class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-sm p-6 border border-slate-200 dark:border-slate-700 shadow-xl">
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Konfirmasi Hapus</h3>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mb-6" id="hapus-nama"></p>
+        <div class="flex gap-3">
+            <button type="button" onclick="closeModal('modal-hapus')"
+                class="flex-1 py-2 rounded-lg text-sm font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200">Batal</button>
+            <a id="hapus-link" href="#"
+                class="flex-1 py-2 text-center bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-bold shadow-md">Hapus</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleAksesCustom(mode, tipe) {
+        const container = document.getElementById(`${mode}-custom-users-container`);
+        if (tipe === 'custom') {
+            container.classList.remove('hidden');
+        } else {
+            container.classList.add('hidden');
+        }
+    }
+
+    function openTambahModal() {
+        document.getElementById('modal-tambah').classList.remove('hidden');
+        toggleAksesCustom('tambah', 'semua');
+    }
+
+    function openEditModal(id, nama, linkUrl, aksesTipe, userIdsStr, isAktif) {
+        const form = document.getElementById('form-edit');
+        form.action = `/arsip/edit/${id}`;
+
+        document.getElementById('edit-nama').value = nama;
+        document.getElementById('edit-link-input').value = linkUrl;
+
+        if (aksesTipe === 'custom') {
+            document.getElementById('edit-akses-custom').checked = true;
+            toggleAksesCustom('edit', 'custom');
+        } else {
+            document.getElementById('edit-akses-semua').checked = true;
+            toggleAksesCustom('edit', 'semua');
+        }
+
+        const allowedIds = userIdsStr ? userIdsStr.split(',').map(s => s.trim()) : [];
+        document.querySelectorAll('.edit-user-chk').forEach(chk => {
+            chk.checked = allowedIds.includes(chk.value);
+        });
+
+        if (isAktif === true) {
+            document.getElementById('edit-aktif-true').checked = true;
+        } else {
+            document.getElementById('edit-aktif-false').checked = true;
+        }
+
+        document.getElementById('modal-edit').classList.remove('hidden');
+    }
+
+    function confirmDelete(url, nama) {
+        document.getElementById('hapus-link').href = url;
+        document.getElementById('hapus-nama').textContent = `Apakah Anda yakin ingin menghapus arsip dokumen "${nama}" secara permanen?`;
+        document.getElementById('modal-hapus').classList.remove('hidden');
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.add('hidden');
+    }
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            closeModal('modal-tambah');
+            closeModal('modal-edit');
+            closeModal('modal-hapus');
+        }
+    });
+</script>
+{% endblock %}

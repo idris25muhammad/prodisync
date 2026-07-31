@@ -1,0 +1,305 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Back -->
+    <a href="{{ url_for('pengumuman.kelola') }}"
+        class="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        Kembali ke Kelola Pengumuman
+    </a>
+
+    <!-- Card -->
+    <div class="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+        <div class="border-b border-slate-100 dark:border-slate-800 px-8 py-5">
+            <h1 class="text-xl font-extrabold text-slate-900 dark:text-white">
+                {% if action == 'tambah' %}Tambah Pengumuman Baru{% else %}Edit Pengumuman{% endif %}
+            </h1>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data" class="p-8 space-y-6" id="pengumuman-form">
+
+            <!-- Judul -->
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    Judul Pengumuman <span class="text-red-500">*</span>
+                </label>
+                <input type="text" name="judul" id="judul"
+                    value="{{ p.judul if p else '' }}"
+                    required
+                    placeholder="Masukkan judul pengumuman..."
+                    class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-slate-900 dark:text-white placeholder:text-slate-400">
+            </div>
+
+            <!-- Visibilitas -->
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    Visibilitas <span class="text-red-500">*</span>
+                </label>
+                <div class="flex gap-3">
+                    {% for val, label, color in [('draft', '📝 Draft', 'slate'), ('dosen', '👤 Dosen Only', 'blue'), ('publik', '🌐 Publik', 'emerald')] %}
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="visibility" value="{{ val }}" class="sr-only peer"
+                            {% if (p and p.visibility == val) or (not p and val == 'draft') %}checked{% endif %}>
+                        <div class="px-4 py-3 rounded-xl border-2 text-center text-sm font-semibold transition-all
+                            peer-checked:border-blue-500 peer-checked:bg-blue-50 dark:peer-checked:bg-blue-900/20 peer-checked:text-blue-700 dark:peer-checked:text-blue-400
+                            border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600">
+                            {{ label }}
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- WYSIWYG Editor (Quill) -->
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    Isi Konten <span class="text-red-500">*</span>
+                </label>
+                <!-- Hidden input yang akan dikirim ke server -->
+                <input type="hidden" name="konten" id="konten-hidden">
+
+                <!-- Quill Editor — toolbar otomatis dari JS config -->
+                <div id="quill-editor"
+                    class="min-h-[400px] border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950/30 text-slate-900 dark:text-white text-sm">
+                </div>
+                <!-- Image error/status message -->
+                <div id="img-error"></div>
+            </div>
+
+            <!-- File Lampiran -->
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    File Lampiran <span class="text-slate-400 font-normal">(opsional — jpg, png, docx, pdf)</span>
+                </label>
+                {% if p and p.file_path %}
+                <div class="flex items-center gap-3 mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                    <svg class="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                    <span class="text-sm text-blue-700 dark:text-blue-300 font-medium flex-1 truncate">{{ p.file_path }}</span>
+                    <label class="flex items-center gap-1.5 text-xs text-red-500 cursor-pointer hover:text-red-700">
+                        <input type="checkbox" name="hapus_file" value="1" class="rounded text-red-500">
+                        Hapus lampiran
+                    </label>
+                </div>
+                {% endif %}
+                <div class="relative">
+                    <input type="file" name="file_lampiran" id="file_lampiran"
+                        accept=".jpg,.jpeg,.png,.docx,.pdf"
+                        class="block w-full text-sm text-slate-500 dark:text-slate-400
+                            file:mr-4 file:py-2.5 file:px-4
+                            file:rounded-xl file:border-0
+                            file:text-sm file:font-semibold
+                            file:bg-blue-50 file:text-blue-700
+                            dark:file:bg-blue-900/30 dark:file:text-blue-400
+                            hover:file:bg-blue-100 dark:hover:file:bg-blue-900/40
+                            transition-all cursor-pointer
+                            bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2">
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex items-center gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <button type="submit"
+                    class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-sm transition-all shadow-md shadow-blue-600/20">
+                    {% if action == 'tambah' %}Simpan Pengumuman{% else %}Perbarui Pengumuman{% endif %}
+                </button>
+                <a href="{{ url_for('pengumuman.kelola') }}"
+                    class="px-6 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl font-semibold text-sm transition-all">
+                    Batal
+                </a>
+            </div>
+
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Quill WYSIWYG Editor (Open Source) -->
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+
+<style>
+    /* Quill dark mode compatibility */
+    html.dark .ql-toolbar { background: #1e293b; border-color: #334155 !important; }
+    html.dark .ql-container { background: #0f172a; border-color: #334155 !important; color: #e2e8f0; }
+    html.dark .ql-toolbar .ql-stroke { stroke: #94a3b8; }
+    html.dark .ql-toolbar .ql-fill { fill: #94a3b8; }
+    html.dark .ql-toolbar .ql-picker { color: #94a3b8; }
+    html.dark .ql-toolbar .ql-picker-options { background: #1e293b; border-color: #334155; }
+    html.dark .ql-toolbar button:hover .ql-stroke,
+    html.dark .ql-toolbar button.ql-active .ql-stroke { stroke: #60a5fa; }
+    html.dark .ql-toolbar button:hover .ql-fill,
+    html.dark .ql-toolbar button.ql-active .ql-fill { fill: #60a5fa; }
+    html.dark .ql-editor.ql-blank::before { color: #475569; }
+    html.dark .ql-editor blockquote { border-left-color: #334155; color: #94a3b8; }
+    .ql-toolbar { border-radius: 0.75rem 0.75rem 0 0 !important; }
+    .ql-container { border-radius: 0 0 0.75rem 0.75rem !important; font-size: 14px; }
+    .ql-editor { min-height: 320px; padding: 20px 24px; line-height: 1.75; }
+    .ql-editor img { max-width: 100%; height: auto; border-radius: 0.5rem; margin: 8px 0; cursor: pointer; }
+
+    /* Upload progress overlay */
+    #img-upload-overlay {
+        display: none;
+        position: fixed; inset: 0; z-index: 9999;
+        background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(4px);
+        align-items: center; justify-content: center;
+    }
+    #img-upload-overlay.active { display: flex; }
+    #img-upload-overlay .box {
+        background: white; border-radius: 1.25rem; padding: 2rem 2.5rem;
+        text-align: center; min-width: 260px; box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+    }
+    html.dark #img-upload-overlay .box { background: #1e293b; color: #e2e8f0; }
+
+    /* Image error banner */
+    #img-error {
+        display: none;
+        margin-top: 8px;
+        padding: 10px 14px;
+        background: #fef2f2; color: #dc2626;
+        border: 1px solid #fecaca; border-radius: 10px;
+        font-size: 13px; font-weight: 600;
+    }
+    html.dark #img-error { background: #450a0a; color: #f87171; border-color: #991b1b; }
+</style>
+
+<!-- Upload progress overlay -->
+<div id="img-upload-overlay">
+    <div class="box">
+        <div class="flex justify-center mb-3">
+            <svg class="w-10 h-10 text-blue-500 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+        </div>
+        <p class="font-semibold">Mengunggah gambar...</p>
+        <p class="text-sm text-slate-400 mt-1">Mohon tunggu sebentar</p>
+    </div>
+</div>
+
+<script>
+    // ── Quill toolbar config ─────────────────────────────────────────────────
+    const toolbarOptions = [
+        [{ 'header': [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        ['blockquote', 'code-block'],
+        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+        [{ 'align': [] }],
+        ['link', 'image'],   // <‑ image button tersedia
+        ['clean']
+    ];
+
+    const quill = new Quill('#quill-editor', {
+        theme: 'snow',
+        modules: { toolbar: { container: toolbarOptions } },
+        placeholder: 'Tulis isi pengumuman di sini... Gambar bisa di-paste atau di-drag masuk.',
+    });
+
+    // Pre-fill saat edit
+    {% if p and p.konten %}
+    quill.root.innerHTML = {{ p.konten | tojson }};
+    {% endif %}
+
+
+    // ── Custom Image Upload Handler ─────────────────────────────────────────
+    const uploadUrl   = "{{ url_for('pengumuman.upload_image') }}";
+    const overlay     = document.getElementById('img-upload-overlay');
+    const imgErrorEl  = document.getElementById('img-error');
+
+    function showImgError(msg) {
+        imgErrorEl.textContent = msg;
+        imgErrorEl.style.display = 'block';
+        setTimeout(() => { imgErrorEl.style.display = 'none'; }, 6000);
+    }
+
+    async function uploadAndInsert(file) {
+        // Client-side size validation (3 MB)
+        if (file.size > 3 * 1024 * 1024) {
+            showImgError('❌ Gambar terlalu besar. Maksimal ukuran 3 MB.');
+            return;
+        }
+        // Client-side format validation
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (!['jpg','jpeg','png','webp','gif'].includes(ext)) {
+            showImgError('❌ Format tidak didukung. Gunakan jpg, png, webp, atau gif.');
+            return;
+        }
+
+        overlay.classList.add('active');
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const resp = await fetch(uploadUrl, {
+                method: 'POST',
+                body: formData,
+            });
+            const data = await resp.json();
+
+            if (!resp.ok || data.error) {
+                showImgError('❌ ' + (data.error || 'Gagal mengunggah gambar.'));
+                return;
+            }
+
+            // Insert ke posisi kursor Quill
+            const range = quill.getSelection(true);
+            quill.insertEmbed(range.index, 'image', data.url, Quill.sources.USER);
+            quill.setSelection(range.index + 1, Quill.sources.SILENT);
+        } catch (err) {
+            showImgError('❌ Koneksi gagal saat upload gambar.');
+        } finally {
+            overlay.classList.remove('active');
+        }
+    }
+
+    // Override toolbar image button
+    quill.getModule('toolbar').addHandler('image', () => {
+        const input = document.createElement('input');
+        input.setAttribute('type', 'file');
+        input.setAttribute('accept', 'image/jpeg,image/png,image/webp,image/gif');
+        input.click();
+        input.onchange = () => {
+            if (input.files && input.files[0]) {
+                uploadAndInsert(input.files[0]);
+            }
+        };
+    });
+
+    // Paste gambar dari clipboard
+    quill.root.addEventListener('paste', (e) => {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (const item of items) {
+            if (item.kind === 'file' && item.type.startsWith('image/')) {
+                e.preventDefault();
+                uploadAndInsert(item.getAsFile());
+                break;
+            }
+        }
+    });
+
+    // Drag-and-drop gambar ke editor
+    quill.root.addEventListener('dragover', (e) => e.preventDefault());
+    quill.root.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const files = e.dataTransfer.files;
+        if (files && files[0] && files[0].type.startsWith('image/')) {
+            uploadAndInsert(files[0]);
+        }
+    });
+
+
+    // ── Form submit → copy Quill HTML ke hidden input ──────────────────────
+    document.getElementById('pengumuman-form').addEventListener('submit', function(e) {
+        if (!quill.getText().trim()) {
+            e.preventDefault();
+            showImgError('⚠️ Isi konten pengumuman tidak boleh kosong!');
+            return;
+        }
+        document.getElementById('konten-hidden').value = quill.root.innerHTML;
+    });
+</script>
+{% endblock %}

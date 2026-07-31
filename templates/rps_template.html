@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <title>RPS_{{ data.identitas.kode }}</title>
+    <style>
+        /* 1. Pengaturan Default (Portrait untuk awal halaman) */
+        @page {
+            size: a4 portrait;
+            margin: 1.5cm 2cm 2cm 3cm;
+
+            @frame footer {
+                -pdf-frame-content: footer_content;
+                bottom: 1.5cm;
+                margin-left: 4cm;
+                margin-right: 3cm;
+                height: 1cm;
+            }
+        }
+
+        /* 2. Template khusus Landscape (Untuk Bab 5 - 8) */
+        @page landscape_page {
+            size: a4 landscape;
+            margin: 1.5cm 2cm 2cm 3cm;
+
+            @frame footer {
+                -pdf-frame-content: footer_content;
+                bottom: 1.5cm;
+                margin-left: 4cm;
+                margin-right: 3cm;
+                height: 1cm;
+            }
+        }
+
+        /* 3. Template khusus Portrait (Untuk Bab 9 dst) */
+        @page portrait_page {
+            size: a4 portrait;
+            margin: 1.5cm 2cm 2cm 3cm;
+
+            @frame footer {
+                -pdf-frame-content: footer_content;
+                bottom: 1.5cm;
+                margin-left: 4cm;
+                margin-right: 3cm;
+                height: 1cm;
+            }
+        }
+
+        /* TIPOGRAFI & TABEL UMUM */
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 10pt;
+            color: #000;
+            line-height: 1.3;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 12px;
+        }
+
+        tr {
+            -pdf-keep-with-next: false;
+        }
+
+        th,
+        td {
+            border: 1px solid #000000;
+            padding: 4px 6px;
+            vertical-align: top;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-justify {
+            text-align: justify;
+        }
+
+        .font-bold {
+            font-weight: bold;
+        }
+
+        .bg-gray {
+            background-color: #E6E6E6;
+        }
+
+        .section-title {
+            font-weight: bold;
+            font-size: 10pt;
+            margin-top: 35px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+
+        .paragraf {
+            margin: 0 0 8px 0;
+            text-align: justify;
+        }
+
+        .table-noborder th,
+        .table-noborder td {
+            border: none;
+            padding: 2px;
+        }
+
+        .ol-list {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .ol-list li {
+            margin-bottom: 4px;
+            text-align: justify;
+        }
+
+        .table-noborder th,
+        .table-noborder td {
+            border: none !important;
+            padding: 2px 4px;
+        }
+
+        /* pengaturan tabel mingguan */
+        .rps-table {
+            width: 100%;
+            table-layout: fixed;
+            border-collapse: collapse;
+            font-size: 9pt;
+        }
+
+        .rps-table th,
+        .rps-table td {
+            border: 1px solid #666;
+            padding: 6px 5px;
+            vertical-align: top;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            white-space: normal;
+            line-height: 1.3;
+        }
+
+        .rps-table th {
+            background: #d9d9d9;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .rps-table .col-minggu,
+        .rps-table .col-tp,
+        .rps-table .col-waktu {
+            text-align: center;
+        }
+
+        .rps-table .col-minggu {
+            width: 5%;
+            font-weight: bold;
+        }
+
+        .rps-table .col-tp {
+            width: 10%;
+        }
+
+        .rps-table .col-kemampuan {
+            width: 14%;
+            text-align: justify;
+        }
+
+        .rps-table .col-bahan {
+            width: 17%;
+        }
+
+        .rps-table .col-subbahan {
+            width: 19%;
+        }
+
+        .rps-table .col-modalitas {
+            width: 15%;
+        }
+
+        .rps-table .col-waktu {
+            width: 10%;
+        }
+
+        .rps-table .col-pengalaman {
+            width: 10%;
+        }
+
+        .cell-wrap {
+            white-space: normal;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
+        }
+
+        .table-50 {
+            width: 50% !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+        }
+
+        .table-identitas {
+            width: 70% !important;
+            margin: 0 auto 20px auto !important;
+            border: none !important;
+            border-collapse: collapse !important;
+            background-color: transparent !important;
+        }
+
+        .table-identitas td {
+            border: none !important;
+            padding: 1.5px 2px !important;
+            vertical-align: top !important;
+            line-height: 1.25 !important;
+            font-size: 9.5pt;
+        }
+
+        .table-identitas td.col-label {
+            width: 38% !important;
+            font-weight: normal !important;
+        }
+
+        .table-identitas td.col-colon {
+            width: 4% !important;
+            font-weight: normal !important;
+            text-align: center;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+
+        .table-identitas td.col-val {
+            width: 58% !important;
+            font-weight: normal !important;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="footer_content" style="text-align: right; font-size: 8pt; color: #666;">
+        Halaman <pdf:pagenumber> dari <pdf:pagecount>
+    </div>
+
+    <table style="width: 100%; border-bottom: 1.5px solid #000000; margin-bottom: 22px; border-collapse: collapse;">
+        <tr>
+            <td style="width: 22%; border: none; vertical-align: middle; padding-bottom: 8px;">
+                <img src="static/images/logo_polibatam.webp" style="width: 85px; height: auto;">
+            </td>
+            <td style="width: 78%; border: none; vertical-align: middle; text-align: left; padding-bottom: 8px; padding-left: 10px;">
+                <div style="font-size: 11pt; font-weight: bold; line-height: 1.15; color: #000000; margin: 0; padding: 0;">
+                    No.FO.6.1.2-V7 Format Rencana Pembelajaran Semester (RPS)<br>
+                    07 Agustus 2023
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <table class="table-identitas">
+        <tr>
+            <td class="col-label">Program Studi</td>
+            <td class="col-colon">:</td>
+            <td class="col-val">Rekayasa Keamanan Siber</td>
+        </tr>
+        <tr>
+            <td class="col-label">Nama Mata Kuliah</td>
+            <td class="col-colon">:</td>
+            <td class="col-val">{{ data.identitas.matkul }}</td>
+        </tr>
+        <tr>
+            <td class="col-label">Kode Mata Kuliah</td>
+            <td class="col-colon">:</td>
+            <td class="col-val">{{ data.identitas.kode }}</td>
+        </tr>
+        <tr>
+            <td class="col-label">SKS</td>
+            <td class="col-colon">:</td>
+            <td class="col-val">{{ data.identitas.sks }}</td>
+        </tr>
+        <tr>
+            <td class="col-label">Semester</td>
+            <td class="col-colon">:</td>
+            <td class="col-val">{{ data.identitas.semester }}</td>
+        </tr>
+        <tr>
+            <td class="col-label">Status Mata Kuliah</td>
+            <td class="col-colon">:</td>
+            <td class="col-val">{{ data.identitas.status or 'Wajib' }}</td>
+        </tr>
+        <tr>
+            <td class="col-label">Mata Kuliah Prasyarat</td>
+            <td class="col-colon">:</td>
+            <td class="col-val">{{ data.identitas.prasyarat or '-' }}</td>
+        </tr>
+        <tr>
+            <td class="col-label">Dosen Pengampu/Pengajar</td>
+            <td class="col-colon">:</td>
+            <td class="col-val">{{ data.identitas.dosen }}</td>
+        </tr>
+        <tr>
+            <td class="col-label">Email/No. Hp</td>
+            <td class="col-colon">:</td>
+            <td class="col-val">{{ data.identitas.email }}</td>
+        </tr>
+    </table>
+
+    <div style="font-weight: bold; margin-bottom: 10px;">
+        I.<span style="display: inline-block; width: 30px;"></span>DEFINISI ISTILAH
+    </div>
+
+    <table class="table-noborder" style="width: 92%; margin-left: 8%; margin-bottom: 20px;">
+        <tr>
+            <td style="width: 25%; font-weight: bold;">CPL</td>
+            <td style="width: 3%;">:</td>
+            <td style="text-align: justify;">Capaian Pembelajaran Lulusan</td>
+        </tr>
+        <tr>
+            <td style="font-weight: bold;">SKS</td>
+            <td>:</td>
+            <td style="text-align: justify;">Sistem Kredit Semester</td>
+        </tr>
+        <tr>
+            <td style="font-weight: bold;">PB</td>
+            <td>:</td>
+            <td style="text-align: justify;">Proses Belajar</td>
+        </tr>
+        <tr>
+            <td style="font-weight: bold;">PT</td>
+            <td>:</td>
+            <td style="text-align: justify;">Penugasan Terstruktur</td>
+        </tr>
+        <tr>
+            <td style="font-weight: bold;">BM</td>
+            <td>:</td>
+            <td style="text-align: justify;">Belajar Mandiri</td>
+        </tr>
+        <tr>
+            <td style="font-weight: bold;">Modalitas Pembelajaran</td>
+            <td>:</td>
+            <td style="text-align: justify;">Cara belajar yang dimiliki setiap mahasiswa didalam kelas atau bisa juga
+                disebut tipe belajar</td>
+        </tr>
+        <tr>
+            <td style="font-weight: bold;">Metode Pembelajaran</td>
+            <td>:</td>
+            <td style="text-align: justify;">Metode Pembelajaran dapat berupa diskusi kelompok, simulasi, studi kasus,
+                Pembelajaran kolaboratif, Pembelajaran kooperatif, Pembelajaran berbasis proyek, Pembelajaran berbasis
+                masalah, atau metode Pembelajaran lain, yang dapat secara efektif memfasilitasi pemenuhan capaian
+                pembelajaran lulusan</td>
+        </tr>
+        <tr>
+            <td style="font-weight: bold;">Bentuk Pembelajaran</td>
+            <td>:</td>
+            <td style="text-align: justify;">Bentuk yang mewadahi metode pembelajaran yang dapat berupa kuliah, responsi
+                dan tutorial, seminar, praktikum, praktik studio, praktik bengkel, praktik lapangan, praktik kerja,
+                penelitian, perancangan, atau pengembangan, pelatihan militer, pertukaran pelajar, magang, wirausaha,
+                dan/atau bentuk lain pengabdian kepada masyarakat.</td>
+        </tr>
+        <tr>
+            <td style="font-weight: bold;">Strategi Pembelajaran</td>
+            <td>:</td>
+            <td style="text-align: justify;">Cara yang digunakan untuk menyampaikan metode pembelajaran dalam suatu
+                lingkungan kegiatan pembelajaran</td>
+        </tr>
+        <tr>
+            <td style="font-weight: bold;">SN Dikti</td>
+            <td>:</td>
+            <td style="text-align: justify;">Standar Nasional Pendidikan Tinggi</td>
+        </tr>
+    </table>
+
+
+
+    <div class="section-title">II. DESKRIPSI MATA KULIAH</div>
+    <div class="paragraf">{{ data.deskripsi | replace('\n', '<br>') | safe }}</div>
+
+    <div class="section-title">III. TUJUAN PEMBELAJARAN (TP)</div>
+    <div class="paragraf">Tujuan pembelajaran dari matakuliah ini terdiri dari {{ data.tujuan_peta.tp_list | length }}
+        poin utama yaitu:</div>
+    <table>
+        <thead>
+            <tr>
+                <th width="8%" class="bg-gray text-center">No.</th>
+                <th width="72%" class="bg-gray text-center">Tujuan Pembelajaran Mata Kuliah</th>
+                <th width="20%" class="bg-gray text-center">Pemetaan SO-PI</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tp in data.tujuan_peta.tp_list %}
+            <tr>
+                <td class="text-center">{{ tp.no }}</td>
+                <td class="text-justify">{{ tp.teks }}</td>
+                <td class="text-center">{{ tp.sopi }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <pdf:nextpage />
+    <div class="section-title">IV. PETA KOMPETENSI</div>
+
+    <div style="border: 2px solid #000000; padding: 18px 14px; background-color: #FCFCFC; border-radius: 6px;">
+        <div class="text-center font-bold"
+            style="margin-bottom: 16px; font-size: 11pt; color: #000000; letter-spacing: 0.2px;">
+            MATA KULIAH: {{ data.identitas.matkul }}<br>
+            <span style="font-size: 10pt; font-weight: bold; margin-top: 4px; display: inline-block;">TUJUAN PEMBELAJARAN:</span>
+        </div>
+
+        {% for lvl in data.tujuan_peta.peta_levels %}
+        <table class="table-noborder" style="width: 100%; border-collapse: collapse; margin: 0;">
+            <tr>
+                {% for tp in data.tujuan_peta.peta_dict[lvl] %}
+                <td style="text-align: center; vertical-align: top; padding: 4px 2px;">
+                    <div style="
+                            border: 2px solid #000000;
+                            padding: 10px 12px;
+                            background-color: #FFFFFF;
+                            width: 88%;
+                            margin: 0 auto;
+                            font-size: 9pt;
+                            text-align: left;
+                            border-radius: 6px;
+                            line-height: 1.45;
+                        ">
+                        <strong style="color:#000000;">TP {{ tp.no }} {% if tp.sopi %}<span style="color:#1E40AF; font-weight: bold;">({{ tp.sopi }})</span>{% endif %}:</strong>
+                        <span style="color:#000000;">{{ tp.teks }}</span>
+                    </div>
+                </td>
+                {% endfor %}
+            </tr>
+        </table>
+
+        {% if not loop.last %}
+        <div style="text-align: center; margin: 6px 0 4px 0;">
+            <span style="
+                    display: inline-block;
+                    font-size: 14pt;
+                    color: #000000;
+                    font-weight: bold;
+                    line-height: 1;
+                    padding: 0 6px;
+                ">&uarr;
+            </span>
+        </div>
+        {% endif %}
+        {% endfor %}
+
+        <div style="text-align: center; margin: 8px 0 6px 0;">
+            <span style="
+                display: inline-block;
+                font-size: 14pt;
+                color: #000000;
+                font-weight: bold;
+                line-height: 1;
+                padding: 0 6px;
+            ">&uarr;
+            </span>
+        </div>
+
+        <div class="text-center" style="margin-top: 2px;">
+            <div style="
+                border: 2px dashed #000000;
+                padding: 9px 14px;
+                margin: 0 auto;
+                width: 82%;
+                background-color: #F3F4F6;
+                font-size: 9pt;
+                color: #000000;
+                border-radius: 6px;
+                line-height: 1.45;
+            ">
+                <strong style="color:#000000;">Entry Behaviour:</strong>
+                Mahasiswa sudah mendapatkan mata kuliah: {{ data.identitas.prasyarat }}
+            </div>
+        </div>
+    </div>
+
+
+    <pdf:nexttemplate name="landscape_page" />
+    <pdf:nextpage />
+    <div class="section-title">V. RENCANA PEMBELAJARAN</div>
+
+    <table class="rps-table">
+        <thead>
+            <tr>
+                <th width="5%" class="col-minggu">Mg Ke</th>
+                <th width="10%" class="col-tp">TP</th>
+                <th width="14%" class="col-kemampuan">Kemampuan Akhir Yang Direncanakan</th>
+                <th width="17%" class="col-bahan">Bahan Kajian / Pokok Bahasan</th>
+                <th width="19%" class="col-subbahan">Sub Pokok Bahasan</th>
+                <th width="15%" class="col-modalitas">Modalitas &amp; Metode</th>
+                <th width="10%" class="col-waktu">Waktu</th>
+                <th width="10%" class="col-pengalaman">Pengalaman Belajar</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in data.rencana_mingguan %}
+            <tr>
+                <td class="col-minggu">
+                    <div class="cell-wrap">{{ m.minggu }}</div>
+                </td>
+                <td class="col-tp">
+                    <div class="cell-wrap">{{ m.tp_ref }}</div>
+                </td>
+                <td class="col-kemampuan">
+                    <div class="cell-wrap">{{ m.kemampuan }}</div>
+                </td>
+                <td class="col-bahan">
+                    <div class="cell-wrap">{{ m.bahan_kajian | replace('\n', '<br />') | safe }}</div>
+                </td>
+                <td class="col-subbahan">
+                    <div class="cell-wrap">{{ m.sub_bahan | replace('\n', '<br />') | safe }}</div>
+                </td>
+                <td class="col-modalitas">
+                    <div class="cell-wrap">{{ m.modalitas | replace('\n', '<br />') | safe }}</div>
+                </td>
+                <td class="col-waktu">
+                    <div class="cell-wrap">{{ m.waktu | replace('\n', '<br />') | safe }}</div>
+                </td>
+                <td class="col-pengalaman">
+                    <div class="cell-wrap">{{ m.pengalaman | replace('\n', '<br />') | safe }}</div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="section-title">VI. SARANA, PRASARANA DAN PERALATAN PENUNJANG PRAKTIK/PRAKTIKUM</div>
+    <table class="rps-table">
+        <thead>
+            <tr>
+                <th width="5%" class="bg-gray text-center">No.</th>
+                <th width="80%" class="bg-gray text-center">Nama Sarana/Prasarana/Perangkat</th>
+                <th width="15%" class="bg-gray text-center">Jumlah (Unit)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in data.sarana_prasarana %}
+            <tr>
+                <td class="text-center">{{ s.no }}</td>
+                <td>{{ s.nama }}</td>
+                <td class="text-center">{{ s.jumlah }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="section-title">VII. METODE EVALUASI</div>
+    <div class="paragraf">
+        {{ data.metode_evaluasi | replace('\n', '<br>') | safe }}
+    </div>
+
+    <div class="section-title">VIII. RENCANA EVALUASI</div>
+
+    <table class="rps-table">
+        <thead>
+            <tr>
+                <th style="width: 35%; vertical-align: middle;">Minggu</th>
+                <th style="width: 4%;">1</th>
+                <th style="width: 4%;">2</th>
+                <th style="width: 4%;">3</th>
+                <th style="width: 4%;">4</th>
+                <th style="width: 4%;">5</th>
+                <th style="width: 4%;">6</th>
+                <th style="width: 4%;">7</th>
+                <th style="width: 5%; background-color: #1f497d;">ATS</th>
+                <th style="width: 4%;">8</th>
+                <th style="width: 4%;">9</th>
+                <th style="width: 4%;">10</th>
+                <th style="width: 4%;">11</th>
+                <th style="width: 4%;">12</th>
+                <th style="width: 4%;">13</th>
+                <th style="width: 4%;">14</th>
+                <th style="width: 5%; background-color: #1f497d;">AAS</th>
+            </tr>
+            <tr>
+                <th>Tujuan Pembelajaran</th>
+                <th colspan="16">Metode Asesmen</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tp in data.tujuan_peta.tp_list %}
+            <tr>
+                <td style="text-align: justify; padding: 4px;"><strong>TP{{ tp.no }} {% if tp.sopi %}<span style="color:#1E40AF;">[{{ tp.sopi }}]</span>{% endif %}</strong>: {{ tp.teks }}</td>
+
+                {% for col in ['1', '2', '3', '4', '5', '6', '7', 'ATS', '8', '9', '10', '11', '12', '13', '14', 'AAS']
+                %}
+
+                {% set cell_bg = '#b4c6e7' if col in ['ATS', 'AAS'] else 'transparent' %}
+
+                <td style="background-color: {{ cell_bg }}; text-align: center; vertical-align: top; padding: 2px;">
+                    {% for r in data.rencana_evaluasi %}
+
+                    {% set tp_terpilih = r.tp.replace(' ', '').split(',') %}
+
+                    {% if ('TP' ~ tp.no) in tp_terpilih and (r.minggu | string | upper) == (col | string | upper) %}
+
+                    {{ r.metode | replace(', ', '<br>') | replace(',', '<br>') | safe }}
+                    {% if r.asesmen %}
+                    <br>{{ r.asesmen | replace(', ', '<br>') | replace(',', '<br>') | safe }}
+                    {% endif %}
+
+                    {% endif %}
+                    {% endfor %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+
+    <pdf:nexttemplate name="portrait_page" />
+    <pdf:nextpage />
+    <div class="section-title">IX. KRITERIA PENILAIAN</div>
+    <div class="paragraf">Persentase bobot penilaian yang digunakan adalah sebagai berikut:</div>
+
+    <table style="width: 80%; margin-left: auto; margin-right: auto;">
+        <thead>
+            <tr>
+                <th width="35%" class="bg-gray text-center">Komponen</th>
+                <th width="50%" class="bg-gray text-center">Sub-Komponen</th>
+                <th width="15%" class="bg-gray text-center">Persentase</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for k in data.kriteria_penilaian %}
+            <tr>
+                {% if k.show_komponen %}
+                <td rowspan="{{ k.rowspan }}" style="vertical-align: middle; font-weight: bold;">{{ k.komponen }}</td>
+                {% endif %}
+                <td>{{ k.sub_komponen | replace('\n', '<br>') | safe }}</td>
+                <td class="text-center">{{ k.persentase }}%</td>
+            </tr>
+            {% endfor %}
+            <tr class="font-bold bg-gray">
+                <td colspan="2" class="text-center font-bold">Total</td>
+                <td class="text-center font-bold">100%</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="paragraf" style="margin-top: 15px;">Hasil pembelajaran akan dinilai dengan menggunakan kriteria sesuai
+        dengan peraturan akademik yang berlaku di Politeknik Negeri Batam, yaitu:</div>
+    <table class="table-50">
+        <thead>
+            <tr>
+                <th width="50%" class="bg-gray text-center">Nilai Angka</th>
+                <th width="50%" class="bg-gray text-center">Nilai Huruf</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="text-center">&ge; 85</td>
+                <td class="text-center">A</td>
+            </tr>
+            <tr>
+                <td class="text-center">80-84</td>
+                <td class="text-center">A-</td>
+            </tr>
+            <tr>
+                <td class="text-center">75-79</td>
+                <td class="text-center">B+</td>
+            </tr>
+            <tr>
+                <td class="text-center">70-74</td>
+                <td class="text-center">B</td>
+            </tr>
+            <tr>
+                <td class="text-center">65-69</td>
+                <td class="text-center">B-</td>
+            </tr>
+            <tr>
+                <td class="text-center">60-64</td>
+                <td class="text-center">C+</td>
+            </tr>
+            <tr>
+                <td class="text-center">55-59</td>
+                <td class="text-center">C</td>
+            </tr>
+            <tr>
+                <td class="text-center">50-54</td>
+                <td class="text-center">C-</td>
+            </tr>
+            <tr>
+                <td class="text-center">45-49</td>
+                <td class="text-center">D+</td>
+            </tr>
+            <tr>
+                <td class="text-center">40-44</td>
+                <td class="text-center">D</td>
+            </tr>
+            <tr>
+                <td class="text-center">&lt; 40</td>
+                <td class="text-center">E</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="section-title">X. KESEPAKATAN PELAKSANAAN PERKULIAHAN</div>
+    <ol class="ol-list">
+        {% for k in data.kesepakatan %}
+        <li>{{ k }}</li>
+        {% endfor %}
+    </ol>
+
+    <div class="section-title" style="margin-top: 20px;">XI. PUSTAKA</div>
+    <ol class="ol-list">
+        {% for p in data.pustaka %}
+        <li>{{ p }}</li>
+        {% endfor %}
+    </ol>
+
+    <div class="section-title" style="margin-top: 20px;">XII. INFORMASI TAMBAHAN</div>
+    <div class="paragraf">
+        Pelaksanaan mata kuliah ini menggunakan metode pembelajaran berbasis proyek dengan implementasi framework CDIO
+        yaitu kurikulum berbasis proses pengembangan produk yang menekankan pada pengembangan softskill dan hardskill.
+    </div>
+
+    <table class="table-noborder" style="margin-top: 30px; width: 100%;">
+        <tr>
+            <td style="width: 15%; font-weight: bold;">Tanggal</td>
+            <td style="width: 35%;">: {{ data.pengesahan.tgl_koor or data.tanggal_koor or '' }}</td>
+            <td style="width: 15%; font-weight: bold;">Tanggal</td>
+            <td style="width: 35%;">: {{ data.pengesahan.tgl_kaprodi or '' }}</td>
+        </tr>
+        <tr>
+            <td style="font-weight: bold;">Disusun oleh</td>
+            <td>: {{ data.pengesahan.disusun_oleh }}<br><span style="font-size: 8pt; color: #555;">(Dosen Koordinator)</span></td>
+            <td style="font-weight: bold;">Disetujui oleh</td>
+            <td>: {{ data.pengesahan.disetujui_oleh or 'Kepala Program Studi' }}<br><span style="font-size: 8pt; color: #555;">(Kepala Program Studi)</span></td>
+        </tr>
+        <tr>
+            <td style="font-weight: bold; padding-top: 10px;" colspan="2">
+                Tanda Tangan:<br>
+                <div style="margin-top: 5px;">
+                    {% if data.qr_dosen_koor %}
+                    <img src="storage/qr/{{ data.qr_dosen_koor }}" style="width: 98px; height: 98px;">
+                    {% else %}
+                    <br>..........................................
+                    {% endif %}
+                </div>
+            </td>
+            <td style="font-weight: bold; padding-top: 10px;" colspan="2">
+                Tanda Tangan:<br>
+                <div style="margin-top: 5px;">
+                    {% if data.qr_kaprodi %}
+                    <img src="storage/qr/{{ data.qr_kaprodi }}" style="width: 98px; height: 98px;">
+                    {% else %}
+                    <br>..........................................
+                    {% endif %}
+                </div>
+            </td>
+        </tr>
+    </table>
+
+</body>
+
+</html>

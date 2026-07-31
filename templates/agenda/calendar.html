@@ -1,0 +1,531 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="space-y-6">
+    {# Header & Controls #}
+    <div class="flex justify-between items-center flex-wrap gap-4">
+        <div>
+            <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2.5">
+                Agenda Kegiatan
+            </h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-1">Jadwal kegiatan prodi, rapat koordinasi, dan batas waktu
+                pengumpulan RPS.</p>
+        </div>
+
+        {% if current_user.is_kaprodi %}
+        <button onclick="openTambahModal()"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-md shadow-blue-600/10 flex items-center gap-2">
+            <span>+ Tambah Agenda</span>
+        </button>
+        {% endif %}
+    </div>
+
+    {# Calendar Container #}
+    <div
+        class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden p-6 space-y-6">
+
+        {# Calendar Header Bar: Month/Year Nav #}
+        <div
+            class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 flex-wrap gap-4">
+            <div class="flex items-center gap-3">
+                <button id="btn-prev"
+                    class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold transition-all">
+                    ‹ Prev
+                </button>
+                <h2 id="current-month-year"
+                    class="text-xl font-black text-slate-800 dark:text-white min-w-[180px] text-center">
+                    —
+                </h2>
+                <button id="btn-next"
+                    class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold transition-all">
+                    Next ›
+                </button>
+                <button id="btn-today"
+                    class="px-3.5 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 text-xs font-bold hover:bg-blue-100 transition-all border border-blue-200 dark:border-blue-800">
+                    Hari Ini
+                </button>
+            </div>
+
+            {# Kategori Legend #}
+            <div class="flex items-center gap-2.5 text-xs font-semibold flex-wrap">
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Rapat Umum</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Rapat Nilai</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span> Rapat RPS</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Rapat ATS</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Workshop</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-teal-500"></span> Asesmen PBL</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span> Lainnya</span>
+            </div>
+        </div>
+
+        {# Days of Week Header #}
+        <div class="grid grid-cols-7 gap-2 text-center text-xs font-extrabold text-slate-400 uppercase tracking-wider">
+            <div class="py-2 text-rose-500">Min</div>
+            <div class="py-2">Sen</div>
+            <div class="py-2">Sel</div>
+            <div class="py-2">Rab</div>
+            <div class="py-2">Kam</div>
+            <div class="py-2">Jum</div>
+            <div class="py-2 text-blue-500">Sab</div>
+        </div>
+
+        {# Calendar Days Grid #}
+        <div id="calendar-grid" class="grid grid-cols-7 gap-2">
+            <!-- Rendered via JavaScript -->
+        </div>
+    </div>
+</div>
+
+{# ── MODAL TAMBAH AGENDA ── #}
+{% if current_user.is_kaprodi %}
+<div id="modal-tambah"
+    class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div
+        class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg p-6 border border-slate-200 dark:border-slate-700 shadow-xl max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span>➕</span> Tambah Agenda Baru
+            </h2>
+            <button onclick="closeModal('modal-tambah')"
+                class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl font-bold">&times;</button>
+        </div>
+        <form method="POST" action="{{ url_for('agenda.add') }}" class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Judul Agenda <span
+                        class="text-red-500">*</span></label>
+                <input type="text" name="judul" required placeholder="Misal: Rapat Finalisasi RPS Ganjil"
+                    class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tanggal <span
+                            class="text-red-500">*</span></label>
+                    <input type="date" name="tanggal" id="tambah-tanggal" required
+                        class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Kategori Agenda</label>
+                    <select name="kategori"
+                        class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="Rapat Umum">Rapat Umum</option>
+                        <option value="Rapat Nilai">Rapat Nilai</option>
+                        <option value="Rapat RPS">Rapat RPS</option>
+                        <option value="Rapat ATS">Rapat ATS</option>
+                        <option value="Workshop">Workshop</option>
+                        <option value="Asesmen PBL">Asesmen PBL</option>
+                        <option value="Lainnya">Lainnya</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Jam Mulai</label>
+                    <input type="time" name="waktu_mulai"
+                        class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Jam Selesai</label>
+                    <input type="time" name="waktu_selesai"
+                        class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Lokasi / Ruangan / Link
+                    Meeting</label>
+                <input type="text" name="lokasi" placeholder="Misal: Ruang Rapat Lt.2 / Zoom Meeting"
+                    class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Deskripsi Catatan</label>
+                <textarea name="deskripsi" rows="3" placeholder="Rincian tambahan agenda..."
+                    class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status Visibilitas</label>
+                <div class="flex gap-4 mt-1.5">
+                    <label class="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                        <input type="radio" name="is_aktif" value="true" checked
+                            class="text-blue-600 focus:ring-blue-500">
+                        <span class="text-slate-700 dark:text-slate-300">Tampilkan (Aktif)</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                        <input type="radio" name="is_aktif" value="false" class="text-blue-600 focus:ring-blue-500">
+                        <span class="text-slate-700 dark:text-slate-300">Sembunyikan (Draft)</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex gap-3 mt-6 pt-3 border-t dark:border-slate-800">
+                <button type="button" onclick="closeModal('modal-tambah')"
+                    class="flex-1 py-2 rounded-lg text-sm font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200">Batal</button>
+                <button type="submit"
+                    class="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold shadow-md">Simpan
+                    Agenda</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ── MODAL EDIT AGENDA ── #}
+<div id="modal-edit"
+    class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div
+        class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg p-6 border border-slate-200 dark:border-slate-700 shadow-xl max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span>✏️</span> Edit Agenda Kegiatan
+            </h2>
+            <button onclick="closeModal('modal-edit')"
+                class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl font-bold">&times;</button>
+        </div>
+        <form id="form-edit" method="POST" class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Judul Agenda <span
+                        class="text-red-500">*</span></label>
+                <input type="text" name="judul" id="edit-judul" required
+                    class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tanggal <span
+                            class="text-red-500">*</span></label>
+                    <input type="date" name="tanggal" id="edit-tanggal" required
+                        class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Kategori Agenda</label>
+                    <select name="kategori" id="edit-kategori"
+                        class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="Rapat Umum">Rapat Umum</option>
+                        <option value="Rapat Nilai">Rapat Nilai</option>
+                        <option value="Rapat RPS">Rapat RPS</option>
+                        <option value="Rapat ATS">Rapat ATS</option>
+                        <option value="Workshop">Workshop</option>
+                        <option value="Asesmen PBL">Asesmen PBL</option>
+                        <option value="Lainnya">Lainnya</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Jam Mulai</label>
+                    <input type="time" name="waktu_mulai" id="edit-waktu-mulai"
+                        class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Jam Selesai</label>
+                    <input type="time" name="waktu_selesai" id="edit-waktu-selesai"
+                        class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Lokasi / Ruangan / Link
+                    Meeting</label>
+                <input type="text" name="lokasi" id="edit-lokasi"
+                    class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Deskripsi Catatan</label>
+                <textarea name="deskripsi" id="edit-deskripsi" rows="3"
+                    class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status Visibilitas</label>
+                <div class="flex gap-4 mt-1.5">
+                    <label class="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                        <input type="radio" name="is_aktif" id="edit-aktif-true" value="true"
+                            class="text-blue-600 focus:ring-blue-500">
+                        <span class="text-slate-700 dark:text-slate-300">Tampilkan (Aktif)</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                        <input type="radio" name="is_aktif" id="edit-aktif-false" value="false"
+                            class="text-blue-600 focus:ring-blue-500">
+                        <span class="text-slate-700 dark:text-slate-300">Sembunyikan (Draft)</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between gap-3 mt-6 pt-3 border-t dark:border-slate-800">
+                <a id="btn-delete-agenda" href="#" onclick="return confirm('Hapus agenda ini secara permanen?')"
+                    class="py-2 px-4 rounded-lg text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:hover:bg-red-900/40">Hapus</a>
+                <div class="flex gap-2">
+                    <button type="button" onclick="closeModal('modal-edit')"
+                        class="py-2 px-4 rounded-lg text-sm font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200">Batal</button>
+                    <button type="submit"
+                        class="py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold shadow-md">Simpan
+                        Perubahan</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{# ── MODAL DETAIL AGENDA (READ-ONLY DOSEN) ── #}
+<div id="modal-detail"
+    class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div
+        class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md p-6 border border-slate-200 dark:border-slate-700 shadow-xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+            <span id="detail-badge" class="px-2.5 py-1 text-[10px] font-black rounded-md uppercase"></span>
+            <button onclick="closeModal('modal-detail')"
+                class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl font-bold">&times;</button>
+        </div>
+
+        <div>
+            <h3 id="detail-judul" class="text-lg font-bold text-slate-900 dark:text-white"></h3>
+            <p id="detail-waktu"
+                class="text-xs text-blue-600 dark:text-blue-400 font-semibold mt-1 flex items-center gap-1.5"></p>
+        </div>
+
+        <div id="detail-lokasi-box"
+            class="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800 text-xs space-y-1">
+            <span class="font-bold text-slate-400 uppercase tracking-wide">📍 Lokasi:</span>
+            <p id="detail-lokasi" class="font-medium text-slate-700 dark:text-slate-300"></p>
+        </div>
+
+        <div>
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">📝 Catatan:</span>
+            <p id="detail-deskripsi" class="text-xs text-slate-600 dark:text-slate-300 mt-1 whitespace-pre-line"></p>
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+            <button type="button" onclick="closeModal('modal-detail')"
+                class="px-5 py-2 rounded-lg text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200">Tutup</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let eventsData = [];
+    let currentDate = new Date();
+    const isKaprodi = {{ 'true' if current_user.is_kaprodi else 'false' }};
+
+    const monthNames = [
+        "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+        "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+    ];
+
+    async function loadEvents() {
+        try {
+            const res = await fetch('/agenda/api/events');
+            eventsData = await res.json();
+            renderCalendar();
+        } catch (e) {
+            console.error("Gagal memuat agenda:", e);
+        }
+    }
+
+    function getCategoryColor(kat) {
+        switch (kat) {
+            case 'Rapat Umum': return 'bg-blue-500 text-white';
+            case 'Rapat Nilai': return 'bg-amber-500 text-white';
+            case 'Rapat RPS': return 'bg-indigo-500 text-white';
+            case 'Rapat ATS': return 'bg-rose-500 text-white';
+            case 'Workshop': return 'bg-emerald-500 text-white';
+            case 'Asesmen PBL': return 'bg-teal-500 text-white';
+            case 'Lainnya': return 'bg-purple-500 text-white';
+            default: return 'bg-blue-500 text-white';
+        }
+    }
+
+    function renderCalendar() {
+        const grid = document.getElementById('calendar-grid');
+        const monthYearLabel = document.getElementById('current-month-year');
+        if (!grid || !monthYearLabel) return;
+
+        grid.innerHTML = '';
+
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+
+        monthYearLabel.textContent = `${monthNames[month]} ${year}`;
+
+        const firstDayOfMonth = new Date(year, month, 1);
+        const lastDayOfMonth = new Date(year, month + 1, 0);
+
+        // Day of week index (0 = Sun, 1 = Mon, ..., 6 = Sat)
+        const startingDay = firstDayOfMonth.getDay();
+        const totalDays = lastDayOfMonth.getDate();
+
+        const todayStr = new Date().toISOString().split('T')[0];
+
+        // 1. Render empty offset cells for previous month days
+        const prevMonthLastDay = new Date(year, month, 0).getDate();
+        for (let i = startingDay - 1; i >= 0; i--) {
+            const dayNum = prevMonthLastDay - i;
+            const cell = document.createElement('div');
+            cell.className = 'min-h-[100px] p-2 rounded-xl bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100/50 dark:border-slate-800/40 text-slate-300 dark:text-slate-700 pointer-events-none';
+            cell.innerHTML = `<span class="text-xs font-semibold">${dayNum}</span>`;
+            grid.appendChild(cell);
+        }
+
+        // 2. Render current month days
+        for (let day = 1; day <= totalDays; day++) {
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const isToday = (dateStr === todayStr);
+
+            const cell = document.createElement('div');
+            cell.className = `min-h-[110px] p-2 rounded-xl border flex flex-col justify-start transition-all cursor-pointer ${isToday
+                    ? 'border-blue-500 dark:border-blue-400 bg-blue-50/20 dark:bg-blue-950/20 shadow-sm'
+                    : 'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700'
+                }`;
+
+            // Header number of the day
+            const header = document.createElement('div');
+            header.className = 'flex justify-between items-center mb-1.5';
+            header.innerHTML = `<span class="text-xs font-extrabold ${isToday ? 'w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center shadow' : 'text-slate-700 dark:text-slate-300'}">${day}</span>`;
+            cell.appendChild(header);
+
+            // Filter events on this date
+            const dayEvents = eventsData.filter(e => e.tanggal === dateStr);
+            const eventsContainer = document.createElement('div');
+            eventsContainer.className = 'space-y-1 w-full flex-1';
+
+            dayEvents.forEach(ev => {
+                const pill = document.createElement('div');
+                const badgeColor = getCategoryColor(ev.kategori);
+                pill.className = `px-2 py-1 rounded-lg text-[10px] font-bold leading-tight truncate shadow-sm transition-all hover:scale-[1.02] ${badgeColor} ${!ev.is_aktif ? 'opacity-50 line-through' : ''}`;
+
+                let timeTxt = ev.waktu_mulai ? `${ev.waktu_mulai} ` : '';
+                pill.textContent = `${timeTxt}${ev.judul}`;
+                pill.title = `${ev.judul} (${ev.kategori}) - ${ev.lokasi || 'Tanpa lokasi'}`;
+
+                pill.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (isKaprodi) {
+                        openEditModal(ev);
+                    } else {
+                        openDetailModal(ev);
+                    }
+                });
+
+                eventsContainer.appendChild(pill);
+            });
+
+            cell.appendChild(eventsContainer);
+
+            // Click cell to add event (for Kaprodi)
+            cell.addEventListener('click', () => {
+                if (isKaprodi) {
+                    openTambahModal(dateStr);
+                }
+            });
+
+            grid.appendChild(cell);
+        }
+
+        // 3. Render trailing empty cells for next month
+        const totalRendered = startingDay + totalDays;
+        const remainingCells = (totalRendered % 7 === 0) ? 0 : 7 - (totalRendered % 7);
+        for (let i = 1; i <= remainingCells; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'min-h-[100px] p-2 rounded-xl bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100/50 dark:border-slate-800/40 text-slate-300 dark:text-slate-700 pointer-events-none';
+            cell.innerHTML = `<span class="text-xs font-semibold">${i}</span>`;
+            grid.appendChild(cell);
+        }
+    }
+
+    function openTambahModal(prefillDate = null) {
+        const modal = document.getElementById('modal-tambah');
+        if (!modal) return;
+        if (prefillDate) {
+            document.getElementById('tambah-tanggal').value = prefillDate;
+        } else {
+            document.getElementById('tambah-tanggal').value = new Date().toISOString().split('T')[0];
+        }
+        modal.classList.remove('hidden');
+    }
+
+    function openEditModal(ev) {
+        const modal = document.getElementById('modal-edit');
+        if (!modal) return;
+
+        document.getElementById('form-edit').action = `/agenda/edit/${ev.id}`;
+        document.getElementById('edit-judul').value = ev.judul;
+        document.getElementById('edit-tanggal').value = ev.tanggal;
+        document.getElementById('edit-waktu-mulai').value = ev.waktu_mulai;
+        document.getElementById('edit-waktu-selesai').value = ev.waktu_selesai;
+        document.getElementById('edit-lokasi').value = ev.lokasi;
+        document.getElementById('edit-deskripsi').value = ev.deskripsi;
+        document.getElementById('edit-kategori').value = ev.kategori;
+
+        if (ev.is_aktif) {
+            document.getElementById('edit-aktif-true').checked = true;
+        } else {
+            document.getElementById('edit-aktif-false').checked = true;
+        }
+
+        document.getElementById('btn-delete-agenda').href = `/agenda/delete/${ev.id}`;
+        modal.classList.remove('hidden');
+    }
+
+    function openDetailModal(ev) {
+        const modal = document.getElementById('modal-detail');
+        if (!modal) return;
+
+        document.getElementById('detail-judul').textContent = ev.judul;
+
+        let waktuStr = `📅 ${ev.tanggal}`;
+        if (ev.waktu_mulai) waktuStr += ` | ⏰ ${ev.waktu_mulai}`;
+        if (ev.waktu_selesai) waktuStr += ` - ${ev.waktu_selesai}`;
+        document.getElementById('detail-waktu').textContent = waktuStr;
+
+        const locBox = document.getElementById('detail-lokasi-box');
+        if (ev.lokasi) {
+            document.getElementById('detail-lokasi').textContent = ev.lokasi;
+            locBox.classList.remove('hidden');
+        } else {
+            locBox.classList.add('hidden');
+        }
+
+        document.getElementById('detail-deskripsi').textContent = ev.deskripsi || '— Tidak ada catatan khusus.';
+
+        const badge = document.getElementById('detail-badge');
+        badge.textContent = ev.kategori;
+        badge.className = `px-2.5 py-1 text-[10px] font-black rounded-md uppercase ${getCategoryColor(ev.kategori)}`;
+
+        modal.classList.remove('hidden');
+    }
+
+    function closeModal(id) {
+        document.getElementById(id)?.classList.add('hidden');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('btn-prev')?.addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            renderCalendar();
+        });
+
+        document.getElementById('btn-next')?.addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderCalendar();
+        });
+
+        document.getElementById('btn-today')?.addEventListener('click', () => {
+            currentDate = new Date();
+            renderCalendar();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal('modal-tambah');
+                closeModal('modal-edit');
+                closeModal('modal-detail');
+            }
+        });
+
+        loadEvents();
+    });
+</script>
+{% endblock %}

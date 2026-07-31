@@ -1,0 +1,11 @@
+from .auth         import bp as auth_bp
+from .dashboard    import bp as dashboard_bp
+from .matakuliah   import bp as matakuliah_bp
+from .rps          import bp as rps_bp
+from .user         import bp as user_bp
+from .kurikulum    import bp as kurikulum_bp
+from .tahun_ajaran import bp as tahun_ajaran_bp
+from .panduan      import bp as panduan_bp
+from .pengumuman   import bp as pengumuman_bp
+from .arsip        import bp as arsip_bp
+from .agenda       import bp as agenda_bp

@@ -1,0 +1,253 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="space-y-8">
+    <div class="flex justify-between items-end">
+        <div>
+            <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white">Dashboard</h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-1">
+                Sistem manajemen program studi
+            </p>
+        </div>
+        <a href="{{ url_for('rps.list') }}"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20 flex items-center gap-2.5">
+            <svg class="w-5 h-5 stroke-cyan-400 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                </path>
+            </svg>
+            <span>Kelola RPS</span>
+        </a>
+    </div>
+
+    {# ── Cards Statistik ── #}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Card 1: Matkul Dikelola -->
+        <div
+            class="relative overflow-hidden bg-white dark:bg-slate-900 p-6 rounded-2xl border border-blue-100 dark:border-blue-900/40 shadow-sm hover:shadow-md transition-all group">
+            <div class="relative z-10 flex items-center justify-between">
+                <div>
+                    <p class="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider mb-1">Matkul
+                        Dikelola</p>
+                    <p class="text-3xl font-black text-blue-600 dark:text-blue-400">{{ total_mk }}</p>
+                </div>
+                <div
+                    class="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                    <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                        <path
+                            d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM3.82 9L12 4.54 20.18 9 12 13.46 3.82 9zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z" />
+                    </svg>
+                </div>
+            </div>
+            <svg class="absolute -right-4 -bottom-4 w-32 h-32 text-blue-500/10 dark:text-blue-400/10 fill-current pointer-events-none transform -rotate-12 transition-transform group-hover:scale-110 group-hover:-rotate-6"
+                viewBox="0 0 24 24">
+                <path
+                    d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM3.82 9L12 4.54 20.18 9 12 13.46 3.82 9zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z" />
+            </svg>
+        </div>
+
+        <!-- Card 2: RPS Selesai -->
+        <div
+            class="relative overflow-hidden bg-white dark:bg-slate-900 p-6 rounded-2xl border border-emerald-100 dark:border-emerald-900/40 shadow-sm hover:shadow-md transition-all group">
+            <div class="relative z-10 flex items-center justify-between">
+                <div>
+                    <p class="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider mb-1">RPS
+                        Selesai</p>
+                    <p class="text-3xl font-black text-emerald-600 dark:text-emerald-400">{{ rps_selesai }}</p>
+                </div>
+                <div
+                    class="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                    <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                        <path
+                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                    </svg>
+                </div>
+            </div>
+            <svg class="absolute -right-4 -bottom-4 w-32 h-32 text-emerald-500/10 dark:text-emerald-400/10 fill-current pointer-events-none transform -rotate-12 transition-transform group-hover:scale-110 group-hover:-rotate-6"
+                viewBox="0 0 24 24">
+                <path
+                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+            </svg>
+        </div>
+
+        <!-- Card 3: Draft -->
+        <div
+            class="relative overflow-hidden bg-white dark:bg-slate-900 p-6 rounded-2xl border border-amber-100 dark:border-amber-900/40 shadow-sm hover:shadow-md transition-all group">
+            <div class="relative z-10 flex items-center justify-between">
+                <div>
+                    <p class="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider mb-1">Draft
+                    </p>
+                    <p class="text-3xl font-black text-amber-600 dark:text-amber-400">{{ rps_draft }}</p>
+                </div>
+                <div
+                    class="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                    <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                        <path
+                            d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a.996.996 0 0 0 0-1.41l-2.34-2.34a.996.996 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
+                    </svg>
+                </div>
+            </div>
+            <svg class="absolute -right-4 -bottom-4 w-32 h-32 text-amber-500/10 dark:text-amber-400/10 fill-current pointer-events-none transform -rotate-12 transition-transform group-hover:scale-110 group-hover:-rotate-6"
+                viewBox="0 0 24 24">
+                <path
+                    d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a.996.996 0 0 0 0-1.41l-2.34-2.34a.996.996 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
+            </svg>
+        </div>
+
+        <!-- Card 4: Belum Diisi -->
+        <div
+            class="relative overflow-hidden bg-white dark:bg-slate-900 p-6 rounded-2xl border border-purple-100 dark:border-purple-900/40 shadow-sm hover:shadow-md transition-all group">
+            <div class="relative z-10 flex items-center justify-between">
+                <div>
+                    <p class="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider mb-1">Belum
+                        Diisi</p>
+                    <p class="text-3xl font-black text-purple-600 dark:text-purple-400">{{ rps_belum }}</p>
+                </div>
+                <div
+                    class="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+                    <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                        <path
+                            d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
+                    </svg>
+                </div>
+            </div>
+            <svg class="absolute -right-4 -bottom-4 w-32 h-32 text-purple-500/10 dark:text-purple-400/10 fill-current pointer-events-none transform -rotate-12 transition-transform group-hover:scale-110 group-hover:-rotate-6"
+                viewBox="0 0 24 24">
+                <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
+            </svg>
+        </div>
+    </div>
+
+    {# ── Agenda Terdekat Banner ── #}
+    {% if agenda_terdekat %}
+    <div
+        class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 rounded-2xl shadow-lg shadow-blue-600/15 flex items-center justify-between flex-wrap gap-4">
+        <div class="flex items-center gap-4">
+            <div
+                class="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-2xl shrink-0">
+                📅
+            </div>
+            <div>
+                <div class="flex items-center gap-2 mb-1">
+                    <span
+                        class="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-white/20 text-white tracking-wider">
+                        Agenda Terdekat
+                    </span>
+                    <span class="text-xs text-blue-100 font-semibold">
+                        • {{ agenda_terdekat.tanggal.strftime('%d/%m/%Y') }} {% if agenda_terdekat.waktu_mulai %}({{
+                        agenda_terdekat.waktu_mulai.strftime('%H:%M') }}){% endif %}
+                    </span>
+                </div>
+                <h3 class="font-extrabold text-lg text-white leading-tight">
+                    {{ agenda_terdekat.judul }}
+                </h3>
+                {% if agenda_terdekat.lokasi %}
+                <p class="text-xs text-blue-100 mt-1 flex items-center gap-1 font-medium">
+                    <span>📍 Lokasi:</span> {{ agenda_terdekat.lokasi }}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+        <a href="{{ url_for('agenda.index') }}"
+            class="px-4 py-2 bg-white text-blue-700 hover:bg-blue-50 rounded-xl text-xs font-bold transition-all shadow-sm shrink-0">
+            Lihat Kalender →
+        </a>
+    </div>
+    {% endif %}
+
+    {# ── Dokumen Panduan & Daftar Mata Kuliah Grid ── #}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {# Dokumen Panduan & Pedoman #}
+        <div
+            class="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+            <div>
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="font-bold text-lg text-slate-800 dark:text-white">Dokumen Panduan & Pedoman</h2>
+                    <span
+                        class="text-xs font-semibold px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-md">
+                        {{ semua_panduan | length }} File
+                    </span>
+                </div>
+
+                <ul class="space-y-3.5 max-h-[280px] overflow-y-auto pr-1">
+                    {% for p in semua_panduan %}
+                    <li
+                        class="group flex items-center justify-between border-b border-slate-50 dark:border-slate-800/50 pb-2 last:border-none last:pb-0">
+                        <div class="flex items-center gap-2.5 truncate flex-1">
+                            {% if p.tipe == 'file' %}
+                            <span class="text-base text-emerald-600 dark:text-emerald-400">📄</span>
+                            <a href="{{ url_for('panduan.download_file', filename=p.file_path) }}" target="_blank"
+                                class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline truncate"
+                                title="{{ p.nama }}">
+                                {{ p.nama }}
+                            </a>
+                            {% else %}
+                            <span class="text-base text-purple-600 dark:text-purple-400">🔗</span>
+                            <a href="{{ p.link_url }}" target="_blank"
+                                class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline truncate"
+                                title="{{ p.nama }}">
+                                {{ p.nama }} <span class="text-[10px] text-slate-400 font-normal">(Cloud)</span>
+                            </a>
+                            {% endif %}
+                        </div>
+
+                        {% if current_user.is_kaprodi and not p.is_aktif %}
+                        <span
+                            class="text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400 shrink-0 ml-2">
+                            HIDDEN
+                        </span>
+                        {% endif %}
+                    </li>
+                    {% else %}
+                    <li class="py-6 text-center text-sm text-slate-400 dark:text-slate-500 italic">
+                        Belum ada berkas panduan yang diterbitkan.
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800/60">
+                <a href="{{ url_for('panduan.list') }}"
+                    class="text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 transition-colors">
+                    <span>Lihat Selengkapnya</span>
+                    <span class="text-sm transition-transform group-hover:translate-x-1">→</span>
+                </a>
+            </div>
+        </div>
+
+        {# Daftar Mata Kuliah Anda (Dipindahkan ke sini) #}
+        <div
+            class="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+            <div>
+                <h2 class="font-bold text-lg mb-6 text-slate-800 dark:text-white">Daftar Mata Kuliah Anda</h2>
+                <div class="space-y-5 max-h-[280px] overflow-y-auto pr-1">
+                    {% for i in range(progress_labels | length) %}
+                    {% set pval = progress_values[i] %}
+                    <div>
+                        <div class="flex justify-between text-sm mb-1.5">
+                            <span class="font-medium text-slate-700 dark:text-slate-300 text-xs">{{ progress_labels[i] }}</span>
+                            <span class="font-bold text-xs {% if pval < 20 %}text-red-600 dark:text-red-400{% elif pval < 100 %}text-amber-500 dark:text-amber-400{% else %}text-emerald-600 dark:text-emerald-400{% endif %}">
+                                {{ pval }}%
+                            </span>
+                        </div>
+                        <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2">
+                            <div class="h-2 rounded-full transition-all duration-500 {% if pval < 20 %}bg-red-500{% elif pval < 100 %}bg-amber-500{% else %}bg-emerald-500{% endif %}"
+                                style="width: {{ pval }}%"></div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-slate-400 text-xs italic py-6 text-center">Belum ada mata kuliah yang diassign.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800/60">
+                <a href="{{ url_for('rps.list') }}"
+                    class="text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 transition-colors">
+                    <span>Lihat Semua RPS</span>
+                    <span class="text-sm transition-transform group-hover:translate-x-1">→</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

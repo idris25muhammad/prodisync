@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProdiSync - Sistem Manajemen Prodi</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: { primary: '#2563eb' },
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <script>
+        // Cek localStorage sebelum render untuk menghindari flash tema
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage))) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+</head>
+
+<body
+    class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200 flex flex-col min-h-screen">
+
+    {# ── TOP HEADER NAVBAR (Desktop & Mobile Header) ── #}
+    <nav
+        class="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 sm:px-8 py-3.5">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            {# Brand Logo & Role Badge #}
+            <div class="flex items-center gap-6">
+                <h1 class="text-xl font-black tracking-tight flex items-center gap-2">
+                    <a href="{{ url_for('dashboard.index') }}" class="inline-flex items-center">
+                        <span class="text-slate-800 dark:text-white">Prodi</span><span
+                            class="{% if current_user.is_kaprodi %}text-blue-600 dark:text-blue-400{% else %}text-orange-500 dark:text-orange-400{% endif %}">Sync</span>
+                    </a>
+                    {% if current_user.is_kaprodi %}
+                    <span
+                        class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-200 dark:border-blue-800 leading-none">
+                        Kaprodi
+                    </span>
+                    {% else %}
+                    <span
+                        class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-orange-50 text-orange-700 dark:bg-orange-950/60 dark:text-orange-400 border border-orange-200 dark:border-orange-800 leading-none">
+                        Dosen
+                    </span>
+                    {% endif %}
+                </h1>
+
+                {# Desktop Navigation Menu (Visible on lg screens and up) #}
+                <div class="hidden lg:flex items-center gap-1">
+                    <a href="{{ url_for('dashboard.index') }}"
+                        class="px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors font-semibold text-sm flex items-center gap-1.5 {{ 'text-blue-600 dark:text-blue-400 font-bold' if request.endpoint == 'dashboard.index' else '' }}">
+                        <svg class="w-4 h-4 stroke-current opacity-70" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        </svg>
+                        <span>Dashboard</span>
+                    </a>
+
+                    <a href="{{ url_for('agenda.index') }}"
+                        class="px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors font-semibold text-sm flex items-center gap-1.5 {{ 'text-blue-600 dark:text-blue-400 font-bold' if request.endpoint and request.endpoint.startswith('agenda.') else '' }}">
+                        <svg class="w-4 h-4 stroke-current opacity-70" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span>Agenda</span>
+                    </a>
+
+                    {# Dropdown 1: Manajemen Data #}
+                    {% set act_mgm = (request.endpoint and (request.endpoint.startswith('matakuliah.') or
+                    request.endpoint.startswith('rps.') or request.endpoint == 'user.list' or
+                    request.endpoint.startswith('pengumuman.'))) %}
+                    <div class="relative group">
+                        <button
+                            class="px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl flex items-center gap-1.5 transition-colors font-semibold text-sm {{ 'text-blue-600 dark:text-blue-400 font-bold' if act_mgm else '' }}">
+                            <svg class="w-4 h-4 stroke-current opacity-70" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                            </svg>
+                            <span>Data ▾</span>
+                        </button>
+
+                        <div class="absolute left-0 top-full pt-3 w-[560px] hidden group-hover:block z-50">
+                            <div
+                                class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl p-5 grid grid-cols-2 gap-5">
+                                {# Column 1: Perkuliahan #}
+                                <div class="border-r border-slate-100 dark:border-slate-800 pr-5">
+                                    <h4 class="text-[10px] font-bold text-slate-400 uppercase mb-3 tracking-wider">
+                                        Perkuliahan</h4>
+                                    <div class="space-y-1">
+                                        <a href="{{ url_for('matakuliah.list') }}"
+                                            class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                                            <svg class="w-5 h-5 stroke-current opacity-70" fill="none"
+                                                stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
+                                                </path>
+                                            </svg>
+                                            <span class="text-sm font-semibold">Mata Kuliah</span>
+                                        </a>
+
+                                        <a href="{{ url_for('rps.list') }}"
+                                            class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                                            <svg class="w-5 h-5 stroke-current opacity-70" fill="none"
+                                                stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                                </path>
+                                            </svg>
+                                            <span class="text-sm font-semibold">RPS (Rencana Program Studi)</span>
+                                        </a>
+                                    </div>
+                                </div>
+
+                                {# Column 2: Pengguna & Informasi #}
+                                <div>
+                                    <h4 class="text-[10px] font-bold text-slate-400 uppercase mb-3 tracking-wider">
+                                        Pengguna & Informasi</h4>
+                                    <div class="space-y-1">
+                                        {% if current_user.is_kaprodi %}
+                                        <a href="/users"
+                                            class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                                            <svg class="w-5 h-5 stroke-current opacity-70" fill="none"
+                                                stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
+                                                </path>
+                                            </svg>
+                                            <span class="text-sm font-semibold">Dosen</span>
+                                        </a>
+                                        {% endif %}
+
+                                        <a href="{{ url_for('pengumuman.index') }}"
+                                            class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                                            <svg class="w-5 h-5 stroke-current opacity-70" fill="none"
+                                                stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z">
+                                                </path>
+                                            </svg>
+                                            <span class="text-sm font-semibold">Pengumuman</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Dropdown 2: Panduan & Arsip (Naik ke Nav Utama) #}
+                    {% set act_pa = (request.endpoint and (request.endpoint.startswith('panduan.') or
+                    request.endpoint.startswith('arsip.'))) %}
+                    <div class="relative group">
+                        <button
+                            class="px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl flex items-center gap-1.5 transition-colors font-semibold text-sm {{ 'text-blue-600 dark:text-blue-400 font-bold' if act_pa else '' }}">
+                            <svg class="w-4 h-4 stroke-current opacity-70" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            </svg>
+                            <span>Berkas ▾</span>
+                        </button>
+
+                        <div class="absolute left-0 top-full pt-3 w-[360px] hidden group-hover:block z-50">
+                            <div
+                                class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl p-4">
+                                <div class="space-y-1">
+                                    <a href="/panduan"
+                                        class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+                                        <svg class="w-5 h-5 stroke-current opacity-70" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                            </path>
+                                        </svg>
+                                        <div>
+                                            <p class="text-sm font-bold">Panduan Akademik</p>
+                                            <p class="text-[10px] text-slate-400">Petunjuk & pedoman prodi</p>
+                                        </div>
+                                    </a>
+                                    <a href="{{ url_for('arsip.index') }}"
+                                        class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+                                        <svg class="w-5 h-5 stroke-current opacity-70" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4">
+                                            </path>
+                                        </svg>
+                                        <div>
+                                            <p class="text-sm font-bold">Arsip Dokumen</p>
+                                            <p class="text-[10px] text-slate-400">Repositori file & berkas</p>
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Dropdown 3: Kurikulum #}
+                    <div class="relative group">
+                        <button
+                            class="px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl flex items-center gap-1.5 transition-colors font-semibold text-sm {{ 'text-blue-600 dark:text-blue-400 font-bold' if request.endpoint and request.endpoint.startswith('kurikulum.') else '' }}">
+                            <svg class="w-4 h-4 stroke-current opacity-70" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 14l9-5-9-5-9 5 9 5z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 01-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                            </svg>
+                            <span>Kurikulum ▾</span>
+                        </button>
+
+                        <div class="absolute left-0 top-full pt-3 w-[360px] hidden group-hover:block z-50">
+                            <div
+                                class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl p-4">
+                                <div class="space-y-1">
+                                    <a href="{{ url_for('kurikulum.integrated') }}"
+                                        class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+                                        <svg class="w-5 h-5 stroke-current opacity-70" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                                            </path>
+                                        </svg>
+                                        <div>
+                                            <p class="text-sm font-bold">Integrated Curriculum</p>
+                                            <p class="text-[10px] text-slate-400">Peta kurikulum terintegrasi</p>
+                                        </div>
+                                    </a>
+
+                                    <a href="{{ url_for('kurikulum.prasyarat') }}"
+                                        class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+                                        <svg class="w-5 h-5 stroke-current opacity-70" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                        </svg>
+                                        <div>
+                                            <p class="text-sm font-bold">Mata Kuliah Prasyarat</p>
+                                            <p class="text-[10px] text-slate-400">Aturan prasyarat pengambilan MK</p>
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            {# Right Section: TA Status, Theme Toggle, Profile Avatar #}
+            <div class="flex items-center gap-3">
+                <div
+                    class="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors cursor-default">
+                    {% if ta_aktif %}
+                    <span class="relative flex h-2 w-2">
+                        <span
+                            class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <span class="text-xs font-bold">
+                        TA: {{ ta_aktif.tahun }} ({{ ta_aktif.semester }})
+                    </span>
+                    {% else %}
+                    <span class="relative flex h-2 w-2">
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                    </span>
+                    <span class="text-xs font-bold">
+                        TA Tidak Aktif
+                    </span>
+                    {% endif %}
+                </div>
+
+                <button id="theme-toggle"
+                    class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-transform">🌙</button>
+
+                {# Desktop Profile Popover (Clickable/Hoverable) #}
+                <div class="relative group hidden lg:block">
+                    <button
+                        class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white text-xs font-bold hover:ring-2 hover:ring-blue-400 transition-all shadow-sm">
+                        {{ current_user.nama[0] }}
+                    </button>
+
+                    <div class="absolute right-0 top-full pt-2 w-52 hidden group-hover:block z-50">
+                        <div
+                            class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl py-2">
+                            <div class="px-4 py-2 border-b border-slate-100 dark:border-slate-800">
+                                <p class="text-xs font-bold text-slate-800 dark:text-white truncate">{{
+                                    current_user.nama }}</p>
+                                <p class="text-[10px] text-slate-400 truncate">{{ current_user.email }}</p>
+                            </div>
+                            <a href="{{ url_for('user.profile') }}"
+                                class="block px-4 py-2 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800">Update
+                                Profil</a>
+                            <a href="{{ url_for('user.ganti_password') }}"
+                                class="block px-4 py-2 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800">Ganti
+                                Password</a>
+                            <a href="/logout"
+                                class="block px-4 py-2 text-xs font-bold text-red-500 hover:bg-slate-50 dark:hover:bg-slate-800">Logout</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    {# ── MOBILE APP BOTTOM NAVIGATION BAR (Visible on Mobile/Tablet < lg) ── #} <div
+        class="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-t border-slate-200/80 dark:border-slate-800/80 px-2 py-2 shadow-2xl flex items-center justify-around">
+        {# 1. Agenda #}
+        {% set act_agenda = (request.endpoint and request.endpoint.startswith('agenda.')) %}
+        <a href="{{ url_for('agenda.index') }}"
+            class="flex flex-col items-center gap-1 px-3 py-1 rounded-xl transition-all {% if act_agenda %}text-blue-600 dark:text-blue-400 font-extrabold{% else %}text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-semibold{% endif %}">
+            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                <path
+                    d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z" />
+            </svg>
+            <span class="text-[10px]">Agenda</span>
+        </a>
+
+        {# 2. Portal Prodi #}
+        {% set act_portal = (request.endpoint and (request.endpoint.startswith('matakuliah.') or
+        request.endpoint.startswith('rps.') or request.endpoint == 'user.list' or
+        request.endpoint.startswith('pengumuman.') or request.endpoint.startswith('panduan.') or
+        request.endpoint.startswith('arsip.'))) %}
+        <button onclick="openMobileSheet('portal-sheet')"
+            class="flex flex-col items-center gap-1 px-3 py-1 rounded-xl transition-all {% if act_portal %}text-blue-600 dark:text-blue-400 font-extrabold{% else %}text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-semibold{% endif %}">
+            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                <path
+                    d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z" />
+            </svg>
+            <span class="text-[10px]">Portal</span>
+        </button>
+
+        {# 3. Kurikulum #}
+        {% set act_kuri = (request.endpoint and request.endpoint.startswith('kurikulum.')) %}
+        <button onclick="openMobileSheet('kurikulum-sheet')"
+            class="flex flex-col items-center gap-1 px-3 py-1 rounded-xl transition-all {% if act_kuri %}text-blue-600 dark:text-blue-400 font-extrabold{% else %}text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-semibold{% endif %}">
+            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                <path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z" />
+            </svg>
+            <span class="text-[10px]">Kurikulum</span>
+        </button>
+
+        {# 4. Lainnya (Titik Tiga Icon) #}
+        {% set act_user = (request.endpoint and request.endpoint.startswith('user.')) %}
+        <button onclick="openMobileSheet('profile-sheet')"
+            class="flex flex-col items-center gap-1 px-3 py-1 rounded-xl transition-all {% if act_user %}text-blue-600 dark:text-blue-400 font-extrabold{% else %}text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-semibold{% endif %}">
+            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                <path
+                    d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+            </svg>
+            <span class="text-[10px]">Lainnya</span>
+        </button>
+        </div>
+
+        {# ── MOBILE BOTTOM SHEET DRAWERS (Popups for Mobile Navigation) ── #}
+        <div id="mobile-sheet-backdrop" onclick="closeMobileSheets()"
+            class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 hidden transition-opacity">
+
+            {# Sheet 1: Manajemen Data #}
+            <div id="portal-sheet" onclick="event.stopPropagation()"
+                class="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 rounded-t-3xl p-6 shadow-2xl transform translate-y-full transition-transform duration-300 z-50 max-h-[80vh] overflow-y-auto hidden">
+                <div
+                    class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 mb-4">
+                    <h3 class="font-extrabold text-base text-slate-800 dark:text-white">Manajemen Data</h3>
+                    <button onclick="closeMobileSheets()"
+                        class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center font-bold text-sm">&times;</button>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Perkuliahan</p>
+                        <div class="grid grid-cols-2 gap-2">
+                            <a href="{{ url_for('matakuliah.list') }}"
+                                class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 block text-xs font-bold text-slate-800 dark:text-white">
+                                Mata Kuliah
+                            </a>
+                            <a href="{{ url_for('rps.list') }}"
+                                class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 block text-xs font-bold text-slate-800 dark:text-white">
+                                RPS
+                            </a>
+                        </div>
+                    </div>
+
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Pengguna &
+                            Informasi</p>
+                        <div class="grid grid-cols-2 gap-2">
+                            {% if current_user.is_kaprodi %}
+                            <a href="/users"
+                                class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 block text-xs font-bold text-slate-800 dark:text-white">
+                                Dosen
+                            </a>
+                            {% endif %}
+                            <a href="{{ url_for('pengumuman.index') }}"
+                                class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 block text-xs font-bold text-slate-800 dark:text-white">
+                                Pengumuman
+                            </a>
+                        </div>
+                    </div>
+
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Berkas
+                        </p>
+                        <div class="grid grid-cols-2 gap-2">
+                            <a href="/panduan"
+                                class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 block text-xs font-bold text-slate-800 dark:text-white">
+                                Panduan Akademik
+                            </a>
+                            <a href="{{ url_for('arsip.index') }}"
+                                class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 block text-xs font-bold text-slate-800 dark:text-white">
+                                Arsip Dokumen
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# Sheet 2: Kurikulum #}
+            <div id="kurikulum-sheet" onclick="event.stopPropagation()"
+                class="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 rounded-t-3xl p-6 shadow-2xl transform translate-y-full transition-transform duration-300 z-50 max-h-[80vh] overflow-y-auto hidden">
+                <div
+                    class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 mb-4">
+                    <h3 class="font-extrabold text-base text-slate-800 dark:text-white">Kurikulum</h3>
+                    <button onclick="closeMobileSheets()"
+                        class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center font-bold text-sm">&times;</button>
+                </div>
+
+                <div class="space-y-2">
+                    <a href="{{ url_for('kurikulum.integrated') }}"
+                        class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 block">
+                        <p class="text-xs font-bold text-slate-800 dark:text-white">Integrated Curriculum</p>
+                        <p class="text-[10px] text-slate-400 mt-0.5">Peta kurikulum terintegrasi</p>
+                    </a>
+                    <a href="{{ url_for('kurikulum.prasyarat') }}"
+                        class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 block">
+                        <p class="text-xs font-bold text-slate-800 dark:text-white">Mata Kuliah Prasyarat</p>
+                        <p class="text-[10px] text-slate-400 mt-0.5">Aturan prasyarat pengambilan MK</p>
+                    </a>
+                </div>
+            </div>
+
+            {# Sheet 3: Profil Saya #}
+            <div id="profile-sheet" onclick="event.stopPropagation()"
+                class="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 rounded-t-3xl p-6 shadow-2xl transform translate-y-full transition-transform duration-300 z-50 max-h-[80vh] overflow-y-auto hidden">
+                <div
+                    class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 mb-4">
+                    <div>
+                        <h3 class="font-extrabold text-sm text-slate-800 dark:text-white">{{ current_user.nama }}</h3>
+                        <p class="text-[10px] text-slate-400">{{ current_user.email }}</p>
+                    </div>
+                    <button onclick="closeMobileSheets()"
+                        class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center font-bold text-sm">&times;</button>
+                </div>
+
+                <div class="space-y-2">
+                    <a href="{{ url_for('user.profile') }}"
+                        class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 text-xs font-bold text-slate-700 dark:text-slate-200 block">
+                        Update Profil
+                    </a>
+                    <a href="{{ url_for('user.ganti_password') }}"
+                        class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 text-xs font-bold text-slate-700 dark:text-slate-200 block">
+                        Ganti Password
+                    </a>
+                    <a href="/logout"
+                        class="p-3 rounded-xl bg-red-50 dark:bg-red-950/30 text-xs font-bold text-red-600 dark:text-red-400 block">
+                        Logout
+                    </a>
+                </div>
+            </div>
+
+        </div>
+
+        {# ── MAIN CONTENT AREA ── #}
+        <main class="max-w-7xl mx-auto w-full p-4 sm:p-8 flex-grow pb-24 lg:pb-8">
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div id="flash-modal"
+                class="fixed top-5 right-5 z-[9999] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl p-4 w-80 transform transition-all duration-300 translate-x-0 opacity-100">
+                <div class="flex items-center gap-3">
+                    <div class="flex-shrink-0">
+                        {% if category == 'success' %}
+                        <div
+                            class="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 flex items-center justify-center font-bold">
+                            ✓</div>
+                        {% else %}
+                        <div
+                            class="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 flex items-center justify-center font-bold">
+                            ✕</div>
+                        {% endif %}
+                    </div>
+                    <div class="flex-1 text-sm font-medium">
+                        {{ message }}
+                    </div>
+                    <button onclick="closeFlashModal()" class="text-slate-400 hover:text-slate-600">&times;</button>
+                </div>
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </main>
+
+        <footer
+            class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-6 mt-auto pb-24 lg:pb-6">
+            <div
+                class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-xs text-slate-500 space-y-4 md:space-y-0">
+                <p>&copy; 2026 ProdiSync. All rights reserved.</p>
+                <div class="flex items-center space-x-6">
+                    <span>Made with <span class="text-red-500 font-bold">&hearts;</span> ID</span>
+                    <a href="#" class="hover:text-slate-800 dark:hover:text-slate-300">Dokumentasi</a>
+                    <a href="#" class="hover:text-slate-800 dark:hover:text-slate-300">Bantuan</a>
+                </div>
+            </div>
+        </footer>
+
+        <script>
+            function closeFlashModal() {
+                const modal = document.getElementById('flash-modal');
+                if (modal) {
+                    modal.classList.add('translate-x-full', 'opacity-0');
+                    setTimeout(() => modal.remove(), 300);
+                }
+            }
+
+            setTimeout(() => {
+                closeFlashModal();
+            }, 4000);
+
+            // Script Toggle Tema Dark/Light
+            const themeToggleBtn = document.getElementById('theme-toggle');
+
+            function updateThemeIcon() {
+                if (document.documentElement.classList.contains('dark')) {
+                    themeToggleBtn.textContent = '☀️';
+                } else {
+                    themeToggleBtn.textContent = '🌙';
+                }
+            }
+
+            updateThemeIcon();
+
+            themeToggleBtn.addEventListener('click', function () {
+                if (document.documentElement.classList.contains('dark')) {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.theme = 'light';
+                } else {
+                    document.documentElement.classList.add('dark');
+                    localStorage.theme = 'dark';
+                }
+                updateThemeIcon();
+            });
+
+            // Mobile Sheet Drawer Handler
+            function openMobileSheet(sheetId) {
+                const backdrop = document.getElementById('mobile-sheet-backdrop');
+                const targetSheet = document.getElementById(sheetId);
+
+                // Close all sheets first
+                document.querySelectorAll('#mobile-sheet-backdrop > div').forEach(el => {
+                    el.classList.add('hidden');
+                    el.classList.add('translate-y-full');
+                });
+
+                if (backdrop && targetSheet) {
+                    backdrop.classList.remove('hidden');
+                    targetSheet.classList.remove('hidden');
+                    setTimeout(() => {
+                        targetSheet.classList.remove('translate-y-full');
+                    }, 10);
+                }
+            }
+
+            function closeMobileSheets() {
+                const backdrop = document.getElementById('mobile-sheet-backdrop');
+                if (backdrop) {
+                    document.querySelectorAll('#mobile-sheet-backdrop > div').forEach(el => {
+                        el.classList.add('translate-y-full');
+                    });
+                    setTimeout(() => {
+                        backdrop.classList.add('hidden');
+                        document.querySelectorAll('#mobile-sheet-backdrop > div').forEach(el => {
+                            el.classList.add('hidden');
+                        });
+                    }, 300);
+                }
+            }
+        </script>
+</body>
+
+</html>

@@ -1,0 +1,218 @@
+<div id="tab-2" class="tab-content hidden space-y-6">
+    <div class="flex justify-between items-end border-b border-slate-200 dark:border-slate-700 pb-3">
+        <div>
+            <h2 id="head-3" class="text-xl font-bold">III. Tujuan Pembelajaran (TP)</h2>
+            <p class="text-xs text-slate-500 mt-1">Level 1 adalah dasar (bawah). Level tertinggi adalah puncak
+                kompetensi.</p>
+        </div>
+        <button type="button" onclick="addTP()"
+            class="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 px-3 py-1.5 rounded-md font-bold text-sm hover:bg-blue-200 dark:hover:bg-blue-900/60">
+            + Tambah TP
+        </button>
+    </div>
+
+    <div id="tp-container"
+        class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700 space-y-4">
+        {% if matkul.tp_data %}
+        {% for tp in matkul.tp_data %}
+        <div
+            class="flex gap-3 items-start border-b border-slate-200 dark:border-slate-700 pb-3 last:border-0 last:pb-0">
+            <div class="w-2/12">
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Level</label>
+                <select name="tp_level[]"
+                    class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
+                    <option value="1" {% if tp.level==1 %}selected{% endif %}>Lvl 1</option>
+                    <option value="2" {% if tp.level==2 %}selected{% endif %}>Lvl 2</option>
+                    <option value="3" {% if tp.level==3 %}selected{% endif %}>Lvl 3</option>
+                    <option value="4" {% if tp.level==4 %}selected{% endif %}>Lvl 4</option>
+                </select>
+            </div>
+            <div class="w-7/12">
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Deskripsi TP</label>
+                <textarea name="tp_teks[]" rows="2"
+                    class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">{{ tp.teks }}</textarea>
+            </div>
+            <div class="w-3/12 relative">
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">SO-PI</label>
+                <input type="text" name="so_pi[]" value="{{ tp.sopi }}" readonly onclick="openSopiModal(this)"
+                    placeholder="Pilih SO-PI..."
+                    class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+            </div>
+            <button type="button" onclick="this.parentElement.remove(); syncTPSelections();"
+                class="text-red-400 hover:text-red-600 dark:hover:text-red-400 p-2 mt-5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-all" title="Hapus">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+                    <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                </svg>
+            </button>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="flex gap-3 items-start">
+            <div class="w-2/12">
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Level</label>
+                <select name="tp_level[]"
+                    class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
+                    <option value="1">Lvl 1</option>
+                </select>
+            </div>
+            <div class="w-7/12">
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Deskripsi TP</label>
+                <textarea name="tp_teks[]" rows="2"
+                    class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">Mahasiswa mampu menjelaskan ekosistem...</textarea>
+            </div>
+            <div class="w-3/12 relative">
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">SO-PI</label>
+                <input type="text" name="so_pi[]" value="SO1-1a" readonly onclick="openSopiModal(this)"
+                    placeholder="Pilih SO-PI..."
+                    class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+            </div>
+            <button type="button" onclick="this.parentElement.remove(); syncTPSelections();"
+                class="text-red-400 hover:text-red-600 dark:hover:text-red-400 p-2 mt-5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-all" title="Hapus">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+                    <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                </svg>
+            </button>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="flex justify-between pt-6">
+        <button type="button" onclick="showTab('tab-1')"
+            class="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-6 py-2.5 rounded-lg font-semibold">
+            &larr; Kembali
+        </button>
+        <button type="button" onclick="saveDraftAndNext('tab-3', this)"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-bold shadow-lg shadow-blue-500/30 transition-all">
+            Save Draft & Ke Rencana Mingguan &rarr;
+        </button>
+    </div>
+</div>
+
+{# ── Modal SO-PI ── #}
+<div id="sopiModal" class="fixed inset-0 z-[100] hidden bg-black/50 items-center justify-center px-4 backdrop-blur-sm">
+    <div
+        class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-4xl flex flex-col max-h-[85vh] shadow-2xl border border-slate-200 dark:border-slate-700">
+        <div
+            class="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/30 rounded-t-2xl">
+            <div>
+                <h3 class="font-black text-lg text-slate-800 dark:text-slate-100">Pilih SO-PI</h3>
+                <p class="text-xs text-slate-500 font-medium">Pilih satu atau lebih Indikator Kinerja (Performance
+                    Indicator) untuk Tujuan Pembelajaran ini.</p>
+            </div>
+            <button type="button" onclick="closeSopiModal()"
+                class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div class="p-5 overflow-y-auto flex-1 space-y-5 bg-slate-50 dark:bg-slate-900/50" id="sopi-list-container">
+            <div class="flex items-center justify-center p-12 text-slate-400">
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg"
+                    fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                    </path>
+                </svg>
+                Memuat data SO-PI...
+            </div>
+        </div>
+        <div
+            class="p-5 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3 bg-slate-50/50 dark:bg-slate-800/30 rounded-b-2xl">
+            <button type="button" onclick="closeSopiModal()"
+                class="px-5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm">Batal</button>
+            <button type="button" onclick="saveSopiSelection()"
+                class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all shadow-md shadow-blue-500/20">Simpan
+                Pilihan</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentSopiInput = null;
+    let sopiDataCache = null;
+
+    async function loadSopiData() {
+        if (sopiDataCache) return sopiDataCache;
+        try {
+            const response = await fetch("{{ url_for('static', filename='data/so-pi.json') }}");
+            sopiDataCache = await response.json();
+            return sopiDataCache;
+        } catch (e) {
+            console.error("Gagal memuat so-pi.json", e);
+            return null;
+        }
+    }
+
+    async function openSopiModal(inputEl) {
+        currentSopiInput = inputEl;
+        const modal = document.getElementById('sopiModal');
+        const container = document.getElementById('sopi-list-container');
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+
+        const data = await loadSopiData();
+        if (!data || !data.student_outcome) {
+            container.innerHTML = '<div class="p-4 bg-red-50 text-red-600 rounded-lg border border-red-200">Gagal memuat data SO-PI. Pastikan file so-pi.json tersedia.</div>';
+            return;
+        }
+
+        // Parse current values (e.g. "SO1-1a, SO2-2b")
+        const currentValues = (inputEl.value || '').split(',').map(s => s.trim()).filter(Boolean);
+
+        let html = '';
+        data.student_outcome.forEach(so => {
+            html += `
+            <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm">
+                <div class="bg-slate-50 dark:bg-slate-800/80 p-4 border-b border-slate-200 dark:border-slate-700">
+                    <h4 class="font-black text-slate-800 dark:text-slate-100 text-[15px] mb-1">${so.so_code}</h4>
+                    <p class="text-sm text-slate-500 font-medium leading-relaxed">${so.so_description}</p>
+                </div>
+                <div class="p-2 flex flex-col divide-y divide-slate-50 dark:divide-slate-800/50">
+        `;
+
+            if (so.performance_indicator) {
+                so.performance_indicator.forEach(pi => {
+                    const combinedCode = `${so.so_code}-${pi.pi_code}`;
+                    const isChecked = currentValues.includes(combinedCode) ? 'checked' : '';
+                    html += `
+                    <label class="flex items-start gap-3 cursor-pointer group p-3 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors rounded-lg">
+                        <div class="pt-0.5">
+                            <input type="checkbox" value="${combinedCode}" class="sopi-checkbox w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:focus:ring-offset-slate-900 cursor-pointer" ${isChecked}>
+                        </div>
+                        <div class="flex-1 text-sm">
+                            <span class="font-bold text-slate-700 dark:text-slate-300 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors mr-2">${pi.pi_code}</span>
+                            <span class="text-slate-600 dark:text-slate-400 leading-relaxed">${pi.pi_description}</span>
+                        </div>
+                    </label>
+                `;
+                });
+            }
+
+            html += `</div></div>`;
+        });
+
+        container.innerHTML = html;
+    }
+
+    function closeSopiModal() {
+        const modal = document.getElementById('sopiModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        currentSopiInput = null;
+    }
+
+    function saveSopiSelection() {
+        if (!currentSopiInput) return;
+
+        const checkboxes = document.querySelectorAll('.sopi-checkbox:checked');
+        const selected = Array.from(checkboxes).map(cb => cb.value);
+
+        currentSopiInput.value = selected.join(', ');
+
+        closeSopiModal();
+    }
+</script>

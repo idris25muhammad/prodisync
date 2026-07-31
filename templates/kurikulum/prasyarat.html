@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="space-y-8">
+    <div class="flex justify-between items-end">
+        <div>
+            <h1 class="text-3xl font-extrabold dark:text-white">Kurikulum</h1>
+            <p class="text-slate-500 mt-1">
+                Peta mata kuliah dan hubungan prasyarat antar semester.
+            </p>
+        </div>
+
+        <button id="downloadPrasyaratJpg" type="button"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl font-semibold">
+            Download JPG
+        </button>
+    </div>
+
+    <div id="prasyaratCapture" class="bg-white dark:bg-slate-900 rounded-2xl">
+        {% include 'kurikulum/_prasyarat_link_map.html' %}
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script>
+    (function () {
+        const btn = document.getElementById('downloadPrasyaratJpg');
+        const target = document.getElementById('prasyaratCapture');
+
+        if (!btn || !target || typeof html2canvas === 'undefined') return;
+
+        btn.addEventListener('click', async function () {
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Processing...';
+
+            try {
+                const canvas = await html2canvas(target, {
+                    backgroundColor: '#ffffff',
+                    scale: 2,
+                    useCORS: true
+                });
+
+                const link = document.createElement('a');
+                link.download = 'peta-prasyarat-kurikulum.jpg';
+                link.href = canvas.toDataURL('image/jpeg', 0.95);
+                link.click();
+            } catch (error) {
+                console.error('Gagal download JPG:', error);
+                alert('Gagal membuat JPG.');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        });
+    })();
+</script>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+
+    <!-- Back -->
+    <a href="{{ url_for('pengumuman.index') }}"
+        class="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        Kembali ke Pengumuman
+    </a>
+
+    <!-- Card -->
+    <div class="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+
+        <!-- Accent stripe -->
+        <div class="h-2 {% if p.visibility == 'publik' %}bg-gradient-to-r from-emerald-400 to-teal-500{% elif p.visibility == 'dosen' %}bg-gradient-to-r from-blue-400 to-indigo-500{% else %}bg-gradient-to-r from-slate-300 to-slate-400{% endif %}"></div>
+
+        <div class="p-8 md:p-12">
+            <!-- Meta -->
+            <div class="flex flex-wrap items-center gap-3 mb-6">
+                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider
+                    {% if p.visibility == 'publik' %}bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400
+                    {% elif p.visibility == 'dosen' %}bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400
+                    {% else %}bg-slate-100 dark:bg-slate-800 text-slate-500{% endif %}">
+                    {% if p.visibility == 'publik' %}🌐 Publik
+                    {% elif p.visibility == 'dosen' %}👤 Dosen Only
+                    {% else %}📝 Draft{% endif %}
+                </span>
+                <span class="text-sm text-slate-400">
+                    {{ p.created_at.strftime('%d %B %Y, %H:%M') }} WIB
+                </span>
+                <span class="text-sm text-slate-400">·</span>
+                <span class="text-sm text-slate-500 dark:text-slate-400 font-medium">{{ p.penulis.nama }}</span>
+            </div>
+
+            <!-- Title -->
+            <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white leading-tight mb-8">
+                {{ p.judul }}
+            </h1>
+
+            <!-- WYSIWYG Content -->
+            <div class="prose prose-slate dark:prose-invert max-w-none
+                prose-headings:font-bold prose-headings:text-slate-900 dark:prose-headings:text-white
+                prose-p:text-slate-600 dark:prose-p:text-slate-300
+                prose-a:text-blue-600 prose-strong:text-slate-900 dark:prose-strong:text-white
+                prose-li:text-slate-600 dark:prose-li:text-slate-300">
+                {{ p.konten | safe }}
+            </div>
+
+            <!-- Attachment -->
+            {% if p.file_path %}
+            <div class="mt-10 pt-6 border-t border-slate-100 dark:border-slate-800">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Lampiran</p>
+                <a href="{{ url_for('pengumuman.download_file', filename=p.file_path) }}"
+                    class="inline-flex items-center gap-3 px-5 py-3 bg-slate-50 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-slate-200 dark:border-slate-700 hover:border-blue-200 dark:hover:border-blue-800 rounded-xl transition-all group">
+                    <svg class="w-5 h-5 text-slate-400 group-hover:text-blue-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                    <span class="text-sm font-medium text-slate-700 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        Unduh Lampiran
+                    </span>
+                </a>
+            </div>
+            {% endif %}
+
+            <!-- Kaprodi Actions -->
+            {% if current_user.is_kaprodi %}
+            <div class="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 flex gap-3">
+                <a href="{{ url_for('pengumuman.edit', id=p.id) }}"
+                    class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-all">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    Edit
+                </a>
+                <a href="{{ url_for('pengumuman.hapus', id=p.id) }}"
+                    onclick="return confirm('Yakin ingin menghapus pengumuman ini?')"
+                    class="inline-flex items-center gap-2 px-5 py-2.5 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-xl text-sm font-semibold transition-all">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    Hapus
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

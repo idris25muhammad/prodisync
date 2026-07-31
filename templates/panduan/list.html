@@ -1,0 +1,266 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-center flex-wrap gap-4">
+        <div>
+            <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white">Manajemen Panduan</h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-1">Kelola dokumen instruksi kerja, template RPS, atau tautan eksternal sistem.</p>
+        </div>
+        
+        {% if current_user.is_kaprodi %}
+        <button onclick="openTambahModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-md shadow-blue-600/10 flex items-center gap-2">
+            <span>+ Tambah Panduan</span>
+        </button>
+        {% endif %}
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for p in semua_panduan %}
+        {# Filter di frontend agar dosen biasa tidak melihat panduan nonaktif #}
+        {% if current_user.is_kaprodi or p.is_aktif %}
+        <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border {% if not p.is_aktif %}border-red-300 dark:border-red-900/50 bg-red-50/10{% else %}border-slate-200 dark:border-slate-800{% endif %} shadow-sm flex flex-col justify-between transition-all">
+            <div>
+                <div class="flex justify-between items-center mb-3">
+                    <div class="flex gap-2">
+                        <span class="px-2.5 py-1 text-[10px] font-black rounded-md {% if p.tipe == 'file' %}bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400{% else %}bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-400{% endif %}">
+                            {{ p.tipe | upper }}
+                        </span>
+                        {% if not p.is_aktif %}
+                        <span class="px-2.5 py-1 text-[10px] font-black rounded-md bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400">NONAKTIF</span>
+                        {% endif %}
+                    </div>
+                    <span class="text-xs text-slate-400">{{ p.created_at.strftime('%d/%m/%Y') }}</span>
+                </div>
+                <h3 class="font-bold text-slate-800 dark:text-white text-base line-clamp-2 mb-1">{{ p.nama }}</h3>
+                
+                <p class="text-[11px] text-slate-400 dark:text-slate-500 font-medium mb-4 flex items-center gap-1">
+                    <span>🔄 Diupdate:</span>
+                    <span>{{ p.updated_at.strftime('%d/%m/%Y %H:%M') if p.updated_at else p.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+                </p>
+            </div>
+
+            <div class="flex gap-2 mt-2 pt-4 border-t border-slate-100 dark:border-slate-800/60">
+                {% if p.tipe == 'file' %}
+                <a href="{{ url_for('panduan.download_file', filename=p.file_path) }}" target="_blank" class="flex-1 py-2 text-center bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold border border-slate-200 dark:border-slate-700 transition-all">
+                    👁️ Lihat Dokumen
+                </a>
+                {% else %}
+                <a href="{{ p.link_url }}" target="_blank" class="flex-1 py-2 text-center bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold border border-slate-200 dark:border-slate-700 transition-all">
+                    🔗 Buka Link External
+                </a>
+                {% endif %}
+
+                {% if current_user.is_kaprodi %}
+                <button onclick="openEditModal('{{ p.id }}', '{{ p.nama | replace("'", "\\'") }}', '{{ p.tipe }}', '{{ p.link_url if p.link_url else '' }}', {{ 'true' if p.is_aktif else 'false' }})" class="p-2 text-amber-600 bg-amber-50 dark:bg-amber-950/20 hover:bg-amber-100 rounded-lg text-xs transition-all" title="Edit">✏️</button>
+                <button onclick="confirmDelete('{{ url_for('panduan.delete', id=p.id) }}', '{{ p.nama | replace("'", "\\'") }}')" class="p-2 text-red-600 bg-red-50 dark:bg-red-950/20 hover:bg-red-100 rounded-lg text-xs transition-all" title="Hapus">🗑️</button>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="col-span-full p-12 text-center bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+            <p class="text-slate-400 text-sm">Belum ada dokumen panduan aktif di sistem.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div id="modal-tambah" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-xl p-6 border border-slate-200 dark:border-slate-700 shadow-xl max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-slate-900 dark:text-white">Tambah Panduan Baru</h2>
+            <button onclick="closeModal('modal-tambah')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl font-bold">&times;</button>
+        </div>
+        <form method="POST" action="{{ url_for('panduan.add') }}" enctype="multipart/form-data" class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nama Panduan</label>
+                <input type="text" name="nama" required placeholder="Misal: Panduan Penyusunan CPL Kurikulum" class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div class="bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-xl border border-slate-200/60 dark:border-slate-800">
+                <p class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Metode File Panduan:</p>
+                <p class="text-xs text-slate-400 dark:text-slate-500 mb-3">Mau langsung upload file dokumen fisik atau pakai tautan link (seperti Google Drive / OneDrive)?</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <label class="flex items-center gap-2 p-2.5 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer bg-white dark:bg-slate-900 hover:bg-slate-100">
+                        <input type="radio" name="tipe" value="file" checked onchange="toggleTipeInput('tambah', 'file')" class="text-blue-600 focus:ring-blue-500">
+                        <span class="text-xs font-bold text-slate-700 dark:text-slate-300">📁 Upload File</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2.5 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer bg-white dark:bg-slate-900 hover:bg-slate-100">
+                        <input type="radio" name="tipe" value="link" onchange="toggleTipeInput('tambah', 'link')" class="text-blue-600 focus:ring-blue-500">
+                        <span class="text-xs font-bold text-slate-700 dark:text-slate-300">🔗 Tautan Link</span>
+                    </label>
+                </div>
+            </div>
+
+            <div id="tambah-container-file">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Unggah Dokumen Berkas</label>
+                <input type="file" name="file_dokumen" id="tambah-file-input" required class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 file:cursor-pointer hover:file:bg-blue-100">
+            </div>
+
+            <div id="tambah-container-link" class="hidden">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Link Tautan Cloud (GDrive/OneDrive)</label>
+                <input type="url" name="link_url" id="tambah-link-input" placeholder="https://drive.google.com/share-link..." class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status Publikasi Panduan</label>
+                <div class="flex gap-4 mt-1.5">
+                    <label class="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                        <input type="radio" name="is_aktif" value="true" checked class="text-blue-600 focus:ring-blue-500">
+                        <span class="text-slate-700 dark:text-slate-300">Aktif (Dapat dilihat Dosen)</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                        <input type="radio" name="is_aktif" value="false" class="text-blue-600 focus:ring-blue-500">
+                        <span class="text-slate-700 dark:text-slate-300">Sembunyikan</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex gap-3 mt-6 Gold pt-2 border-t dark:border-slate-800">
+                <button type="button" onclick="closeModal('modal-tambah')" class="flex-1 py-2 rounded-lg text-sm font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200">Batal</button>
+                <button type="submit" class="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold shadow-md">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="modal-edit" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-xl p-6 border border-slate-200 dark:border-slate-700 shadow-xl max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-slate-900 dark:text-white">Ubah Data Panduan</h2>
+            <button onclick="closeModal('modal-edit')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl font-bold">&times;</button>
+        </div>
+        <form id="form-edit" method="POST" enctype="multipart/form-data" class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nama Panduan</label>
+                <input type="text" name="nama" id="edit-nama" required class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <div class="bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-xl border border-slate-200/60 dark:border-slate-800">
+                <p class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Metode File Panduan:</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <label class="flex items-center gap-2 p-2.5 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer bg-white dark:bg-slate-900 hover:bg-slate-100">
+                        <input type="radio" name="tipe" id="edit-tipe-file" value="file" onchange="toggleTipeInput('edit', 'file')" class="text-blue-600 focus:ring-blue-500">
+                        <span class="text-xs font-bold text-slate-700 dark:text-slate-300">📁 Upload File</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2.5 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer bg-white dark:bg-slate-900 hover:bg-slate-100">
+                        <input type="radio" name="tipe" id="edit-tipe-link" value="link" onchange="toggleTipeInput('edit', 'link')" class="text-blue-600 focus:ring-blue-500">
+                        <span class="text-xs font-bold text-slate-700 dark:text-slate-300">🔗 Tautan Link</span>
+                    </label>
+                </div>
+            </div>
+
+            <div id="edit-container-file">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Ganti Dokumen File <span class="text-slate-400 font-normal lowercase">(kosongkan jika tetap)</span></label>
+                <input type="file" name="file_dokumen" id="edit-file-input" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 file:cursor-pointer">
+            </div>
+
+            <div id="edit-container-link" class="hidden">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Link Tautan URL</label>
+                <input type="url" name="link_url" id="edit-link-input" class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status Publikasi Panduan</label>
+                <div class="flex gap-4 mt-1.5">
+                    <label class="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                        <input type="radio" name="is_aktif" id="edit-aktif-true" value="true" class="text-blue-600 focus:ring-blue-500">
+                        <span class="text-slate-700 dark:text-slate-300">Aktif</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                        <input type="radio" name="is_aktif" id="edit-aktif-false" value="false" class="text-blue-600 focus:ring-blue-500">
+                        <span class="text-slate-700 dark:text-slate-300">Sembunyikan</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex gap-3 mt-6 pt-2 border-t dark:border-slate-800">
+                <button type="button" onclick="closeModal('modal-edit')" class="flex-1 py-2 rounded-lg text-sm font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200">Batal</button>
+                <button type="submit" class="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold shadow-md">Simpan Perubahan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="modal-hapus" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-sm p-6 border border-slate-200 dark:border-slate-700 shadow-xl">
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Konfirmasi Hapus</h3>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mb-6" id="hapus-nama"></p>
+        <div class="flex gap-3">
+            <button type="button" onclick="closeModal('modal-hapus')" class="flex-1 py-2 rounded-lg text-sm font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200">Batal</button>
+            <a id="hapus-link" href="#" class="flex-1 py-2 text-center bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-bold shadow-md">Hapus</a>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleTipeInput(mode, tipe) {
+    const containerFile = document.getElementById(`${mode}-container-file`);
+    const containerLink = document.getElementById(`${mode}-container-link`);
+    const fileInput = document.getElementById(`${mode}-file-input`);
+    const linkInput = document.getElementById(`${mode}-link-input`);
+
+    if (tipe === 'file') {
+        containerFile.classList.remove('hidden');
+        containerLink.classList.add('hidden');
+        if (mode === 'tambah') fileInput.required = true;
+        linkInput.required = false;
+    } else {
+        containerFile.classList.add('hidden');
+        containerLink.classList.remove('hidden');
+        if (mode === 'tambah') fileInput.required = false;
+        linkInput.required = true;
+    }
+}
+
+function openTambahModal() {
+    document.getElementById('modal-tambah').classList.remove('hidden');
+    toggleTipeInput('tambah', 'file');
+}
+
+function openEditModal(id, nama, tipe, linkUrl, isAktif) {
+    const form = document.getElementById('form-edit');
+    form.action = `/panduan/edit/${id}`;
+    
+    document.getElementById('edit-nama').value = nama;
+    
+    // Set Status Radio Is_Aktif di modal edit
+    if (isAktif === true) {
+        document.getElementById('edit-aktif-true').checked = true;
+    } else {
+        document.getElementById('edit-aktif-false').checked = true;
+    }
+    
+    // Set Tipe Sumber Input
+    if (tipe === 'file') {
+        document.getElementById('edit-tipe-file').checked = true;
+        toggleTipeInput('edit', 'file');
+        document.getElementById('edit-link-input').value = '';
+    } else {
+        document.getElementById('edit-tipe-link').checked = true;
+        toggleTipeInput('edit', 'link');
+        document.getElementById('edit-link-input').value = linkUrl;
+    }
+    
+    document.getElementById('modal-edit').classList.remove('hidden');
+}
+
+function confirmDelete(url, nama) {
+    document.getElementById('hapus-link').href = url;
+    document.getElementById('hapus-nama').textContent = `Apakah Anda yakin ingin menghapus panduan "${nama}" secara permanen?`;
+    document.getElementById('modal-hapus').classList.remove('hidden');
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.add('hidden');
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeModal('modal-tambah');
+        closeModal('modal-edit');
+        closeModal('modal-hapus');
+    }
+});
+</script>
+{% endblock %}

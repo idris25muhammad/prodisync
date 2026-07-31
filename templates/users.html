@@ -1,0 +1,524 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="space-y-8">
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Manajemen User</h1>
+            <p class="text-slate-500 dark:text-slate-400 text-sm">Kelola akun dosen dan kaprodi.</p>
+        </div>
+        <button type="button" onclick="openAddModal()"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20">
+            + Tambah User
+        </button>
+    </div>
+
+    <div
+        class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr
+                        class="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider">
+                        <th class="p-5">Nama</th>
+                        <th class="p-5">Username</th>
+                        <th class="p-5">Email</th>
+                        <th class="p-5 text-center">Role</th>
+                        <th class="p-5">Dibuat</th>
+                        <th class="p-5">Diupdate</th>
+                        <th class="p-5 text-center">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                    {% for u in users %}
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                        <td class="p-5 font-medium text-slate-800 dark:text-slate-100">
+                            {{ u.nama }}
+                            {% if u.id == current_user.id %}
+                            <span
+                                class="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400">
+                                Anda
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="p-5 font-mono text-sm text-slate-500">{{ u.username }}</td>
+                        <td class="p-5 text-sm text-slate-500">{{ u.email or '-' }}</td>
+                        <td class="p-5 text-center">
+                            <span class="text-[11px] font-bold px-2 py-1 rounded-full
+                                {{ 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400' if u.role == 'kaprodi'
+                                   else 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300' }}">
+                                {{ u.role | upper }}
+                            </span>
+                        </td>
+                        <td class="p-5 text-xs text-slate-500 whitespace-nowrap">
+                            {{ u.created_at.strftime('%d/%m/%Y %H:%M') if u.created_at else '-' }}
+                        </td>
+                        <td class="p-5 text-xs text-slate-500 whitespace-nowrap">
+                            {{ u.updated_at.strftime('%d/%m/%Y %H:%M') if u.updated_at else '-' }}
+                        </td>
+                        <td class="p-5">
+                            <div class="flex gap-2 justify-center flex-wrap">
+                                <button type="button" onclick='openEditModal({
+                                        id: {{ u.id }},
+                                        nama: {{ u.nama|tojson }},
+                                        username: {{ u.username|tojson }},
+                                        email: {{ (u.email or "")|tojson }},
+                                        role: {{ u.role|tojson }},
+                                        nidn: {{ (u.nidn or "")|tojson }},
+                                        nip: {{ (u.nip or "")|tojson }},
+                                        sinta_id: {{ (u.sinta_id or "")|tojson }},
+                                        google_scholar_id: {{ (u.google_scholar_id or "")|tojson }},
+                                        google_scholar_url: {{ (u.google_scholar_url or "")|tojson }},
+                                        orcid_id: {{ (u.orcid_id or "")|tojson }},
+                                        scopus_id: {{ (u.scopus_id or "")|tojson }},
+                                        researcher_id: {{ (u.researcher_id or "")|tojson }},
+                                        garuda_id: {{ (u.garuda_id or "")|tojson }},
+                                        afiliasi: {{ (u.afiliasi or "")|tojson }},
+                                        prodi: {{ (u.prodi or "")|tojson }},
+                                        jabatan_fungsional: {{ (u.jabatan_fungsional or "")|tojson }},
+                                        bidang_keahlian: {{ (u.bidang_keahlian or "")|tojson }},
+                                        homepage_url: {{ (u.homepage_url or "")|tojson }},
+                                        foto_url: {{ (u.foto_url or "")|tojson }}
+                                    })'
+                                    class="text-xs font-bold px-3 py-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-all">
+                                    Edit
+                                </button>
+
+
+                                {% if u.id != current_user.id %}
+                                <button type="button" onclick="openDeleteModal({{ u.id }}, {{ u.nama|tojson }})"
+                                    class="text-xs font-bold px-3 py-1.5 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-all">
+                                    Hapus
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="10" class="p-12 text-center text-slate-400 italic">
+                            Belum ada user terdaftar.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="modal-user" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onclick="closeModal('modal-user')"></div>
+
+    <div class="relative z-10 w-full max-w-5xl max-h-[90vh] overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl"
+        role="dialog" aria-modal="true" aria-labelledby="modal-user-title">
+
+        <div
+            class="flex items-center justify-between px-6 py-5 border-b border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/60">
+            <div>
+                <h2 id="modal-user-title" class="text-xl font-bold text-slate-900 dark:text-white">Tambah User</h2>
+                <p class="text-sm text-slate-500 dark:text-slate-400">Isi data akun dan profil akademik user.</p>
+            </div>
+
+            <button type="button" onclick="closeModal('modal-user')"
+                class="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition">
+                <span class="text-2xl leading-none">&times;</span>
+            </button>
+        </div>
+
+        <form id="user-form" method="POST" class="overflow-y-auto max-h-[calc(90vh-88px)]">
+            <div class="p-6 space-y-6">
+
+                <!-- SECTION: AKUN -->
+                <section
+                    class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 p-5">
+                    <div class="mb-4">
+                        <h3 class="text-sm font-bold uppercase tracking-wide text-slate-700 dark:text-slate-200">Akun
+                        </h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Informasi dasar untuk login dan hak
+                            akses.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nama Lengkap</label>
+                            <input id="user-nama" type="text" name="nama" required
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Username</label>
+                            <input id="user-username" type="text" name="username" required
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Email</label>
+                            <input id="user-email" type="email" name="email" autocomplete="email"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Role</label>
+                            <select id="user-role" name="role"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="dosen">Dosen</option>
+                                <option value="kaprodi">Kaprodi</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="password-group" class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Password</label>
+                        <input id="user-password" type="password" name="password" autocomplete="new-password"
+                            class="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500">
+
+                        <label id="use-email-password-wrapper"
+                            class="mt-3 inline-flex items-start gap-2 rounded-xl bg-blue-50 dark:bg-blue-950/30 px-3 py-2 text-sm text-slate-700 dark:text-slate-300">
+                            <input id="use-email-password" type="checkbox" class="mt-1 accent-blue-600">
+                            <span>Gunakan email sebagai password sementara</span>
+                        </label>
+
+                        <p class="text-xs text-slate-400 mt-2">
+                            Password sementara akan dipakai saat pembuatan akun baru.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- SECTION: PROFIL AKADEMIK -->
+                <section
+                    class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5">
+                    <div class="mb-4">
+                        <h3 class="text-sm font-bold uppercase tracking-wide text-slate-700 dark:text-slate-200">Profil
+                            Akademik</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Identitas dosen dan informasi
+                            institusi.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">NIDN</label>
+                            <input id="user-nidn" type="text" name="nidn"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">NIP</label>
+                            <input id="user-nip" type="text" name="nip"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Prodi</label>
+                            <input id="user-prodi" type="text" name="prodi"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Afiliasi</label>
+                            <input id="user-afiliasi" type="text" name="afiliasi"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Jabatan
+                                Fungsional</label>
+                            <input id="user-jabatan_fungsional" type="text" name="jabatan_fungsional"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Bidang Keahlian</label>
+                            <textarea id="user-bidang_keahlian" name="bidang_keahlian" rows="3"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SECTION: IDENTITAS RISET -->
+                <section
+                    class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5">
+                    <div class="mb-4">
+                        <h3 class="text-sm font-bold uppercase tracking-wide text-slate-700 dark:text-slate-200">
+                            Identitas Riset</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Profil penelitian dan tautan
+                            eksternal.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">SINTA ID</label>
+                            <input id="user-sinta_id" type="text" name="sinta_id"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Google Scholar
+                                ID</label>
+                            <input id="user-google_scholar_id" type="text" name="google_scholar_id"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Google Scholar
+                                URL</label>
+                            <input id="user-google_scholar_url" type="url" name="google_scholar_url"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">ORCID ID</label>
+                            <input id="user-orcid_id" type="text" name="orcid_id"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Scopus ID</label>
+                            <input id="user-scopus_id" type="text" name="scopus_id"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Researcher ID</label>
+                            <input id="user-researcher_id" type="text" name="researcher_id"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Garuda ID</label>
+                            <input id="user-garuda_id" type="text" name="garuda_id"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Homepage URL</label>
+                            <input id="user-homepage_url" type="url" name="homepage_url"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Foto URL</label>
+                            <input id="user-foto_url" type="url" name="foto_url"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div
+                class="sticky bottom-0 flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 backdrop-blur">
+                <button type="button" onclick="closeModal('modal-user')"
+                    class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 transition">
+                    Batal
+                </button>
+                <button type="submit" id="user-submit-btn"
+                    class="px-5 py-2.5 rounded-xl text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/20 transition">
+                    Simpan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="modal-reset" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeModal('modal-reset')"></div>
+
+    <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-sm border border-slate-200 dark:border-slate-700 z-10 p-6"
+        role="dialog" aria-modal="true" aria-labelledby="modal-reset-title">
+        <h2 id="modal-reset-title" class="text-lg font-bold mb-1 text-slate-900 dark:text-white">Reset Password</h2>
+        <p id="reset-nama" class="text-sm text-slate-500 mb-4"></p>
+        <form id="reset-form" method="POST" class="space-y-4">
+            <input id="reset-password-input" type="password" name="password" required placeholder="Password baru"
+                class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-amber-500">
+            <div class="flex justify-end gap-3">
+                <button type="button" onclick="closeModal('modal-reset')"
+                    class="px-4 py-2 rounded-lg text-sm font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-200">
+                    Batal
+                </button>
+                <button type="submit"
+                    class="px-4 py-2 rounded-lg text-sm font-bold bg-amber-500 hover:bg-amber-600 text-white">
+                    Reset
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="modal-hapus" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeModal('modal-hapus')"></div>
+
+    <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-sm border border-slate-200 dark:border-slate-700 z-10 p-6 text-center"
+        role="dialog" aria-modal="true" aria-labelledby="modal-hapus-title">
+        <div class="text-4xl mb-3">🗑️</div>
+        <h2 id="modal-hapus-title" class="text-lg font-bold mb-1 text-slate-900 dark:text-white">Hapus User?</h2>
+        <p id="hapus-nama" class="text-sm text-slate-500 mb-6"></p>
+        <form id="hapus-form" method="POST">
+            <div class="flex gap-3 justify-center">
+                <button type="button" onclick="closeModal('modal-hapus')"
+                    class="px-5 py-2 rounded-lg text-sm font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-200">
+                    Batal
+                </button>
+                <button type="submit"
+                    class="px-5 py-2 rounded-lg text-sm font-bold bg-red-600 hover:bg-red-700 text-white">
+                    Ya, Hapus
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    let lastFocusedElement = null;
+
+    function openModal(id) {
+        lastFocusedElement = document.activeElement;
+        document.getElementById(id).classList.remove('hidden');
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.add('hidden');
+        if (lastFocusedElement) lastFocusedElement.focus();
+    }
+
+    function setPasswordReadonlyState(isReadonly) {
+        const passwordInput = document.getElementById('user-password');
+
+        passwordInput.readOnly = isReadonly;
+
+        if (isReadonly) {
+            passwordInput.classList.add('bg-slate-100', 'dark:bg-slate-700', 'cursor-not-allowed');
+        } else {
+            passwordInput.classList.remove('bg-slate-100', 'dark:bg-slate-700', 'cursor-not-allowed');
+        }
+    }
+
+    function syncEmailAsPassword() {
+        const checkbox = document.getElementById('use-email-password');
+        const emailInput = document.getElementById('user-email');
+        const passwordInput = document.getElementById('user-password');
+
+        if (!checkbox || !emailInput || !passwordInput) return;
+
+        if (checkbox.checked) {
+            passwordInput.value = emailInput.value.trim();
+            setPasswordReadonlyState(true);
+        } else {
+            passwordInput.value = '';
+            setPasswordReadonlyState(false);
+        }
+    }
+
+    function resetAcademicFields() {
+        document.getElementById('user-nidn').value = '';
+        document.getElementById('user-nip').value = '';
+        document.getElementById('user-sinta_id').value = '';
+        document.getElementById('user-google_scholar_id').value = '';
+        document.getElementById('user-google_scholar_url').value = '';
+        document.getElementById('user-orcid_id').value = '';
+        document.getElementById('user-scopus_id').value = '';
+        document.getElementById('user-researcher_id').value = '';
+        document.getElementById('user-garuda_id').value = '';
+        document.getElementById('user-afiliasi').value = '';
+        document.getElementById('user-prodi').value = '';
+        document.getElementById('user-jabatan_fungsional').value = '';
+        document.getElementById('user-bidang_keahlian').value = '';
+        document.getElementById('user-homepage_url').value = '';
+        document.getElementById('user-foto_url').value = '';
+    }
+
+    function openAddModal() {
+        document.getElementById('modal-user-title').textContent = 'Tambah User';
+        document.getElementById('user-form').action = "{{ url_for('user.add') }}";
+        document.getElementById('user-nama').value = '';
+        document.getElementById('user-username').value = '';
+        document.getElementById('user-email').value = '';
+        document.getElementById('user-role').value = 'dosen';
+        resetAcademicFields();
+        document.getElementById('user-password').value = '';
+        document.getElementById('user-password').required = true;
+        document.getElementById('password-group').classList.remove('hidden');
+        document.getElementById('use-email-password-wrapper').classList.remove('hidden');
+        document.getElementById('use-email-password').checked = false;
+        setPasswordReadonlyState(false);
+        document.getElementById('user-submit-btn').textContent = 'Simpan';
+        openModal('modal-user');
+        setTimeout(() => document.getElementById('user-nama').focus(), 50);
+    }
+
+    function openEditModal(user) {
+        document.getElementById('modal-user-title').textContent = 'Edit User';
+        document.getElementById('user-form').action = `/users/edit/${user.id}`;
+        document.getElementById('user-nama').value = user.nama || '';
+        document.getElementById('user-username').value = user.username || '';
+        document.getElementById('user-email').value = user.email || '';
+        document.getElementById('user-role').value = user.role || 'dosen';
+        document.getElementById('user-nidn').value = user.nidn || '';
+        document.getElementById('user-nip').value = user.nip || '';
+        document.getElementById('user-sinta_id').value = user.sinta_id || '';
+        document.getElementById('user-google_scholar_id').value = user.google_scholar_id || '';
+        document.getElementById('user-google_scholar_url').value = user.google_scholar_url || '';
+        document.getElementById('user-orcid_id').value = user.orcid_id || '';
+        document.getElementById('user-scopus_id').value = user.scopus_id || '';
+        document.getElementById('user-researcher_id').value = user.researcher_id || '';
+        document.getElementById('user-garuda_id').value = user.garuda_id || '';
+        document.getElementById('user-afiliasi').value = user.afiliasi || '';
+        document.getElementById('user-prodi').value = user.prodi || '';
+        document.getElementById('user-jabatan_fungsional').value = user.jabatan_fungsional || '';
+        document.getElementById('user-bidang_keahlian').value = user.bidang_keahlian || '';
+        document.getElementById('user-homepage_url').value = user.homepage_url || '';
+        document.getElementById('user-foto_url').value = user.foto_url || '';
+        document.getElementById('user-password').value = '';
+        document.getElementById('user-password').required = false;
+        document.getElementById('password-group').classList.add('hidden');
+        document.getElementById('use-email-password-wrapper').classList.add('hidden');
+        document.getElementById('use-email-password').checked = false;
+        setPasswordReadonlyState(false);
+        document.getElementById('user-submit-btn').textContent = 'Update';
+        openModal('modal-user');
+        setTimeout(() => document.getElementById('user-nama').focus(), 50);
+    }
+
+    function openResetModal(id, nama) {
+        document.getElementById('reset-form').action = `/users/reset-password/${id}`;
+        document.getElementById('reset-nama').textContent = 'Ganti password untuk: ' + nama;
+        document.getElementById('reset-password-input').value = '';
+        openModal('modal-reset');
+        setTimeout(() => document.getElementById('reset-password-input').focus(), 50);
+    }
+
+    function openDeleteModal(id, nama) {
+        document.getElementById('hapus-form').action = `/users/delete/${id}`;
+        document.getElementById('hapus-nama').textContent = '"' + nama + '" akan dihapus permanen.';
+        openModal('modal-hapus');
+    }
+
+    document.getElementById('use-email-password')?.addEventListener('change', function () {
+        const emailInput = document.getElementById('user-email');
+
+        if (this.checked && !emailInput.value.trim()) {
+            alert('Isi email terlebih dahulu.');
+            this.checked = false;
+            return;
+        }
+
+        syncEmailAsPassword();
+    });
+
+    document.getElementById('user-email')?.addEventListener('input', function () {
+        const checkbox = document.getElementById('use-email-password');
+        if (checkbox && checkbox.checked) {
+            syncEmailAsPassword();
+        }
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            ['modal-user', 'modal-reset', 'modal-hapus'].forEach(id => {
+                const modal = document.getElementById(id);
+                if (!modal.classList.contains('hidden')) {
+                    closeModal(id);
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

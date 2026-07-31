@@ -1,0 +1,21 @@
+# Environment variables - JANGAN di-commit!
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+venv/
+.venv/
+*.egg-info/
+
+# Database
+*.db
+*.sqlite3
+
+# Storage / Upload
+storage/
+
+# IDE
+.vscode/
+.idea/

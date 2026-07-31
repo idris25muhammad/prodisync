@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-end">
+        <div>
+            <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white">Integrated Curriculum</h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-1">
+                Visual kurikulum terintegrasi berbasis semester, year progression, project milestone, dan skill mapping.
+            </p>
+        </div>
+        <div class="flex items-center gap-3">
+            <button id="downloadIntegratedJpg"
+                    type="button"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl font-semibold">
+                Download JPG
+            </button>
+
+            <a href="{{ url_for('dashboard.index') }}"
+               class="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-4 py-2 rounded-xl font-semibold">
+                ← Kembali
+            </a>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-4">
+        <div id="integratedCurriculumCapture" class="min-w-[1200px] bg-white dark:bg-slate-900">
+           {% include 'kurikulum/_integrated_curr_map.html' %}
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script>
+(function () {
+    const btn = document.getElementById('downloadIntegratedJpg');
+    const target = document.getElementById('integratedCurriculumCapture');
+
+    if (!btn || !target || typeof html2canvas === 'undefined') return;
+
+    btn.addEventListener('click', async function () {
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Processing...';
+
+        try {
+            const canvas = await html2canvas(target, {
+                backgroundColor: '#ffffff',
+                scale: 2,
+                useCORS: true
+            });
+
+            const link = document.createElement('a');
+            link.download = 'integrated-curriculum.jpg';
+            link.href = canvas.toDataURL('image/jpeg', 0.95);
+            link.click();
+        } catch (error) {
+            console.error('Gagal download JPG:', error);
+            alert('Gagal membuat JPG.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    });
+})();
+</script>
+{% endblock %}
