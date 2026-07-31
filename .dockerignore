@@ -1,0 +1,54 @@
+# Python cache & bytecode
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Environment files (JANGAN masuk ke image!)
+.env
+.env.local
+.env.*.local
+
+# Git
+.git/
+.gitignore
+
+# Development & editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Agent customizations
+.agents/
+
+# Migrations (akan dijalankan via `flask db upgrade` saat startup)
+# migrations/  <- JANGAN exclude ini, dibutuhkan oleh Flask-Migrate
+
+# Storage uploads (dipasang via volume, tidak perlu di-copy ke image)
+storage/
+
+# Logs
+*.log
+
+# Testing
+tests/
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Node (jika ada)
+node_modules/

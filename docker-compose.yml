@@ -1,0 +1,88 @@
+services:
+  # ──────────────────────────────────────────
+  # Container 1: MySQL Database
+  # ──────────────────────────────────────────
+  db:
+    image: mysql:8.0
+    container_name: prodisync_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql        # Data persisten
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro  # SQL awal (opsional)
+    ports:
+      - "3307:3306"   # Expose ke host via port 3307 (agar tidak konflik MySQL lokal)
+    networks:
+      - prodisync_net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ──────────────────────────────────────────
+  # Container 2: Flask Application (Gunicorn)
+  # ──────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: prodisync_app
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Override DB_HOST agar mengarah ke container db (bukan localhost)
+      DB_HOST: db
+      DB_PORT: "3306"
+    volumes:
+      - ./storage:/app/storage        # Persist uploaded files
+    networks:
+      - prodisync_net
+    depends_on:
+      db:
+        condition: service_healthy    # Tunggu MySQL benar-benar siap
+    command: >
+      sh -c "
+        echo '⏳ Menjalankan migrasi database...' &&
+        flask db upgrade &&
+        echo '✅ Migrasi selesai. Menjalankan Gunicorn...' &&
+        gunicorn --bind 0.0.0.0:8000 --workers 4 --timeout 120
+          --access-logfile - --error-logfile - 'app:create_app()'
+      "
+
+  # ──────────────────────────────────────────
+  # Container 3: Nginx (Reverse Proxy)
+  # ──────────────────────────────────────────
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: prodisync_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"       # HTTP
+      - "443:443"     # HTTPS (siapkan sertifikat SSL jika ada)
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./static:/app/static:ro       # Nginx serve static files langsung
+      - ./nginx/ssl:/etc/nginx/ssl:ro # Opsional: taruh sertifikat SSL di sini
+    networks:
+      - prodisync_net
+    depends_on:
+      - app
+
+# ──────────────────────────────────────────
+# Volumes & Networks
+# ──────────────────────────────────────────
+volumes:
+  db_data:
+    driver: local
+
+networks:
+  prodisync_net:
+    driver: bridge
