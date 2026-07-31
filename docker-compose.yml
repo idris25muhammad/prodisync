@@ -46,25 +46,7 @@ services:
     depends_on:
       db:
         condition: service_healthy    # Tunggu MySQL benar-benar siap
-    command: >
-      sh -c "
-        echo '⏳ Menunggu MySQL siap menerima koneksi...' &&
-        until python3 -c \"
-import pymysql, os, sys
-try:
-    pymysql.connect(host='db',user=os.environ.get('DB_USER','root'),password=os.environ.get('DB_PASSWORD',''),db=os.environ.get('DB_NAME','prodisync_db'),port=3306)
-    sys.exit(0)
-except: sys.exit(1)
-\" 2>/dev/null; do
-          echo 'MySQL belum siap, coba lagi dalam 3 detik...';
-          sleep 3;
-        done &&
-        echo '✅ MySQL siap! Menjalankan migrasi...' &&
-        flask db upgrade &&
-        echo '✅ Migrasi selesai. Menjalankan Gunicorn...' &&
-        gunicorn --bind 0.0.0.0:8000 --workers 4 --timeout 120
-          --access-logfile - --error-logfile - 'app:create_app()'
-      "
+    command: ["sh", "/app/entrypoint.sh"]
 
   # ──────────────────────────────────────────
   # Container 3: Nginx (Reverse Proxy)
