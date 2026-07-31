@@ -30,7 +30,7 @@ COPY --from=builder /install /usr/local
 COPY . .
 
 # Buat direktori storage dengan permission yang benar
-RUN mkdir -p storage && chmod -R 755 storage && chmod +x entrypoint.sh
+RUN mkdir -p storage && chmod -R 755 storage
 
 # Port yang di-expose (Gunicorn akan listen di sini)
 EXPOSE 8000
