@@ -208,48 +208,29 @@ sudo systemctl status prodisync
 
 ---
 
-## 🐳 Deployment dengan Docker (Direkomendasikan untuk Production)
+## 🐳 Deployment dengan Docker (Production Ready)
 
-Setup ini menggunakan **3 container** yang dikelola Docker Compose:
+Setup ini menggunakan **3 container** yang dikelola Docker Compose + **Host Nginx**:
 
-| Container | Image | Peran |
-|-----------|-------|-------|
-| `prodisync_db` | `mysql:8.0` | Database MySQL |
-| `prodisync_app` | Build dari Dockerfile | Flask + Gunicorn |
-| `prodisync_nginx` | `nginx:1.25-alpine` | Reverse Proxy |
+| Container / Server | Peran |
+|--------------------|-------|
+| `Host Nginx` | Master Reverse Proxy di OS Ubuntu Server (Port 80/443) |
+| `prodisync_nginx` | Docker Nginx Web Server (Port `127.0.0.1:8080:80`) |
+| `prodisync_app` | Flask + Gunicorn WSGI Server |
+| `prodisync_db` | Database MySQL 8.0 |
 
 ```
-Browser → [Nginx :80] → [Flask/Gunicorn :8000] → [MySQL :3306]
+Browser (Port 80)
+   │
+   ├─► http://IP/ ──────────────► Redirect (301) ke https://if.polibatam.ac.id/rekayasa-keamanan-siber/
+   └─► http://IP/prodisync/ ────► Host Nginx ──► Docker Nginx (:8080) ──► Flask App (:8000) ──► MySQL (:3306)
 ```
 
-### Prasyarat
+### 1. Prasyarat
 
 - Ubuntu Server 22.04 / 24.04 LTS
 - Docker Engine + Docker Compose Plugin
-
-### 1. Install Docker di Ubuntu Server
-
-```bash
-sudo apt update && sudo apt upgrade -y
-sudo apt install -y ca-certificates curl gnupg
-
-sudo install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-sudo chmod a+r /etc/apt/keyrings/docker.gpg
-
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
-  https://download.docker.com/linux/ubuntu \
-  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-sudo apt update
-sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-
-# Jalankan Docker tanpa sudo
-sudo usermod -aG docker $USER
-newgrp docker
-```
+- Host Nginx (`sudo apt install nginx`)
 
 ### 2. Clone Repository ke Server
 
@@ -270,57 +251,88 @@ nano .env
 Isi `.env` untuk production:
 
 ```env
-SECRET_KEY=isi_dengan_random_string_panjang_tanpa_karakter_dolar
+SECRET_KEY=isi_dengan_random_string_panjang
 FLASK_DEBUG=False
 
-DB_USER=root
+DB_USER=idris
 DB_PASSWORD=password_kuat_anda
 DB_HOST=db
 DB_PORT=3306
 DB_NAME=prodisync_db
 ```
 
-> **Penting:** `DB_HOST` wajib diisi `db` (bukan `localhost`) agar container Flask bisa terhubung ke container MySQL.
+> **Penting:** `DB_HOST` wajib diisi `db` (bukan `localhost`) agar container Flask terhubung ke container MySQL.
 
-Generate `SECRET_KEY` yang aman:
-```bash
-python3 -c "import secrets; print(secrets.token_hex(32))"
-```
-
-### 4. Buat Direktori Storage
-
-```bash
-mkdir -p storage && chmod 755 storage
-```
-
-### 5. Build & Jalankan Semua Container
+### 4. Build & Jalankan Container Docker
 
 ```bash
 docker compose up --build -d
 ```
 
-### 6. Verifikasi
+*Secara otomatis, Docker akan menjalankan `flask db upgrade` (Flask-Migrate) dan `flask seed-db` + `flask seed-matakuliah` saat pertama kali dinyalakan.*
+
+---
+
+## 🌐 Konfigurasi Host Nginx Server (`/prodisync` Routing)
+
+Di Ubuntu Server, buat file konfigurasi Master Reverse Proxy:
 
 ```bash
-docker compose ps
+sudo nano /etc/nginx/sites-available/prodisync
 ```
 
-Semua container harus berstatus `running`. Akses aplikasi di: `http://IP_SERVER_ANDA`
+Isi file konfigurasi:
 
-### Perintah Berguna
+```nginx
+server {
+    listen 80;
+    server_name _;
+
+    client_max_body_size 20M;
+
+    # 1. Redirect root (/) ke Web Utama RKS Polibatam
+    location = / {
+        return 301 https://if.polibatam.ac.id/rekayasa-keamanan-siber/;
+    }
+
+    # 2. Reverse Proxy ke Aplikasi ProdiSync Docker (/prodisync/)
+    location /prodisync/ {
+        proxy_pass http://127.0.0.1:8080/;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        proxy_http_version 1.1;
+        proxy_read_timeout 120s;
+        proxy_send_timeout 120s;
+    }
+}
+```
+
+Aktifkan konfigurasi dan reload Nginx Host:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/prodisync /etc/nginx/sites-enabled/
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+---
+
+### Perintah Maintenance Berguna
 
 ```bash
 # Lihat log real-time
-docker compose logs -f
+docker compose logs -f app
 
 # Restart container app
 docker compose restart app
 
-# Jalankan migrasi manual
+# Jalankan migrasi database manual
 docker compose exec app flask db upgrade
-
-# Masuk ke shell container
-docker compose exec app bash
 
 # Stop semua container
 docker compose down
