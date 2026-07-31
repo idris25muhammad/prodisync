@@ -11,7 +11,6 @@ services:
       MYSQL_DATABASE: ${DB_NAME}
     volumes:
       - db_data:/var/lib/mysql        # Data persisten
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro  # SQL awal (opsional)
     ports:
       - "3307:3306"   # Expose ke host via port 3307 (agar tidak konflik MySQL lokal)
     networks:
@@ -48,7 +47,12 @@ services:
         condition: service_healthy    # Tunggu MySQL benar-benar siap
     command: >
       sh -c "
-        echo '⏳ Menjalankan migrasi database...' &&
+        echo '⏳ Menunggu MySQL siap menerima koneksi...' &&
+        until python3 -c \"import socket; s=socket.create_connection(('db',3306),timeout=2)\" 2>/dev/null; do
+          echo 'MySQL belum siap, coba lagi dalam 3 detik...';
+          sleep 3;
+        done &&
+        echo '✅ MySQL siap! Menjalankan migrasi...' &&
         flask db upgrade &&
         echo '✅ Migrasi selesai. Menjalankan Gunicorn...' &&
         gunicorn --bind 0.0.0.0:8000 --workers 4 --timeout 120
