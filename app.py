@@ -6,11 +6,14 @@ from werkzeug.security import generate_password_hash
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 
+from werkzeug.middleware.proxy_fix import ProxyFix
+
 ph = PasswordHasher()
 
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
     db.init_app(app)
     migrate.init_app(app, db)
