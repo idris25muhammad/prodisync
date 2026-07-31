@@ -45,12 +45,7 @@ def create_app():
             ta_aktif = None
         return dict(ta_aktif=ta_aktif)
 
-    # ── CLI: flask init-db ──────────────────────────────────────────────────
-    @app.cli.command('init-db')
-    def init_db():
-        """Buat semua tabel database."""
-        db.create_all()
-        print('✅ Semua tabel berhasil dibuat.')
+
 
     # ── CLI: flask seed-db ──────────────────────────────────────────────────
     @app.cli.command('seed-db')
