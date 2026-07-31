@@ -1,6 +1,9 @@
 # Environment variables - JANGAN di-commit!
 .env
 
+# Agent config
+.agents/
+
 # Python
 __pycache__/
 *.py[cod]
