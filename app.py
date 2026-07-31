@@ -6,14 +6,25 @@ from werkzeug.security import generate_password_hash
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 
-from werkzeug.middleware.proxy_fix import ProxyFix
+class PrefixMiddleware:
+    def __init__(self, app):
+        self.app = app
+
+    def __call__(self, environ, start_response):
+        prefix = environ.get('HTTP_X_FORWARDED_PREFIX', '') or environ.get('HTTP_X_SCRIPT_NAME', '')
+        if prefix:
+            environ['SCRIPT_NAME'] = prefix
+            path_info = environ.get('PATH_INFO', '')
+            if path_info.startswith(prefix):
+                environ['PATH_INFO'] = path_info[len(prefix):]
+        return self.app(environ, start_response)
 
 ph = PasswordHasher()
 
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+    app.wsgi_app = PrefixMiddleware(app.wsgi_app)
 
     db.init_app(app)
     migrate.init_app(app, db)
