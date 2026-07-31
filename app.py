@@ -39,7 +39,10 @@ def create_app():
     # TA Aktif
     @app.context_processor
     def inject_ta_aktif():
-        ta_aktif = TahunAjaran.query.filter_by(is_aktif=True).first()
+        try:
+            ta_aktif = TahunAjaran.query.filter_by(is_aktif=True).first()
+        except Exception:
+            ta_aktif = None
         return dict(ta_aktif=ta_aktif)
 
     # ── CLI: flask init-db ──────────────────────────────────────────────────
