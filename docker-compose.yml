@@ -6,10 +6,12 @@ services:
     image: mysql:8.0
     container_name: prodisync_db
     restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
       MYSQL_DATABASE: ${DB_NAME}
-    command: --default-authentication-plugin=mysql_native_password
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
     ports:
@@ -21,7 +23,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 30s
+      start_period: 40s
 
   # ──────────────────────────────────────────
   # Container 2: Flask Application (Gunicorn)
@@ -48,7 +50,15 @@ services:
     command:
       - sh
       - -c
-      - "sleep 10 && flask db upgrade && gunicorn --bind 0.0.0.0:8000 --workers 4 --timeout 120 --access-logfile - --error-logfile - 'app:create_app()'"
+      - |
+        echo "==> Menjalankan migrasi..."
+        flask db upgrade
+        echo "==> Seed data pengguna & tahun ajaran..."
+        flask seed-db || true
+        echo "==> Seed katalog mata kuliah..."
+        flask seed-matakuliah || true
+        echo "==> Semua selesai. Menjalankan Gunicorn..."
+        exec gunicorn --bind 0.0.0.0:8000 --workers 4 --timeout 120 --access-logfile - --error-logfile - "app:create_app()"
 
   # ──────────────────────────────────────────
   # Container 3: Nginx (Reverse Proxy)
