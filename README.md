@@ -1,449 +1,119 @@
 # ProdiSync
 
-**ProdiSync** adalah sistem manajemen program studi berbasis web yang dirancang untuk memudahkan pengelolaan **Rencana Pembelajaran Semester (RPS)**, kurikulum, pengumuman, agenda, dan arsip dokumen secara terstruktur dan kolaboratif.
+**ProdiSync** adalah sistem manajemen program studi berbasis web yang dirancang untuk mengelola **Rencana Pembelajaran Semester (RPS)**, kurikulum, pengumuman, agenda kegiatan, serta arsip dokumen secara terstruktur, aman, dan kolaboratif.
 
-Dibangun dengan **Flask** (Python), **MySQL**, dan **Jinja2 Templates**.
+Aplikasi ini dibangun menggunakan **Flask 3.0** (Python), **MySQL 8.0**, **SQLAlchemy ORM**, dan **Jinja2 Templates**, serta dikembangkan dengan standar keamanan dan modulasi arsitektur modern.
 
 ---
 
-## Fitur Utama
+## 🌟 Fitur & Modul Utama
 
 | Modul | Deskripsi |
 |---|---|
-| Autentikasi | Login aman dengan hashing password Argon2 |
-| RPS | Manajemen Rencana Pembelajaran Semester per mata kuliah |
-| Mata Kuliah | Katalog mata kuliah berdasarkan kurikulum |
-| Kurikulum | Pengelolaan data kurikulum program studi |
-| Tahun Ajaran | Pengaturan tahun ajaran aktif |
-| Pengumuman | Sistem pengumuman publik/privat untuk civitas akademika |
-| Agenda | Manajemen agenda dan jadwal kegiatan prodi |
-| Arsip Dokumen | Pengelolaan dan unduhan arsip dokumen |
-| Panduan | Halaman panduan penggunaan sistem |
-| Manajemen User | Administrasi akun dosen dan kaprodi |
+| **Autentikasi & Keamanan** | Login aman dengan algoritma password hashing Argon2 serta proteksi role-based access control (RBAC). |
+| **Manajemen RPS** | Pembuatan, penyuntingan, pencetakan (PDF via `xhtml2pdf`), dan publikasi Rencana Pembelajaran Semester per mata kuliah. |
+| **Katalog Mata Kuliah** | Pengelolaan daftar mata kuliah berdasarkan struktur kurikulum prodi. |
+| **Kurikulum & Tahun Ajaran** | Pengaturan tahun ajaran aktif dan kurikulum yang berlaku. |
+| **Pengumuman Prodi** | Publikasi pengumuman internal maupun publik untuk civitas akademika. |
+| **Agenda & Jadwal** | Manajemen agenda dan jadwal kegiatan prodi. |
+| **Arsip Dokumen** | Manajemen file & pengunggahan arsip dokumen prodi. |
+| **Manajemen Pengguna** | Administrasi akun dosen dan pimpinan prodi (Kaprodi). |
 
 ---
 
-## Tech Stack
+## 👥 Aktor & Hak Akses Pengguna
 
-- **Backend**: Python 3.10+, Flask 3.0
-- **Database**: MySQL 8.x (via SQLAlchemy + PyMySQL)
-- **Auth**: Flask-Login + Argon2 Password Hashing
-- **Migration**: Flask-Migrate (Alembic)
-- **PDF**: xhtml2pdf
-- **Template Engine**: Jinja2
+Aplikasi ProdiSync membagi hak akses ke dalam 2 peran (aktor) utama:
+
+```
+                  ┌─────────────────────────────────────────┐
+                  │            Aktor & Hak Akses            │
+                  └────────────────────┬────────────────────┘
+                                       │
+                ┌──────────────────────┴──────────────────────┐
+                │                                             │
+      ┌─────────┴───────────┐                       ┌─────────┴───────────┐
+      │     Role: DOSEN     │                       │    Role: KAPRODI    │
+      └─────────┬───────────┘                       └─────────┬───────────┘
+                │                                             │
+   - Kelola RPS Mata Kuliah Milik Sendiri        - Akses Semua Fitur Dosen
+   - Lihat Pengumuman & Agenda Prodi             - Kelola Seluruh Data RPS & Kurikulum
+   - Lihat & Unduh Arsip Dokumen                 - Manajemen User (Tambah/Edit/Hapus)
+   - Cetak PDF RPS                               - Kelola Pengumuman, Agenda & Arsip
+```
+
+1. **Dosen**
+   - Membuat, menyunting, dan memperbarui RPS untuk mata kuliah yang diampu.
+   - Mengunduh dan mencetak RPS dalam format PDF.
+   - Mengakses agenda kegiatan prodi dan arsip dokumen.
+2. **Kaprodi (Ketua Program Studi / Administrator)**
+   - Hak akses penuh (*Full Administrative Control*).
+   - Mengelola akun pengguna (Dosen dan Kaprodi).
+   - Meninjau, menyetujui, dan mengelola seluruh RPS di lingkungan prodi.
+   - Mengelola data master: Kurikulum, Tahun Ajaran, Katalog Mata Kuliah.
+   - Menerbitkan pengumuman, mengelola agenda, dan mengunggah dokumen arsip.
 
 ---
 
-## Persyaratan Sistem
+## 🏗️ Arsitektur Aplikasi & Tech Stack
 
-- Python **3.10** atau lebih baru
-- MySQL **8.x**
-- pip (Python package manager)
-- Git
+ProdiSync menerapkan **Application Factory Pattern** dan **Flask Blueprints** (MVC) untuk menjamin kerapihan dan skalabilitas kode:
 
----
-
-## Panduan Deployment
-
-### 1. Clone Repository
-
-`ash
-git clone https://github.com/<username>/prodisync.git
-cd prodisync
-`
-
-### 2. Buat Virtual Environment
-
-`ash
-# Linux/macOS
-python -m venv venv
-source venv/bin/activate
-
-# Windows
-python -m venv venv
-venv\Scripts\activate
-`
-
-### 3. Install Dependencies
-
-`ash
-pip install -r requirements.txt
-`
-
-### 4. Konfigurasi Environment Variables
-
-Salin file contoh lalu isi dengan kredensial Anda:
-
-`ash
-cp .env.example .env
-`
-
-Edit file .env:
-
-`env
-# Flask
-SECRET_KEY=ganti_dengan_random_string_yang_sangat_panjang_dan_aman
-FLASK_DEBUG=False
-
-# Database MySQL
-DB_USER=root
-DB_PASSWORD=password_database_anda
-DB_HOST=localhost
-DB_PORT=3306
-DB_NAME=prodisync_db
-`
-
-> **Penting:** Generate `SECRET_KEY` yang kuat dengan:
-> `ash
-> python -c "import secrets; print(secrets.token_hex(32))"
-> `
-
-### 5. Buat Database MySQL
-
-`sql
-CREATE DATABASE prodisync_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-`
-
-### 6. Jalankan Migrasi Database
-
-`ash
-# Jika folder migrations/ sudah ada di repo:
-flask db upgrade
-
-# Fresh setup:
-flask db init
-flask db migrate -m "Initial migration"
-flask db upgrade
-`
-
-### 7. Seed Data Awal
-
-`ash
-flask seed-db          # User default & tahun ajaran
-flask seed-matakuliah  # Katalog mata kuliah RKS
-`
-
-**Akun default setelah seed:**
-
-| Username | Password   | Role    |
-|----------|------------|---------|
-| `idris`  | `idris123` | Dosen   |
-| `kps`    | `kps123`   | Kaprodi |
-
-> **Wajib ganti password** akun default setelah pertama login!
-
-### 8. Jalankan Aplikasi
-
-`ash
-flask run
-`
-
-Aplikasi berjalan di: **http://localhost:5000**
-
----
-
-## Deployment Produksi (Gunicorn + Nginx)
-
-### Install & Jalankan Gunicorn
-
-`ash
-pip install gunicorn
-gunicorn -w 4 -b 0.0.0.0:8000 "app:create_app()"
-`
-
-### Konfigurasi Nginx
-
-`
-ginx
-server {
-    listen 80;
-    server_name yourdomain.com;
-
-    location / {
-        proxy_pass http://127.0.0.1:8000;
-        proxy_set_header Host \System.Management.Automation.Internal.Host.InternalHost;
-        proxy_set_header X-Real-IP \;
-        proxy_set_header X-Forwarded-For \;
-        proxy_set_header X-Forwarded-Proto \;
-    }
-
-    location /static {
-        alias /path/to/prodisync/static;
-        expires 30d;
-    }
-
-    location /storage {
-        alias /path/to/prodisync/storage;
-    }
-}
-`
-
-### Systemd Service (Linux)
-
-Buat file `/etc/systemd/system/prodisync.service`:
-
-`ini
-[Unit]
-Description=ProdiSync Flask App
-After=network.target
-
-[Service]
-User=www-data
-Group=www-data
-WorkingDirectory=/path/to/prodisync
-Environment="PATH=/path/to/prodisync/venv/bin"
-ExecStart=/path/to/prodisync/venv/bin/gunicorn -w 4 -b 127.0.0.1:8000 "app:create_app()"
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-`
-
-`ash
-sudo systemctl daemon-reload
-sudo systemctl enable prodisync
-sudo systemctl start prodisync
-sudo systemctl status prodisync
-`
-
----
-
-## 🐳 Deployment dengan Docker (Production Ready)
-
-Setup ini menggunakan **3 container** yang dikelola Docker Compose + **Host Nginx**:
-
-| Container / Server | Peran |
-|--------------------|-------|
-| `Host Nginx` | Master Reverse Proxy di OS Ubuntu Server (Port 80/443) |
-| `prodisync_nginx` | Docker Nginx Web Server (Port `127.0.0.1:8080:80`) |
-| `prodisync_app` | Flask + Gunicorn WSGI Server |
-| `prodisync_db` | Database MySQL 8.0 |
+- **Backend Framework**: Python 3.10+ & Flask 3.0
+- **Database & ORM**: MySQL 8.0 + SQLAlchemy (via PyMySQL)
+- **Database Migration**: Flask-Migrate (Alembic)
+- **Password Hashing**: Argon2 (`argon2-cffi`)
+- **PDF Engine**: `xhtml2pdf`
+- **Template Engine**: Jinja2 HTML5 + CSS3 (Slate Dark Theme & Responsive UI)
+- **WSGI Production Server**: Gunicorn
 
 ```
-Browser (Port 80)
-   │
-   ├─► http://IP/ ──────────────► Redirect (301) ke https://if.polibatam.ac.id/rekayasa-keamanan-siber/
-   └─► http://IP/prodisync/ ────► Host Nginx ──► Docker Nginx (:8080) ──► Flask App (:8000) ──► MySQL (:3306)
-```
-
-### 1. Prasyarat
-
-- Ubuntu Server 22.04 / 24.04 LTS
-- Docker Engine + Docker Compose Plugin
-- Host Nginx (`sudo apt install nginx`)
-
-### 2. Clone Repository ke Server
-
-```bash
-cd /opt
-sudo git clone https://github.com/idris25muhammad/prodisync.git
-sudo chown -R $USER:$USER /opt/prodisync
-cd /opt/prodisync
-```
-
-### 3. Setup File `.env`
-
-```bash
-cp .env.example .env
-nano .env
-```
-
-Isi `.env` untuk production:
-
-```env
-SECRET_KEY=isi_dengan_random_string_panjang
-FLASK_DEBUG=False
-
-DB_USER=idris
-DB_PASSWORD=password_kuat_anda
-DB_HOST=db
-DB_PORT=3306
-DB_NAME=prodisync_db
-```
-
-> **Penting:** `DB_HOST` wajib diisi `db` (bukan `localhost`) agar container Flask terhubung ke container MySQL.
-
-### 4. Build & Jalankan Container Docker
-
-```bash
-docker compose up --build -d
-```
-
-*Secara otomatis, Docker akan menjalankan `flask db upgrade` (Flask-Migrate) dan `flask seed-db` + `flask seed-matakuliah` saat pertama kali dinyalakan.*
-
----
-
-## 🌐 Konfigurasi Host Nginx Server (`/prodisync` Routing)
-
-Di Ubuntu Server, buat file konfigurasi Master Reverse Proxy:
-
-```bash
-sudo nano /etc/nginx/sites-available/prodisync
-```
-
-Isi file konfigurasi:
-
-```nginx
-server {
-    listen 80;
-    server_name _;
-
-    client_max_body_size 20M;
-
-    # 1. Redirect root (/) ke Web Utama RKS Polibatam
-    location = / {
-        return 301 https://if.polibatam.ac.id/rekayasa-keamanan-siber/;
-    }
-
-    # 2. Reverse Proxy ke Aplikasi ProdiSync Docker (/prodisync/)
-    location /prodisync/ {
-        proxy_pass http://127.0.0.1:8080/;
-
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-
-        proxy_http_version 1.1;
-        proxy_read_timeout 120s;
-        proxy_send_timeout 120s;
-    }
-}
-```
-
-Aktifkan konfigurasi dan reload Nginx Host:
-
-```bash
-sudo ln -s /etc/nginx/sites-available/prodisync /etc/nginx/sites-enabled/
-sudo rm -f /etc/nginx/sites-enabled/default
-sudo nginx -t
-sudo systemctl reload nginx
+project_root/
+├── app.py                  # Application Factory (`create_app()`) & CLI Seed Commands
+├── config.py               # Konfigurasi Environment (Development, Production, Testing)
+├── extensions.py           # Inisialisasi ekstensi Flask (db, login_manager, migrate)
+├── requirements.txt        # Dependensi pustaka Python
+├── .env.example            # Template variabel lingkungan
+├── Dockerfile              # Dockerfile untuk image aplikasi Flask
+├── docker-compose.yml      # Orkestrasi container Docker (prodisyncdb & prodisyncapp)
+├── migrations/             # Berkas migrasi skema database (Alembic)
+├── models/                 # Model-model SQLAlchemy (User, RPS, Matakuliah, dsb.)
+├── routes/                 # Blueprint Controller (auth, rps, admin, dsb.)
+├── templates/              # Modul Template Jinja2
+├── static/                 # Aset statis (CSS, SVG Icons, JS)
+└── storage/                # Direktori penyimpan unggahan arsip dokumen & media
 ```
 
 ---
 
-### Perintah Maintenance Berguna
+## 📚 Dokumentasi Deployment & Migrasi
 
-```bash
-# Lihat log real-time
-docker compose logs -f app
+Dokumentasi telah dipisahkan berdasarkan kebutuhan operasional dan deployment. Silakan merujuk ke panduan yang sesuai:
 
-# Restart container app
-docker compose restart app
+1. 🐳 **[Panduan Deployment Docker Container (Ubuntu Server)](DOCKER-DEPLOY.md)**  
+   *Panduan resmi deployment produksi menggunakan Docker Compose (`prodisyncdb` & `prodisyncapp`), Host Nginx Reverse Proxy di port 80/443, serta integrasi CI/CD GitHub Actions.*
 
-# Jalankan migrasi database manual
-docker compose exec app flask db upgrade
+2. 🖥️ **[Panduan Manual Deployment (Linux / Ubuntu)](MANUAL-DEPLOY.md)**  
+   *Panduan deployment manual di server Linux tanpa Docker (Virtualenv, Gunicorn, Systemd Service, dan Host Nginx).*
 
-# Stop semua container
-docker compose down
-```
+3. 🗄️ **[Panduan Migrasi Database Flask-Migrate](FLASK-MIGRATE.md)**  
+   *Panduan mekanisme pembaruan skema database di lingkungan produksi: 1. Menambahkan tabel/model baru; 2. Mengubah/mengubah nama kolom pada tabel yang sudah ada.*
 
 ---
 
-## ⚙️ CI/CD Otomatis dengan GitHub Actions
+## 🔐 Akun Akreditasi Default (Development / Seed)
 
-Setiap `git push` ke branch `main` akan otomatis deploy ke server production.
+Setelah menjalankan database seed, akun berikut secara otomatis tersedia:
 
-### Setup (Sekali Saja)
+| Username | Password | Peran (Role) |
+|---|---|---|
+| `idris` | `idris123` | Dosen |
+| `kps` | `kps123` | Kaprodi |
 
-**1. Buat SSH Key di Server**
-
-```bash
-ssh-keygen -t ed25519 -C "github-deploy" -f ~/.ssh/deploy_key -N ""
-cat ~/.ssh/deploy_key.pub >> ~/.ssh/authorized_keys
-
-# Tampilkan private key (copy untuk disimpan di GitHub)
-cat ~/.ssh/deploy_key
-```
-
-**2. Tambah Secrets di GitHub**
-
-Buka: **GitHub repo → Settings → Secrets and variables → Actions → New repository secret**
-
-| Secret Name | Value |
-|-------------|-------|
-| `SSH_HOST` | IP server Ubuntu |
-| `SSH_USER` | Username Ubuntu (misal: `ubuntu`) |
-| `SSH_PRIVATE_KEY` | Isi private key dari langkah 1 |
-
-### Alur Kerja
-
-```
-git push origin main
-       ↓
-GitHub Actions berjalan otomatis
-       ↓
-SSH ke server → git pull → docker build → flask db upgrade
-       ↓
-Aplikasi production terupdate! 🎉
-```
-
-Pantau status deploy di tab **Actions** pada GitHub repository.
+> ⚠️ **Penting:** Selalu ubah password default saat melakukan deployment ke lingkungan produksi!
 
 ---
 
-## Struktur Direktori
+## 🏢 Pengembang
 
-```
-prodisync/
-├── app.py                  # Application factory & CLI commands
-├── config.py               # Konfigurasi aplikasi
-├── extensions.py           # Inisialisasi ekstensi Flask
-├── requirements.txt        # Daftar dependensi Python
-├── .env.example            # Template environment variables
-├── Dockerfile              # Docker image untuk Flask app
-├── docker-compose.yml      # Orkestrasi 3 container
-├── .dockerignore           # Exclude files dari Docker build
-├── nginx/
-│   └── nginx.conf          # Konfigurasi Nginx reverse proxy
-├── .github/
-│   └── workflows/
-│       └── deploy.yml      # GitHub Actions CI/CD workflow
-├── migrations/             # File migrasi database (Alembic)
-├── models/                 # SQLAlchemy Models
-├── routes/                 # Flask Blueprints (Controllers)
-├── templates/              # Jinja2 HTML Templates
-├── static/                 # CSS, JS, Gambar
-└── storage/                # File upload (dokumen, dll)
-```
-
----
-
-## CLI Commands
-
-| Perintah | Fungsi |
-|---|---|
-| `flask init-db` | Membuat semua tabel database |
-| `flask seed-db` | Seed data user default & tahun ajaran |
-| `flask seed-matakuliah` | Seed katalog mata kuliah RKS |
-| `flask db upgrade` | Menerapkan migrasi database terbaru |
-| `flask db migrate -m "..."` | Membuat file migrasi baru |
-
----
-
-## Peran Pengguna
-
-| Role | Akses |
-|---|---|
-| **Dosen** | Membuat, mengedit, dan melihat RPS milik sendiri |
-| **Kaprodi** | Akses penuh: manajemen user, kurikulum, pengumuman, semua RPS |
-
----
-
-## Catatan Produksi
-
-- Pastikan `FLASK_DEBUG=False` di environment produksi
-- Gunakan HTTPS dengan SSL/TLS (disarankan Let's Encrypt)
-- Backup database MySQL secara berkala
-- File `.env` **jangan di-commit ke Git**
-- Pastikan direktori `storage/` memiliki izin tulis:
-  `ash
-  chmod -R 755 storage/
-  chown -R www-data:www-data storage/
-  `
-
----
-
-## Dikembangkan oleh
-
-**IDLabs** — Program Studi Rekayasa Keamanan Siber, Politeknik Negeri Batam
+**IDLabs** — Program Studi Rekayasa Keamanan Siber, Politeknik Negeri Batam.

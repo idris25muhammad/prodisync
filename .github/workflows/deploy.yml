@@ -24,9 +24,9 @@ jobs:
             git pull origin main
 
             echo "🐳 Rebuild & restart container app..."
-            docker compose up --build -d app
+            docker compose up --build -d prodisyncapp
 
             echo "🗄️ Jalankan migrasi database..."
-            docker compose exec -T app flask db upgrade
+            docker compose exec -T prodisyncapp flask db upgrade
 
             echo "✅ Deploy selesai!"
