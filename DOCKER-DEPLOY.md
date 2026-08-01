@@ -6,7 +6,7 @@ Dokumen ini menjelaskan tata cara deployment aplikasi **ProdiSync** di server **
 
 ## 🏛️ Arsitektur Deployment
 
-Pada setup ini, container reverse proxy internal telah dihapus. Host Nginx pada OS Ubuntu bertindak langsung sebagai Master Reverse Proxy yang meneruskan trafik Web ke container aplikasi Flask (`prodisyncapp`).
+ProdiSync menggunakan **Host Nginx** pada OS Ubuntu Server sebagai Master Reverse Proxy yang meneruskan trafik Web (Port 80 / 443) ke container aplikasi Flask (`prodisyncapp`).
 
 ```
                               [ Browser Pengguna ]
@@ -38,10 +38,10 @@ Pada setup ini, container reverse proxy internal telah dihapus. Host Nginx pada 
 
 ---
 
-## 📋 Prasyarat Server
+## 📋 Prasyarat Server & Instalasi Nginx
 
 1. **Ubuntu Server 22.04 LTS / 24.04 LTS**.
-2. **Docker Engine & Docker Compose Plugin** terinstall:
+2. **Instalasi Docker Engine & Docker Compose Plugin**:
    ```bash
    sudo apt update
    sudo apt install -y ca-certificates curl gnupg
@@ -49,9 +49,20 @@ Pada setup ini, container reverse proxy internal telah dihapus. Host Nginx pada 
    docker --version
    docker compose version
    ```
-3. **Host Nginx Web Server**:
+3. **Instalasi & Pengaktifan Host Nginx Web Server**:
    ```bash
+   # Update repository paket Ubuntu
+   sudo apt update
+
+   # Install paket Nginx Web Server
    sudo apt install -y nginx
+
+   # Aktifkan Nginx agar otomatis berjalan saat server booting
+   sudo systemctl enable nginx
+   sudo systemctl start nginx
+
+   # Cek status service Nginx
+   sudo systemctl status nginx
    ```
 
 ---
