@@ -29,6 +29,11 @@
             document.documentElement.classList.remove('dark');
         }
     </script>
+    {% block scripts %}
+    <script src="...rps-core.js"></script>
+    <script src="...rps-render.js"></script>
+    <script src="...rps-bobot.js"></script>
+    {% endblock %}
 </head>
 
 <body

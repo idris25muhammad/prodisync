@@ -1,51 +1,69 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <title>RPS_{{ data.identitas.kode }}</title>
     <style>
-        /* 1. Pengaturan Default (Portrait untuk awal halaman) */
+        /* Pengaturan halaman cetak (semua portrait, browser print) */
         @page {
             size: a4 portrait;
-            margin: 1.5cm 2cm 2cm 3cm;
+            margin: 1.5cm 2cm 2cm 2cm;
+        }
 
-            @frame footer {
-                -pdf-frame-content: footer_content;
-                bottom: 1.5cm;
-                margin-left: 4cm;
-                margin-right: 3cm;
-                height: 1cm;
+        /* Tombol Print & elemen layar lainnya: disembunyikan saat print */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+
+            .page-break {
+                page-break-before: always;
+            }
+
+            /* Hindari baris tabel/section kepotong di tengah antar halaman */
+            table {
+                page-break-inside: auto;
+            }
+
+            tr {
+                page-break-inside: avoid;
+                page-break-after: auto;
+            }
+
+            thead {
+                display: table-header-group;
             }
         }
 
-        /* 2. Template khusus Landscape (Untuk Bab 5 - 8) */
-        @page landscape_page {
-            size: a4 landscape;
-            margin: 1.5cm 2cm 2cm 3cm;
-
-            @frame footer {
-                -pdf-frame-content: footer_content;
-                bottom: 1.5cm;
-                margin-left: 4cm;
-                margin-right: 3cm;
-                height: 1cm;
-            }
+        .print-bar {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: #1f497d;
+            padding: 10px 16px;
+            text-align: right;
+            margin-bottom: 20px;
         }
 
-        /* 3. Template khusus Portrait (Untuk Bab 9 dst) */
-        @page portrait_page {
-            size: a4 portrait;
-            margin: 1.5cm 2cm 2cm 3cm;
-
-            @frame footer {
-                -pdf-frame-content: footer_content;
-                bottom: 1.5cm;
-                margin-left: 4cm;
-                margin-right: 3cm;
-                height: 1cm;
-            }
+        .print-bar button {
+            background: #ffffff;
+            color: #1f497d;
+            border: none;
+            padding: 8px 18px;
+            font-weight: bold;
+            font-size: 10pt;
+            border-radius: 4px;
+            cursor: pointer;
         }
+
+        .print-bar button:hover {
+            background: #e6e6e6;
+        }
+
+        /* Footer nomor halaman otomatis (pdf:pagenumber) tidak tersedia di
+           print browser biasa. Aktifkan opsi "Headers and footers" di dialog
+           print browser (mis. Chrome) untuk menampilkan nomor halaman & tanggal. */
 
         /* TIPOGRAFI & TABEL UMUM */
         body {
@@ -103,8 +121,8 @@
 
         .table-noborder th,
         .table-noborder td {
-            border: none;
-            padding: 2px;
+            border: none !important;
+            padding: 2px 4px;
         }
 
         .ol-list {
@@ -117,30 +135,24 @@
             text-align: justify;
         }
 
-        .table-noborder th,
-        .table-noborder td {
-            border: none !important;
-            padding: 2px 4px;
-        }
-
-        /* pengaturan tabel mingguan */
+        /* pengaturan tabel mingguan (Section VII) - portrait, jadi dikecilkan */
         .rps-table {
             width: 100%;
             table-layout: fixed;
             border-collapse: collapse;
-            font-size: 9pt;
+            font-size: 7pt;
         }
 
         .rps-table th,
         .rps-table td {
             border: 1px solid #666;
-            padding: 6px 5px;
+            padding: 4px 3px;
             vertical-align: top;
             word-wrap: break-word;
             overflow-wrap: break-word;
             word-break: break-word;
             white-space: normal;
-            line-height: 1.3;
+            line-height: 1.25;
         }
 
         .rps-table th {
@@ -156,37 +168,33 @@
         }
 
         .rps-table .col-minggu {
-            width: 5%;
+            width: 6%;
             font-weight: bold;
         }
 
         .rps-table .col-tp {
-            width: 10%;
+            width: 8%;
         }
 
-        .rps-table .col-kemampuan {
-            width: 14%;
+        .rps-table .col-subject {
+            width: 30%;
             text-align: justify;
         }
 
-        .rps-table .col-bahan {
-            width: 17%;
-        }
-
-        .rps-table .col-subbahan {
-            width: 19%;
-        }
-
         .rps-table .col-modalitas {
-            width: 15%;
+            width: 16%;
         }
 
         .rps-table .col-waktu {
-            width: 10%;
+            width: 12%;
         }
 
-        .rps-table .col-pengalaman {
-            width: 10%;
+        .rps-table .col-assessment {
+            width: 14%;
+        }
+
+        .rps-table .col-resource {
+            width: 14%;
         }
 
         .cell-wrap {
@@ -197,7 +205,7 @@
         }
 
         .table-50 {
-            width: 50% !important;
+            width: 65% !important;
             margin-left: auto !important;
             margin-right: auto !important;
         }
@@ -235,23 +243,84 @@
             width: 58% !important;
             font-weight: normal !important;
         }
+
+        /* Section IV/V - SO-PI & CLO tables */
+        .so-pi-table th,
+        .so-pi-table td {
+            font-size: 9pt;
+        }
+
+        .so-pi-table .col-code {
+            width: 8%;
+            text-align: center;
+        }
+
+        .so-pi-table .col-desc {
+            text-align: justify;
+        }
+
+        .so-pi-table .col-level {
+            width: 8%;
+            text-align: center;
+        }
+
+        /* Section IX - Assessment Rubric (proficiency 1-5 checkmark grid) */
+        .rubric-table th,
+        .rubric-table td {
+            font-size: 8.5pt;
+            text-align: center;
+        }
+
+        .rubric-table .col-clo {
+            width: 34%;
+            text-align: justify;
+        }
+
+        .rubric-table .lvl-mark {
+            font-weight: bold;
+        }
+
+        /* Section X - Student Outcomes Assessment Plan grid */
+        .matrix-table {
+            font-size: 7.5pt;
+        }
+
+        .matrix-table th,
+        .matrix-table td {
+            border: 1px solid #666;
+            padding: 3px 2px;
+            text-align: center;
+        }
+
+        .matrix-table .col-sopi {
+            width: 10%;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        .matrix-table th.stage-header {
+            background: #1f497d;
+            color: #fff;
+        }
     </style>
 </head>
 
 <body>
 
-    <div id="footer_content" style="text-align: right; font-size: 8pt; color: #666;">
-        Halaman <pdf:pagenumber> dari <pdf:pagecount>
+    <div class="print-bar no-print">
+        <button onclick="window.print()">🖨️ Print / Simpan sebagai PDF</button>
     </div>
 
     <table style="width: 100%; border-bottom: 1.5px solid #000000; margin-bottom: 22px; border-collapse: collapse;">
         <tr>
             <td style="width: 22%; border: none; vertical-align: middle; padding-bottom: 8px;">
-                <img src="static/images/logo_polibatam.webp" style="width: 85px; height: auto;">
+                <img src="{{ url_for('static', filename='images/logo_polibatam.webp') }}" width="85" height="auto">
             </td>
-            <td style="width: 78%; border: none; vertical-align: middle; text-align: left; padding-bottom: 8px; padding-left: 10px;">
-                <div style="font-size: 11pt; font-weight: bold; line-height: 1.15; color: #000000; margin: 0; padding: 0;">
-                    No.FO.6.1.2-V7 Format Rencana Pembelajaran Semester (RPS)<br>
+            <td
+                style="width: 78%; border: none; vertical-align: middle; text-align: left; padding-bottom: 8px; padding-left: 10px;">
+                <div
+                    style="font-size: 11pt; font-weight: bold; line-height: 1.15; color: #000000; margin: 0; padding: 0;">
+                    No.FO.6.1.7-V1 Semester Lesson Plan<br>
                     07 Agustus 2023
                 </div>
             </td>
@@ -260,22 +329,22 @@
 
     <table class="table-identitas">
         <tr>
-            <td class="col-label">Program Studi</td>
+            <td class="col-label">Study Program</td>
             <td class="col-colon">:</td>
-            <td class="col-val">Rekayasa Keamanan Siber</td>
+            <td class="col-val">Cybersecurity Engineering (Rekayasa Keamanan Siber)</td>
         </tr>
         <tr>
-            <td class="col-label">Nama Mata Kuliah</td>
-            <td class="col-colon">:</td>
-            <td class="col-val">{{ data.identitas.matkul }}</td>
-        </tr>
-        <tr>
-            <td class="col-label">Kode Mata Kuliah</td>
+            <td class="col-label">Course Code</td>
             <td class="col-colon">:</td>
             <td class="col-val">{{ data.identitas.kode }}</td>
         </tr>
         <tr>
-            <td class="col-label">SKS</td>
+            <td class="col-label">Course Title</td>
+            <td class="col-colon">:</td>
+            <td class="col-val font-bold">{{ data.identitas.matkul }}</td>
+        </tr>
+        <tr>
+            <td class="col-label">Credits</td>
             <td class="col-colon">:</td>
             <td class="col-val">{{ data.identitas.sks }}</td>
         </tr>
@@ -285,127 +354,128 @@
             <td class="col-val">{{ data.identitas.semester }}</td>
         </tr>
         <tr>
-            <td class="col-label">Status Mata Kuliah</td>
+            <td class="col-label">Course Status</td>
             <td class="col-colon">:</td>
-            <td class="col-val">{{ data.identitas.status or 'Wajib' }}</td>
+            <td class="col-val">{{ data.identitas.status or 'Compulsory' }}</td>
         </tr>
         <tr>
-            <td class="col-label">Mata Kuliah Prasyarat</td>
+            <td class="col-label">Prerequisite Course</td>
             <td class="col-colon">:</td>
-            <td class="col-val">{{ data.identitas.prasyarat or '-' }}</td>
+            <td class="col-val">{{ data.identitas.prasyarat or '\u2014' }}</td>
         </tr>
         <tr>
-            <td class="col-label">Dosen Pengampu/Pengajar</td>
+            <td class="col-label">Co-requisite</td>
+            <td class="col-colon">:</td>
+            <td class="col-val">{{ data.identitas.co_requisite or '-' }}</td>
+        </tr>
+        <tr>
+            <td class="col-label">Lecturer</td>
             <td class="col-colon">:</td>
             <td class="col-val">{{ data.identitas.dosen }}</td>
         </tr>
         <tr>
-            <td class="col-label">Email/No. Hp</td>
+            <td class="col-label">Email</td>
             <td class="col-colon">:</td>
             <td class="col-val">{{ data.identitas.email }}</td>
         </tr>
     </table>
 
-    <div style="font-weight: bold; margin-bottom: 10px;">
-        I.<span style="display: inline-block; width: 30px;"></span>DEFINISI ISTILAH
-    </div>
-
+    <div class="section-title">I. TERM DEFINITION</div>
     <table class="table-noborder" style="width: 92%; margin-left: 8%; margin-bottom: 20px;">
         <tr>
-            <td style="width: 25%; font-weight: bold;">CPL</td>
+            <td style="width: 25%; font-weight: bold;">Student Outcomes (SO)</td>
             <td style="width: 3%;">:</td>
-            <td style="text-align: justify;">Capaian Pembelajaran Lulusan</td>
+            <td style="text-align: justify;">The specified knowledge, skills, abilities or attitudes that students
+                are expected to attain by the end of a learning experience or program of study</td>
         </tr>
         <tr>
-            <td style="font-weight: bold;">SKS</td>
+            <td style="font-weight: bold;">Performance Indicator (PI)</td>
             <td>:</td>
-            <td style="text-align: justify;">Sistem Kredit Semester</td>
+            <td style="text-align: justify;">Concrete measurable performances students must meet as indicators of
+                achievement</td>
         </tr>
         <tr>
-            <td style="font-weight: bold;">PB</td>
+            <td style="font-weight: bold;">Course Learning Outcomes (CLOs)</td>
             <td>:</td>
-            <td style="text-align: justify;">Proses Belajar</td>
-        </tr>
-        <tr>
-            <td style="font-weight: bold;">PT</td>
-            <td>:</td>
-            <td style="text-align: justify;">Penugasan Terstruktur</td>
-        </tr>
-        <tr>
-            <td style="font-weight: bold;">BM</td>
-            <td>:</td>
-            <td style="text-align: justify;">Belajar Mandiri</td>
-        </tr>
-        <tr>
-            <td style="font-weight: bold;">Modalitas Pembelajaran</td>
-            <td>:</td>
-            <td style="text-align: justify;">Cara belajar yang dimiliki setiap mahasiswa didalam kelas atau bisa juga
-                disebut tipe belajar</td>
-        </tr>
-        <tr>
-            <td style="font-weight: bold;">Metode Pembelajaran</td>
-            <td>:</td>
-            <td style="text-align: justify;">Metode Pembelajaran dapat berupa diskusi kelompok, simulasi, studi kasus,
-                Pembelajaran kolaboratif, Pembelajaran kooperatif, Pembelajaran berbasis proyek, Pembelajaran berbasis
-                masalah, atau metode Pembelajaran lain, yang dapat secara efektif memfasilitasi pemenuhan capaian
-                pembelajaran lulusan</td>
-        </tr>
-        <tr>
-            <td style="font-weight: bold;">Bentuk Pembelajaran</td>
-            <td>:</td>
-            <td style="text-align: justify;">Bentuk yang mewadahi metode pembelajaran yang dapat berupa kuliah, responsi
-                dan tutorial, seminar, praktikum, praktik studio, praktik bengkel, praktik lapangan, praktik kerja,
-                penelitian, perancangan, atau pengembangan, pelatihan militer, pertukaran pelajar, magang, wirausaha,
-                dan/atau bentuk lain pengabdian kepada masyarakat.</td>
-        </tr>
-        <tr>
-            <td style="font-weight: bold;">Strategi Pembelajaran</td>
-            <td>:</td>
-            <td style="text-align: justify;">Cara yang digunakan untuk menyampaikan metode pembelajaran dalam suatu
-                lingkungan kegiatan pembelajaran</td>
-        </tr>
-        <tr>
-            <td style="font-weight: bold;">SN Dikti</td>
-            <td>:</td>
-            <td style="text-align: justify;">Standar Nasional Pendidikan Tinggi</td>
+            <td style="text-align: justify;">The specific and measurable statements that define the knowledge,
+                skills, and attitudes learners will demonstrate by the completion of a course</td>
         </tr>
     </table>
 
-
-
-    <div class="section-title">II. DESKRIPSI MATA KULIAH</div>
+    <div class="section-title">II. COURSE DESCRIPTION</div>
     <div class="paragraf">{{ data.deskripsi | replace('\n', '<br>') | safe }}</div>
 
-    <div class="section-title">III. TUJUAN PEMBELAJARAN (TP)</div>
-    <div class="paragraf">Tujuan pembelajaran dari matakuliah ini terdiri dari {{ data.tujuan_peta.tp_list | length }}
-        poin utama yaitu:</div>
-    <table>
+    <div class="section-title">III. COURSE GOAL</div>
+    <div class="paragraf">Upon completion of this course, students are expected to:</div>
+    <ol class="ol-list">
+        {% for clo in data.clo_list %}
+        <li>{{ clo.description }}</li>
+        {% endfor %}
+    </ol>
+
+    <div class="page-break"></div>
+    <div class="section-title">IV. STUDENT OUTCOMES (SOs) AND PERFORMANCE INDICATOR (PIs)</div>
+    <table class="so-pi-table">
         <thead>
             <tr>
-                <th width="8%" class="bg-gray text-center">No.</th>
-                <th width="72%" class="bg-gray text-center">Tujuan Pembelajaran Mata Kuliah</th>
-                <th width="20%" class="bg-gray text-center">Pemetaan SO-PI</th>
+                <th class="bg-gray col-code">Code</th>
+                <th class="bg-gray col-desc">Student Outcomes (SO)</th>
+                <th class="bg-gray col-code">Code</th>
+                <th class="bg-gray col-desc">Performance Indicators (PIs)</th>
+                <th class="bg-gray col-level">Level<sup>(1)</sup></th>
             </tr>
         </thead>
         <tbody>
-            {% for tp in data.tujuan_peta.tp_list %}
+            {% for row in data.so_pi_list %}
             <tr>
-                <td class="text-center">{{ tp.no }}</td>
-                <td class="text-justify">{{ tp.teks }}</td>
-                <td class="text-center">{{ tp.sopi }}</td>
+                <td class="col-code">{{ row.so_code }}</td>
+                <td class="col-desc">{{ row.so_description }}</td>
+                <td class="col-code">{{ row.pi_code }}</td>
+                <td class="col-desc"><em>{{ row.pi_description }}</em></td>
+                <td class="col-level">{{ row.level }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div style="font-size: 8pt; margin-top: -6px;">
+        <sup>(1)</sup>Proficiency level, for example:
+        <ol class="ol-list" style="margin-top: 4px;">
+            {% for lvl in data.proficiency_levels %}
+            <li>Level-{{ lvl.level }} : {{ lvl.label }}</li>
+            {% endfor %}
+        </ol>
+    </div>
+
+    <div class="section-title">V. COURSE LEARNING OUTCOMES (CLOs)</div>
+    <div class="paragraf">Upon completion of this course, the student will be able to:</div>
+    <table class="so-pi-table">
+        <thead>
+            <tr>
+                <th class="bg-gray col-code">Code</th>
+                <th class="bg-gray col-desc">Course Learning Outcomes</th>
+                <th class="bg-gray col-level">Related to<br>SO-PI</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for clo in data.clo_list %}
+            <tr>
+                <td class="col-code">{{ clo.code }}</td>
+                <td class="col-desc">{{ clo.description }}</td>
+                <td class="col-level">{{ clo.so_code }}-{{ clo.related_sopi }}</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 
-    <pdf:nextpage />
-    <div class="section-title">IV. PETA KOMPETENSI</div>
+    <div class="page-break"></div>
+    <div class="section-title">VI. COMPETENCY MAP</div>
 
     <div style="border: 2px solid #000000; padding: 18px 14px; background-color: #FCFCFC; border-radius: 6px;">
         <div class="text-center font-bold"
             style="margin-bottom: 16px; font-size: 11pt; color: #000000; letter-spacing: 0.2px;">
-            MATA KULIAH: {{ data.identitas.matkul }}<br>
-            <span style="font-size: 10pt; font-weight: bold; margin-top: 4px; display: inline-block;">TUJUAN PEMBELAJARAN:</span>
+            COURSE: {{ data.identitas.matkul }}<br>
+            <span style="font-size: 10pt; font-weight: bold; margin-top: 4px; display: inline-block;">COURSE LEARNING
+                OUTCOMES:</span>
         </div>
 
         {% for lvl in data.tujuan_peta.peta_levels %}
@@ -424,7 +494,8 @@
                             border-radius: 6px;
                             line-height: 1.45;
                         ">
-                        <strong style="color:#000000;">TP {{ tp.no }} {% if tp.sopi %}<span style="color:#1E40AF; font-weight: bold;">({{ tp.sopi }})</span>{% endif %}:</strong>
+                        <strong style="color:#000000;">CLO-{{ tp.no }} {% if tp.sopi %}<span
+                                style="color:#1E40AF; font-weight: bold;">({{ tp.sopi }})</span>{% endif %}:</strong>
                         <span style="color:#000000;">{{ tp.teks }}</span>
                     </div>
                 </td>
@@ -472,27 +543,25 @@
                 line-height: 1.45;
             ">
                 <strong style="color:#000000;">Entry Behaviour:</strong>
-                Mahasiswa sudah mendapatkan mata kuliah: {{ data.identitas.prasyarat }}
+                Students have completed: {{ data.identitas.prasyarat or '\u2014' }}
             </div>
         </div>
     </div>
 
 
-    <pdf:nexttemplate name="landscape_page" />
-    <pdf:nextpage />
-    <div class="section-title">V. RENCANA PEMBELAJARAN</div>
+    <div class="page-break"></div>
+    <div class="section-title">VII. WEEKLY COURSE PLAN</div>
 
     <table class="rps-table">
         <thead>
             <tr>
-                <th width="5%" class="col-minggu">Mg Ke</th>
-                <th width="10%" class="col-tp">TP</th>
-                <th width="14%" class="col-kemampuan">Kemampuan Akhir Yang Direncanakan</th>
-                <th width="17%" class="col-bahan">Bahan Kajian / Pokok Bahasan</th>
-                <th width="19%" class="col-subbahan">Sub Pokok Bahasan</th>
-                <th width="15%" class="col-modalitas">Modalitas &amp; Metode</th>
-                <th width="10%" class="col-waktu">Waktu</th>
-                <th width="10%" class="col-pengalaman">Pengalaman Belajar</th>
+                <th width="6%" class="col-minggu">Week</th>
+                <th width="8%" class="col-tp">CLO</th>
+                <th width="30%" class="col-subject">Subject</th>
+                <th width="16%" class="col-modalitas">Learning Method</th>
+                <th width="12%" class="col-waktu">Time</th>
+                <th width="14%" class="col-assessment">Assessment Method</th>
+                <th width="14%" class="col-resource">Learning Resources</th>
             </tr>
         </thead>
         <tbody>
@@ -504,14 +573,12 @@
                 <td class="col-tp">
                     <div class="cell-wrap">{{ m.tp_ref }}</div>
                 </td>
-                <td class="col-kemampuan">
-                    <div class="cell-wrap">{{ m.kemampuan }}</div>
-                </td>
-                <td class="col-bahan">
-                    <div class="cell-wrap">{{ m.bahan_kajian | replace('\n', '<br />') | safe }}</div>
-                </td>
-                <td class="col-subbahan">
-                    <div class="cell-wrap">{{ m.sub_bahan | replace('\n', '<br />') | safe }}</div>
+                <td class="col-subject">
+                    <div class="cell-wrap">
+                        {% if m.kemampuan %}<strong>{{ m.kemampuan }}</strong><br>{% endif %}
+                        {{ m.bahan_kajian | replace('\n', '<br />') | safe }}{% if m.sub_bahan %}; {{ m.sub_bahan |
+                        replace('\n', '<br />') | safe }}{% endif %}
+                    </div>
                 </td>
                 <td class="col-modalitas">
                     <div class="cell-wrap">{{ m.modalitas | replace('\n', '<br />') | safe }}</div>
@@ -519,21 +586,37 @@
                 <td class="col-waktu">
                     <div class="cell-wrap">{{ m.waktu | replace('\n', '<br />') | safe }}</div>
                 </td>
-                <td class="col-pengalaman">
-                    <div class="cell-wrap">{{ m.pengalaman | replace('\n', '<br />') | safe }}</div>
+                <td class="col-assessment">
+                    <div class="cell-wrap">
+                        {% set found = [] %}
+                        {% for r in data.rencana_evaluasi %}
+                        {% if (r.minggu | string) == (m.minggu | string) %}
+                        {% if found.append(r.metode) %}{% endif %}
+                        {% endif %}
+                        {% endfor %}
+                        {{ found | unique | join(', ') }}
+                    </div>
+                </td>
+                <td class="col-resource">
+                    <div class="cell-wrap">
+                        {% if data.pustaka %}Ref. 1&ndash;{{ data.pustaka | length }};{% endif %} e-learning
+                    </div>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 
-    <div class="section-title">VI. SARANA, PRASARANA DAN PERALATAN PENUNJANG PRAKTIK/PRAKTIKUM</div>
-    <table class="rps-table">
+
+    <div class="page-break"></div>
+    <div class="section-title">VIII. FACILITIES, INFRASTRUCTURE AND EQUIPMENT TO SUPPORT THE PRACTICE/PRACTICUM</div>
+    <table>
         <thead>
             <tr>
                 <th width="5%" class="bg-gray text-center">No.</th>
-                <th width="80%" class="bg-gray text-center">Nama Sarana/Prasarana/Perangkat</th>
-                <th width="15%" class="bg-gray text-center">Jumlah (Unit)</th>
+                <th width="80%" class="bg-gray text-center">Name of Facilities/Infrastructure/Supporting Equipment
+                </th>
+                <th width="15%" class="bg-gray text-center">Quantity (Unit)</th>
             </tr>
         </thead>
         <tbody>
@@ -547,82 +630,73 @@
         </tbody>
     </table>
 
-    <div class="section-title">VII. METODE EVALUASI</div>
-    <div class="paragraf">
-        {{ data.metode_evaluasi | replace('\n', '<br>') | safe }}
-    </div>
-
-    <div class="section-title">VIII. RENCANA EVALUASI</div>
-
-    <table class="rps-table">
+    <div class="section-title">IX. ASSESSMENT RUBRIC</div>
+    <table class="rubric-table">
         <thead>
             <tr>
-                <th style="width: 35%; vertical-align: middle;">Minggu</th>
-                <th style="width: 4%;">1</th>
-                <th style="width: 4%;">2</th>
-                <th style="width: 4%;">3</th>
-                <th style="width: 4%;">4</th>
-                <th style="width: 4%;">5</th>
-                <th style="width: 4%;">6</th>
-                <th style="width: 4%;">7</th>
-                <th style="width: 5%; background-color: #1f497d;">ATS</th>
-                <th style="width: 4%;">8</th>
-                <th style="width: 4%;">9</th>
-                <th style="width: 4%;">10</th>
-                <th style="width: 4%;">11</th>
-                <th style="width: 4%;">12</th>
-                <th style="width: 4%;">13</th>
-                <th style="width: 4%;">14</th>
-                <th style="width: 5%; background-color: #1f497d;">AAS</th>
+                <th rowspan="2" style="width: 8%;" class="bg-gray">CLO</th>
+                <th rowspan="2" class="bg-gray col-clo">Performance Indicator</th>
+                <th colspan="{{ data.proficiency_levels | length }}" class="bg-gray">Proficiency Level<sup>(1)</sup>
+                </th>
             </tr>
             <tr>
-                <th>Tujuan Pembelajaran</th>
-                <th colspan="16">Metode Asesmen</th>
+                {% for lvl in data.proficiency_levels %}
+                <th class="bg-gray" style="width: 8%;">{{ lvl.level }}</th>
+                {% endfor %}
             </tr>
         </thead>
         <tbody>
-            {% for tp in data.tujuan_peta.tp_list %}
+            {% for row in data.rubric_rows %}
             <tr>
-                <td style="text-align: justify; padding: 4px;"><strong>TP{{ tp.no }} {% if tp.sopi %}<span style="color:#1E40AF;">[{{ tp.sopi }}]</span>{% endif %}</strong>: {{ tp.teks }}</td>
-
-                {% for col in ['1', '2', '3', '4', '5', '6', '7', 'ATS', '8', '9', '10', '11', '12', '13', '14', 'AAS']
-                %}
-
-                {% set cell_bg = '#b4c6e7' if col in ['ATS', 'AAS'] else 'transparent' %}
-
-                <td style="background-color: {{ cell_bg }}; text-align: center; vertical-align: top; padding: 2px;">
-                    {% for r in data.rencana_evaluasi %}
-
-                    {% set tp_terpilih = r.tp.replace(' ', '').split(',') %}
-
-                    {% if ('TP' ~ tp.no) in tp_terpilih and (r.minggu | string | upper) == (col | string | upper) %}
-
-                    {{ r.metode | replace(', ', '<br>') | replace(',', '<br>') | safe }}
-                    {% if r.asesmen %}
-                    <br>{{ r.asesmen | replace(', ', '<br>') | replace(',', '<br>') | safe }}
-                    {% endif %}
-
-                    {% endif %}
-                    {% endfor %}
-                </td>
+                {% if row.show_clo %}
+                <td rowspan="{{ row.rowspan }}" style="vertical-align: middle;">{{ row.clo_code }}</td>
+                {% endif %}
+                <td class="col-clo">{{ row.pi_code }} &mdash; {{ row.pi_description }}</td>
+                {% for lvl in data.proficiency_levels %}
+                <td class="lvl-mark">{{ '\u2713' if row.level == lvl.level else '' }}</td>
                 {% endfor %}
             </tr>
             {% endfor %}
         </tbody>
     </table>
+    <div style="font-size: 8pt; margin-top: -6px;">
+        <sup>(1)</sup> Can be 4 or 5 levels with customized criteria.
+    </div>
 
+    <div class="section-title">X. STUDENT OUTCOMES ASSESSMENT PLAN</div>
+    <table class="matrix-table">
+        <thead>
+            <tr>
+                <th class="col-sopi">SO-PI</th>
+                {% for w in data.so_pi_matrix.weeks %}
+                <th>{{ w }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in data.so_pi_matrix.rows %}
+            <tr>
+                <td class="col-sopi">{{ row.so_code }} ({{ row.pi_code }})</td>
+                {% for w in data.so_pi_matrix.weeks %}
+                <td>{{ row.cells[w] }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div style="font-size: 8pt; margin-top: -6px;">
+        Notes: T = Tugas, P = Praktikum, K = Kuis, ATS = Asesmen Tengah Semester, AAS = Asesmen Akhir Semester,
+        PP = Presentasi Progres/Proyek.
+    </div>
 
-    <pdf:nexttemplate name="portrait_page" />
-    <pdf:nextpage />
-    <div class="section-title">IX. KRITERIA PENILAIAN</div>
-    <div class="paragraf">Persentase bobot penilaian yang digunakan adalah sebagai berikut:</div>
-
+    <div class="section-title">XI. ASSIGNMENT DESCRIPTION</div>
+    <div class="paragraf">The final course grade is composed of:</div>
     <table style="width: 80%; margin-left: auto; margin-right: auto;">
         <thead>
             <tr>
-                <th width="35%" class="bg-gray text-center">Komponen</th>
-                <th width="50%" class="bg-gray text-center">Sub-Komponen</th>
-                <th width="15%" class="bg-gray text-center">Persentase</th>
+                <th width="35%" class="bg-gray text-center">Component</th>
+                <th width="50%" class="bg-gray text-center">Sub-Component</th>
+                <th width="15%" class="bg-gray text-center">Percentage</th>
             </tr>
         </thead>
         <tbody>
@@ -642,54 +716,59 @@
         </tbody>
     </table>
 
-    <div class="paragraf" style="margin-top: 15px;">Hasil pembelajaran akan dinilai dengan menggunakan kriteria sesuai
-        dengan peraturan akademik yang berlaku di Politeknik Negeri Batam, yaitu:</div>
+    <div class="section-title">XII. GRADING SCALE</div>
     <table class="table-50">
         <thead>
             <tr>
-                <th width="50%" class="bg-gray text-center">Nilai Angka</th>
-                <th width="50%" class="bg-gray text-center">Nilai Huruf</th>
+                <th width="34%" class="bg-gray text-center">Category</th>
+                <th width="33%" class="bg-gray text-center">Grading Scale</th>
+                <th width="33%" class="bg-gray text-center">Grade</th>
             </tr>
         </thead>
         <tbody>
             <tr>
-                <td class="text-center">&ge; 85</td>
+                <td rowspan="1" class="text-center">Excellent</td>
+                <td class="text-center">&gt; 85</td>
                 <td class="text-center">A</td>
             </tr>
             <tr>
-                <td class="text-center">80-84</td>
+                <td rowspan="2" class="text-center">Very Good</td>
+                <td class="text-center">80&ndash;84</td>
                 <td class="text-center">A-</td>
             </tr>
             <tr>
-                <td class="text-center">75-79</td>
+                <td class="text-center">75&ndash;79</td>
                 <td class="text-center">B+</td>
             </tr>
             <tr>
-                <td class="text-center">70-74</td>
+                <td rowspan="2" class="text-center">Good</td>
+                <td class="text-center">70&ndash;74</td>
                 <td class="text-center">B</td>
             </tr>
             <tr>
-                <td class="text-center">65-69</td>
+                <td class="text-center">65&ndash;69</td>
                 <td class="text-center">B-</td>
             </tr>
             <tr>
-                <td class="text-center">60-64</td>
+                <td rowspan="2" class="text-center">Fair</td>
+                <td class="text-center">60&ndash;64</td>
                 <td class="text-center">C+</td>
             </tr>
             <tr>
-                <td class="text-center">55-59</td>
+                <td class="text-center">55&ndash;59</td>
                 <td class="text-center">C</td>
             </tr>
             <tr>
-                <td class="text-center">50-54</td>
+                <td rowspan="4" class="text-center">Poor</td>
+                <td class="text-center">50&ndash;54</td>
                 <td class="text-center">C-</td>
             </tr>
             <tr>
-                <td class="text-center">45-49</td>
+                <td class="text-center">45&ndash;49</td>
                 <td class="text-center">D+</td>
             </tr>
             <tr>
-                <td class="text-center">40-44</td>
+                <td class="text-center">40&ndash;44</td>
                 <td class="text-center">D</td>
             </tr>
             <tr>
@@ -699,55 +778,61 @@
         </tbody>
     </table>
 
-    <div class="section-title">X. KESEPAKATAN PELAKSANAAN PERKULIAHAN</div>
+    <div class="section-title">XIII. COURSE POLICIES</div>
     <ol class="ol-list">
         {% for k in data.kesepakatan %}
         <li>{{ k }}</li>
         {% endfor %}
     </ol>
 
-    <div class="section-title" style="margin-top: 20px;">XI. PUSTAKA</div>
+    <div class="section-title" style="margin-top: 20px;">XIV. TEXTBOOKS/SUPPLIES/MATERIALS/EQUIPMENT/TECHNOLOGY OR
+        TECHNICAL REQUIREMENTS</div>
     <ol class="ol-list">
         {% for p in data.pustaka %}
         <li>{{ p }}</li>
         {% endfor %}
     </ol>
 
-    <div class="section-title" style="margin-top: 20px;">XII. INFORMASI TAMBAHAN</div>
+    <div class="section-title" style="margin-top: 20px;">XV. ADDITIONAL INFORMATION</div>
     <div class="paragraf">
-        Pelaksanaan mata kuliah ini menggunakan metode pembelajaran berbasis proyek dengan implementasi framework CDIO
-        yaitu kurikulum berbasis proses pengembangan produk yang menekankan pada pengembangan softskill dan hardskill.
+        Course delivery follows the study-program PBL agreement: students join all scheduled sessions; all
+        submissions go through the e-learning platform by the stated deadlines; academic integrity rules of
+        Politeknik Negeri Batam apply in full.
     </div>
 
     <table class="table-noborder" style="margin-top: 30px; width: 100%;">
         <tr>
-            <td style="width: 15%; font-weight: bold;">Tanggal</td>
+            <td style="width: 15%; font-weight: bold;">Date</td>
             <td style="width: 35%;">: {{ data.pengesahan.tgl_koor or data.tanggal_koor or '' }}</td>
-            <td style="width: 15%; font-weight: bold;">Tanggal</td>
+            <td style="width: 15%; font-weight: bold;">Date</td>
             <td style="width: 35%;">: {{ data.pengesahan.tgl_kaprodi or '' }}</td>
         </tr>
         <tr>
-            <td style="font-weight: bold;">Disusun oleh</td>
-            <td>: {{ data.pengesahan.disusun_oleh }}<br><span style="font-size: 8pt; color: #555;">(Dosen Koordinator)</span></td>
-            <td style="font-weight: bold;">Disetujui oleh</td>
-            <td>: {{ data.pengesahan.disetujui_oleh or 'Kepala Program Studi' }}<br><span style="font-size: 8pt; color: #555;">(Kepala Program Studi)</span></td>
+            <td style="font-weight: bold;">Prepared by</td>
+            <td>: {{ data.pengesahan.disusun_oleh }}<br><span style="font-size: 8pt; color: #555;">(Course
+                    Coordinator)</span></td>
+            <td style="font-weight: bold;">Approved by</td>
+            <td>: {{ data.pengesahan.disetujui_oleh or 'Head of Study Program' }}<br><span
+                    style="font-size: 8pt; color: #555;">(Head of Study Program)</span></td>
         </tr>
         <tr>
             <td style="font-weight: bold; padding-top: 10px;" colspan="2">
-                Tanda Tangan:<br>
+                Sign:<br>
                 <div style="margin-top: 5px;">
                     {% if data.qr_dosen_koor %}
-                    <img src="storage/qr/{{ data.qr_dosen_koor }}" style="width: 98px; height: 98px;">
+                    <img src="{{ url_for('rps.qr_file', filename=data.qr_dosen_koor) }}"
+                        style="width: 98px; height: 98px;">
                     {% else %}
                     <br>..........................................
                     {% endif %}
                 </div>
             </td>
             <td style="font-weight: bold; padding-top: 10px;" colspan="2">
-                Tanda Tangan:<br>
+                Sign:<br>
                 <div style="margin-top: 5px;">
                     {% if data.qr_kaprodi %}
-                    <img src="storage/qr/{{ data.qr_kaprodi }}" style="width: 98px; height: 98px;">
+                    <img src="{{ url_for('rps.qr_file', filename=data.qr_kaprodi) }}"
+                        style="width: 98px; height: 98px;">
                     {% else %}
                     <br>..........................................
                     {% endif %}

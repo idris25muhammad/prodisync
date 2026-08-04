@@ -7,6 +7,8 @@ from utils.decorators import kaprodi_required
 from xhtml2pdf import pisa
 from io import BytesIO
 import os
+import json
+import re
 import time
 from datetime import datetime
 from werkzeug.utils import secure_filename
@@ -359,6 +361,352 @@ def auto_wrap_text(text, max_len=16):
     return '\n'.join(processed_lines)
 
 
+# ── Helper: Load & cache so-pi.json (SO, PI, Proficiency Level master data) ──
+_SO_PI_CACHE = None
+
+def _load_so_pi_data():
+    """
+    Load static/data/so-pi.json sekali lalu cache di memori proses.
+    Return dict:
+      - so_map    : {so_code: so_description}
+      - pi_map    : {pi_code: {'description': ..., 'so_code': ..., 'level': int}}
+      - levels    : {level_int: label}
+      - so_pi_rows: list baris SO-PI urut sesuai JSON (untuk Section IV, semua PI ditampilkan)
+    """
+    global _SO_PI_CACHE
+    if _SO_PI_CACHE is None:
+        path = os.path.join(current_app.root_path, 'static', 'data', 'so-pi.json')
+        so_map, pi_map, levels, so_pi_rows = {}, {}, {}, []
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                raw = json.load(f)
+            for so in raw.get('student_outcome', []):
+                so_map[so['so_code']] = so.get('so_description', '')
+                for pi in so.get('performance_indicator', []):
+                    lvl = pi.get('level', 1)
+                    pi_map[pi['pi_code']] = {
+                        'description': pi.get('pi_description', ''),
+                        'so_code'    : so['so_code'],
+                        'level'      : lvl,
+                    }
+                    so_pi_rows.append({
+                        'so_code'        : so['so_code'],
+                        'so_description' : so.get('so_description', ''),
+                        'pi_code'        : pi['pi_code'],
+                        'pi_description' : pi.get('pi_description', ''),
+                        'level'          : lvl,
+                    })
+            for lvl in raw.get('proficiency_levels', []):
+                levels[lvl['level']] = lvl.get('label', '')
+            for row in so_pi_rows:
+                row['level_label'] = levels.get(row['level'], '')
+        except (FileNotFoundError, json.JSONDecodeError):
+            pass
+        _SO_PI_CACHE = {'so_map': so_map, 'pi_map': pi_map, 'levels': levels, 'so_pi_rows': so_pi_rows}
+    return _SO_PI_CACHE
+
+
+
+# ── Helper: Kode metode asesmen (T/P/K/PP/ATS/AAS) untuk Section X ───────────
+_VALID_ASSESSMENT_CODES = {'T', 'P', 'K', 'PP', 'ATS', 'AAS'}
+
+
+def _split_multi(raw):
+    """Pecah value gabungan koma (mis. "T, P, K" atau "TP1, TP2") jadi list token bersih."""
+    if not raw:
+        return []
+    return [p.strip() for p in str(raw).split(',') if p.strip()]
+
+
+def _normalize_assessment_code(token):
+    """
+    Normalisasi satu token metode ke kode baku (T/P/K/PP/ATS/AAS) sesuai
+    pilihan di UI. Fallback deteksi dari teks deskriptif tetap dipertahankan
+    untuk kompatibilitas data lama yang menyimpan teks penuh (mis. "Tugas").
+    """
+    t = (token or '').strip()
+    if not t:
+        return ''
+    upper = t.upper()
+    if upper in _VALID_ASSESSMENT_CODES:
+        return upper
+    low = t.lower()
+    if 'tengah semester' in low or 'uts' in low or 'mid' in low:
+        return 'ATS'
+    if 'akhir semester' in low or 'uas' in low or 'final' in low:
+        return 'AAS'
+    if 'kuis' in low or 'quiz' in low:
+        return 'K'
+    if 'presentasi' in low or 'progres' in low or 'progress' in low or 'demo' in low:
+        return 'PP'
+    if 'praktikum' in low or 'lab' in low or 'proyek' in low or 'project' in low:
+        return 'P'
+    if 'tugas' in low or 'assignment' in low:
+        return 'T'
+    return upper[:3]
+
+
+def _assessment_codes(metode_text):
+    """
+    Field 'metode' bisa berisi lebih dari satu kode sekaligus, dipisah koma
+    (mis. "T, P, K"). Return list kode baku UNIK, urut sesuai kemunculan.
+    """
+    codes = []
+    for token in _split_multi(metode_text):
+        code = _normalize_assessment_code(token)
+        if code and code not in codes:
+            codes.append(code)
+    return codes
+
+
+# ── Helper: parse kode SO-PI dari field tp_data[].sopi ───────────────────────
+def _parse_sopi_codes(raw):
+    """
+    tp_data[].sopi bisa berisi:
+      - kode gabungan tunggal   : "SO1-1a"
+      - kode gabungan multi     : "SO1-1a, SO2-2b"
+      - kode legacy tanpa prefix SO (data lama): "1a"
+      - variasi spasi di sekitar tanda hubung  : "SO1 - 1a"
+    Return list pi_code MURNI, mis. ['1a', '2b'], sesuai key di ref['pi_map'].
+    """
+    codes = []
+    for part in (raw or '').split(','):
+        part = part.strip()
+        if not part:
+            continue
+        # Kode gabungan "SO1-1a" -> ambil bagian setelah tanda "-" pertama.
+        # PENTING: strip lagi setelah split, karena format "SO1 - 1a" (dengan
+        # spasi di sekitar tanda hubung) akan menyisakan spasi di depan pi_code
+        # (mis. " 1a") kalau tidak di-strip ulang, sehingga tidak match dengan
+        # key di ref['pi_map'] (yang persis "1a") dan baris SO-PI tsb hilang
+        # diam-diam dari Section IV & Section X.
+        pi_code = part.split('-', 1)[1].strip() if '-' in part else part
+        if pi_code and pi_code not in codes:
+            codes.append(pi_code)
+    return codes
+
+
+# ── Helper: ekstrak angka dari string referensi TP/minggu sembarang format ──
+def _extract_ref_number(raw):
+    """
+    Field seperti eval_tp[] / eval_minggu[] adalah free-text, sehingga bisa
+    diisi dengan berbagai format: "1", " 1 ", "TP-1", "CLO-1", "Minggu 5", dsb.
+    Ambil angka pertama yang ditemukan agar pemetaan ke tp_data[].no / minggu
+    tidak gagal hanya karena ada prefix teks atau spasi.
+    Return int atau None kalau tidak ada angka sama sekali.
+    """
+    if raw is None:
+        return None
+    match = re.search(r'\d+', str(raw))
+    return int(match.group()) if match else None
+
+
+def _parse_tp_refs(raw):
+    """
+    Field eval_tp[] bisa berisi satu atau LEBIH referensi TP sekaligus,
+    dipisah koma, mis. "TP1", "TP1, TP2", "1, 2". Return list nomor TP unik
+    (int), sesuai key di tp_by_no.
+    """
+    refs = []
+    for token in _split_multi(raw):
+        n = _extract_ref_number(token)
+        if n is not None and n not in refs:
+            refs.append(n)
+    return refs
+
+
+def _normalize_week_key(raw):
+    """
+    Field minggu bisa berupa angka murni ("1".."14") ATAU label teks untuk
+    masa asesmen tengah/akhir semester ("ATS"/"AAS"). Normalisasi supaya key
+    yang dipakai di header & dict cells konsisten (mis. "01" -> "1",
+    "ats" -> "ATS", "Minggu 5" -> "5").
+    Return string key, atau None kalau tidak ada nilai valid sama sekali.
+    """
+    if raw is None:
+        return None
+    s = str(raw).strip()
+    if not s:
+        return None
+    if s.isdigit():
+        return str(int(s))
+    upper = s.upper()
+    if upper in ('ATS', 'AAS'):
+        return upper
+    n = _extract_ref_number(s)
+    return str(n) if n is not None else upper
+
+
+def _week_sort_key(key):
+    """Urutan kolom Section X: angka naik dulu, lalu ATS, lalu AAS, lalu sisanya."""
+    if str(key).isdigit():
+        return (0, int(key), '')
+    upper = str(key).upper()
+    if upper == 'ATS':
+        return (1, 0, '')
+    if upper == 'AAS':
+        return (2, 0, '')
+    return (3, 0, upper)
+
+
+# ── Helper: Section IV (SO-PI table) & Section V (CLO table) ────────────────
+def _build_so_pi_and_clo(rps):
+    """
+    Section IV & Section X: hanya SO-PI yang benar-benar dipakai di RPS ini
+    (dirujuk lewat tp_data[].sopi). Deskripsi & Level PI diambil dari
+    so-pi.json (levelnya sudah fix per PI di master data, bukan input
+    manual per RPS).
+
+    Section V (CLO): dari rps.tp_data, tiap TP jadi 1 baris CLO.
+      tp_data: [{'no': 1, 'teks': '...', 'sopi': 'SO1-1a'}, ...]
+      'sopi' bisa berisi 1 atau beberapa kode gabungan (comma-separated),
+      di-parse via _parse_sopi_codes() menjadi pi_code murni untuk lookup
+      ke so-pi.json (mis. '1a' -> SO1 / PI 1a).
+    """
+    ref = _load_so_pi_data()
+    tp_list = rps.tp_data or []
+
+    # PI unik yang benar-benar dipakai di RPS ini, urut kemunculan pertama
+    used_pi_codes = []
+    for tp in tp_list:
+        for code in _parse_sopi_codes(tp.get('sopi')):
+            if code not in used_pi_codes:
+                used_pi_codes.append(code)
+
+    # Section IV - hanya baris SO-PI yang dipakai, level dari master so-pi.json
+    so_pi_list = []
+    for pi_code in used_pi_codes:
+        pi_info = ref['pi_map'].get(pi_code)
+        if not pi_info:
+            continue
+        so_pi_list.append({
+            'so_code'        : pi_info['so_code'],
+            'so_description' : ref['so_map'].get(pi_info['so_code'], ''),
+            'pi_code'        : pi_code,
+            'pi_description' : pi_info['description'],
+            'level'          : pi_info['level'],
+            'level_label'    : ref['levels'].get(pi_info['level'], ''),
+        })
+    so_pi_list.sort(key=lambda r: (r['so_code'], r['pi_code']))
+
+    # Section V - CLO list, urut sesuai input dosen
+    # Satu TP bisa merujuk ke lebih dari satu PI, jadi related_sopi/so_code
+    # dsb disimpan sebagai list; field tunggal (so_code, pi_description,
+    # level) diisi dari PI pertama untuk kompatibilitas tampilan lama.
+    # 'pi_details' menyimpan SEMUA PI beserta description & level MASING-
+    # MASING (dipakai Section IX supaya tiap PI dapat baris & centang level
+    # proficiency sendiri, bukan cuma level PI pertama).
+    clo_list = []
+    for i, tp in enumerate(tp_list):
+        pi_codes = _parse_sopi_codes(tp.get('sopi'))
+        pi_infos = [ref['pi_map'][c] for c in pi_codes if c in ref['pi_map']]
+        first = pi_infos[0] if pi_infos else {}
+        clo_list.append({
+            'code'             : f"CLO-{tp.get('no', i + 1)}",
+            'description'      : tp.get('teks', ''),
+            'related_sopi'     : ', '.join(pi_codes),
+            'related_sopi_list': pi_codes,
+            'so_code'          : first.get('so_code', ''),
+            'so_code_list'     : [pi['so_code'] for pi in pi_infos],
+            'pi_description'   : first.get('description', ''),
+            'level'            : first.get('level', 1),
+            'pi_details'       : [
+                {
+                    'pi_code'   : c,
+                    'so_code'   : ref['pi_map'][c]['so_code'],
+                    'description': ref['pi_map'][c]['description'],
+                    'level'     : ref['pi_map'][c]['level'],
+                }
+                for c in pi_codes if c in ref['pi_map']
+            ],
+        })
+
+    proficiency_levels = [
+        {'level': lvl, 'label': label}
+        for lvl, label in sorted(ref['levels'].items())
+    ]
+
+    # Section IX (Assessment Rubric) - 1 baris per PI (bukan per CLO), supaya
+    # CLO yang merujuk 2+ PI dengan level proficiency berbeda tetap tercentang
+    # sesuai levelnya masing-masing, tidak numpuk jadi 1 baris/level.
+    rubric_rows = []
+    for clo in clo_list:
+        details = clo['pi_details'] or [{
+            'pi_code'    : clo.get('related_sopi', ''),
+            'so_code'    : clo.get('so_code', ''),
+            'description': clo.get('pi_description', ''),
+            'level'      : clo.get('level', 1),
+        }]
+        for idx, d in enumerate(details):
+            rubric_rows.append({
+                'clo_code'      : clo['code'],
+                'show_clo'      : idx == 0,
+                'rowspan'       : len(details),
+                'so_code'       : d['so_code'],
+                'pi_code'       : d['pi_code'],
+                'pi_description': d['description'],
+                'level'         : d['level'],
+            })
+
+    return so_pi_list, clo_list, proficiency_levels, rubric_rows
+
+
+# ── Helper: Section X - Student Outcomes Assessment Plan (matrix) ───────────
+def _build_so_pi_matrix(rps, so_pi_list):
+    """
+    Bangun grid SO-PI (baris) x Minggu (kolom) berisi kode asesmen
+    (T/P/K/PP/ATS/AAS) berdasarkan rencana_evaluasi (minggu, tp, metode)
+    yang tp-nya merujuk ke tp_data dengan pi_code (sopi) yang sama dengan
+    baris SO-PI.
+
+    Catatan penting:
+      - 'tp' & 'metode' bisa berisi LEBIH DARI SATU nilai sekaligus, dipisah
+        koma (mis. tp="TP1, TP2", metode="T, P, K") -> harus dipecah semua,
+        bukan cuma diambil satu.
+      - 'minggu' bisa berupa angka ("1".."14") ATAU label teks masa asesmen
+        ("ATS"/"AAS") -> kolomnya tetap harus muncul, bukan cuma yang angka.
+    """
+    detail = rps.rps_detail or {}
+    rencana_evaluasi = detail.get('rencana_evaluasi', [])
+    tp_by_no = {tp.get('no'): tp for tp in (rps.tp_data or [])}
+
+    week_keys = []
+    for ev in rencana_evaluasi:
+        key = _normalize_week_key(ev.get('minggu'))
+        if key is not None and key not in week_keys:
+            week_keys.append(key)
+    weeks = sorted(week_keys, key=_week_sort_key)
+    if not weeks:
+        weeks = [str(w) for w in range(1, 15)]  # hindari list() yang ke-shadow oleh route function `list`
+
+    rows = []
+    for so_pi in so_pi_list:
+        cells = {w: [] for w in weeks}
+        for ev in rencana_evaluasi:
+            # eval_tp[] bisa berisi beberapa referensi TP sekaligus ("TP1, TP2")
+            tp_refs = _parse_tp_refs(ev.get('tp'))
+            matched = any(
+                so_pi['pi_code'] in _parse_sopi_codes(tp_by_no[n].get('sopi'))
+                for n in tp_refs if n in tp_by_no
+            )
+            if not matched:
+                continue
+            wk = _normalize_week_key(ev.get('minggu'))
+            if wk not in cells:
+                continue
+            # eval_metode[] bisa berisi beberapa kode sekaligus ("T, P, K")
+            for code in _assessment_codes(ev.get('metode', '')):
+                if code not in cells[wk]:
+                    cells[wk].append(code)
+        rows.append({
+            'so_code' : so_pi['so_code'],
+            'pi_code' : so_pi['pi_code'],
+            'cells'   : {w: ', '.join(codes) for w, codes in cells.items()},
+        })
+
+    return {'weeks': weeks, 'rows': rows}
+
+
 # ── Helper: Build data untuk PDF ──────────────────────────────────────────────
 def _build_rps_data(rps, dosen):
     mk     = rps.matakuliah
@@ -376,18 +724,12 @@ def _build_rps_data(rps, dosen):
     qr_koor_val = rps.qr_dosen_koor or detail.get('qr_koor')
     qr_kaprodi_val = rps.qr_kaprodi or (mk.qr_kaprodi if mk else None)
 
-    # Process Rencana Mingguan to prevent text overflow in xhtml2pdf
-    rencana_mingguan_clean = []
-    for item in detail.get('rencana_mingguan', []):
-        m_copy = dict(item)
-        for key, max_l in [
-            ('minggu', 5), ('tp_ref', 8), ('kemampuan', 12),
-            ('bahan_kajian', 14), ('sub_bahan', 15), ('modalitas', 12),
-            ('waktu', 8), ('pengalaman', 8)
-        ]:
-            if key in m_copy and m_copy[key]:
-                m_copy[key] = auto_wrap_text(str(m_copy[key]), max_len=max_l)
-        rencana_mingguan_clean.append(m_copy)
+    # Rencana Mingguan apa adanya — wrapping teks diserahkan ke CSS
+    # (table-layout: fixed + word-wrap: break-word) di rps_template.html,
+    # bukan manual char-wrap seperti waktu masih pakai xhtml2pdf.
+    # NB: pakai list comprehension, bukan list(...), karena ada route
+    # function bernama `list` di module ini yang nge-shadow builtin.
+    rencana_mingguan_clean = [dict(item) for item in detail.get('rencana_mingguan', [])]
 
     # Format prasyarat dengan nama mata kuliah jika hanya berisi kode
     prasyarat_val = rps.prasyarat or ''
@@ -429,16 +771,27 @@ def _build_rps_data(rps, dosen):
         
         i = j
 
+    # Section IV (SO-PI table), Section V (CLO table), footnote proficiency level,
+    # Section IX (Assessment Rubric - 1 baris per PI)
+    so_pi_list, clo_list, proficiency_levels, rubric_rows = _build_so_pi_and_clo(rps)
+
+    # Section X (Student Outcomes Assessment Plan grid)
+    so_pi_matrix = _build_so_pi_matrix(rps, so_pi_list)
+
+    # Section co-requisite: belum ada kolom di model, default '-' sesuai template
+    co_requisite = getattr(mk, 'co_requisite', None) or '-'
+
     return {
         'identitas': {
-            'matkul'   : mk.nama if mk else '',
-            'kode'     : mk.kode if mk else '',
-            'sks'      : rps.sks,
-            'semester' : rps.semester,
-            'status'   : (mk.tipe.capitalize() if (mk and mk.tipe) else 'Wajib'),
-            'prasyarat': prasyarat_display,
-            'dosen'    : dosen.nama if dosen else '',
-            'email'    : dosen.email if dosen else '',
+            'matkul'       : mk.nama if mk else '',
+            'kode'         : mk.kode if mk else '',
+            'sks'          : rps.sks,
+            'semester'     : rps.semester,
+            'status'       : (mk.tipe.capitalize() if (mk and mk.tipe) else 'Wajib'),
+            'prasyarat'    : prasyarat_display,
+            'co_requisite' : co_requisite,
+            'dosen'        : dosen.nama if dosen else '',
+            'email'        : dosen.email if dosen else '',
         },
         'pengesahan': {
             'tgl_kaprodi'  : tgl_kaprodi_val,
@@ -451,6 +804,11 @@ def _build_rps_data(rps, dosen):
             'peta_levels': sorted(peta.keys(), reverse=True),
             'peta_dict'  : peta,
         },
+        'so_pi_list'         : so_pi_list,          # Section IV
+        'clo_list'           : clo_list,            # Section V
+        'proficiency_levels' : proficiency_levels,  # Footnote Section IV/IX
+        'rubric_rows'        : rubric_rows,          # Section IX (1 baris per PI)
+        'so_pi_matrix'       : so_pi_matrix,         # Section X
         'rencana_mingguan'   : rencana_mingguan_clean,
         'sarana_prasarana'   : detail.get('sarana_prasarana',    []),
         'metode_evaluasi'    : detail.get('metode_evaluasi',     ''),
@@ -583,3 +941,11 @@ def view_qr(id):
 
     upload_dir = os.path.join(current_app.root_path, 'storage', 'qr')
     return send_from_directory(upload_dir, rps.rps_detail.get('qr_koor'))
+
+
+# ── Route: Serve file QR generik (dipakai rps_template.html: qr_dosen_koor & qr_kaprodi) ──
+@bp.route('/qr-file/<path:filename>')
+@login_required
+def qr_file(filename):
+    qr_dir = os.path.join(current_app.root_path, 'storage', 'qr')
+    return send_from_directory(qr_dir, filename)
