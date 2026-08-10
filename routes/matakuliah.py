@@ -1,12 +1,9 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from extensions import db
 from models import MataKuliah
 from sqlalchemy import or_
 from utils.decorators import kaprodi_required
-from datetime import datetime
-import os
-import time
 
 bp = Blueprint('matakuliah', __name__, url_prefix='/matakuliah')
 
@@ -64,14 +61,6 @@ def add():
     desk  = request.form.get('deskripsi', '').strip()
     tipe  = request.form.get('tipe',      'wajib').strip()
 
-    tgl_str = request.form.get('tgl_pengesahan_kaprodi', '').strip()
-    tgl_kaprodi = None
-    if tgl_str:
-        try:
-            tgl_kaprodi = datetime.strptime(tgl_str, '%Y-%m-%d').date()
-        except ValueError:
-            pass
-
     if not kode or not nama:
         flash('Kode dan Nama mata kuliah wajib diisi.', 'danger')
         return redirect(url_for('matakuliah.list'))
@@ -86,19 +75,7 @@ def add():
         kurikulum=kurik,
         deskripsi=desk,
         tipe=tipe,
-        tgl_pengesahan_kaprodi=tgl_kaprodi
     )
-
-    qr_file = request.files.get('qr_kaprodi')
-    if qr_file and qr_file.filename:
-        ext = qr_file.filename.rsplit('.', 1)[-1].lower()
-        if ext in ['png', 'jpg', 'jpeg']:
-            upload_dir = os.path.join(current_app.root_path, 'storage', 'qr')
-            os.makedirs(upload_dir, exist_ok=True)
-            filename = f"kaprodi_qr_{int(time.time())}.{ext}"
-            filepath = os.path.join(upload_dir, filename)
-            qr_file.save(filepath)
-            mk.qr_kaprodi = filename
 
     db.session.add(mk)
     db.session.commit()
@@ -132,24 +109,6 @@ def edit(id):
     mk.kurikulum = kurik_edit
     mk.deskripsi = request.form.get('deskripsi', '').strip()
     mk.tipe      = request.form.get('tipe', 'wajib').strip()
-
-    tgl_str = request.form.get('tgl_pengesahan_kaprodi', '').strip()
-    if tgl_str:
-        try:
-            mk.tgl_pengesahan_kaprodi = datetime.strptime(tgl_str, '%Y-%m-%d').date()
-        except ValueError:
-            pass
-
-    qr_file = request.files.get('qr_kaprodi')
-    if qr_file and qr_file.filename:
-        ext = qr_file.filename.rsplit('.', 1)[-1].lower()
-        if ext in ['png', 'jpg', 'jpeg']:
-            upload_dir = os.path.join(current_app.root_path, 'storage', 'qr')
-            os.makedirs(upload_dir, exist_ok=True)
-            filename = f"kaprodi_mk_{id}_qr_{int(time.time())}.{ext}"
-            filepath = os.path.join(upload_dir, filename)
-            qr_file.save(filepath)
-            mk.qr_kaprodi = filename
 
     db.session.commit()
     flash('Mata kuliah berhasil diperbarui!', 'success')

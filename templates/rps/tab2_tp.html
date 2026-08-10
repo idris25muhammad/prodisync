@@ -1,14 +1,16 @@
 <div id="tab-2" class="tab-content hidden space-y-6">
     <div class="flex justify-between items-end border-b border-slate-200 dark:border-slate-700 pb-3">
         <div>
-            <h2 id="head-3" class="text-xl font-bold">III. Tujuan Pembelajaran (TP)</h2>
+            <h2 id="head-3" class="text-xl font-bold">Course Learning Outcomes (CLOs)</h2>
             <p class="text-xs text-slate-500 mt-1">Level 1 adalah dasar (bawah). Level tertinggi adalah puncak
                 kompetensi.</p>
         </div>
+        {% if current_user.is_kaprodi %}
         <button type="button" onclick="addTP()"
             class="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 px-3 py-1.5 rounded-md font-bold text-sm hover:bg-blue-200 dark:hover:bg-blue-900/60">
             + Tambah TP
         </button>
+        {% endif %}
     </div>
 
     <div id="tp-container"
@@ -19,6 +21,7 @@
             class="flex gap-3 items-start border-b border-slate-200 dark:border-slate-700 pb-3 last:border-0 last:pb-0">
             <div class="w-2/12">
                 <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Level</label>
+                {% if current_user.is_kaprodi %}
                 <select name="tp_level[]"
                     class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
                     <option value="1" {% if tp.level==1 %}selected{% endif %}>Lvl 1</option>
@@ -26,18 +29,32 @@
                     <option value="3" {% if tp.level==3 %}selected{% endif %}>Lvl 3</option>
                     <option value="4" {% if tp.level==4 %}selected{% endif %}>Lvl 4</option>
                 </select>
+                {% else %}
+                <input type="text" value="Lvl {{ tp.level }}" readonly
+                    class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600 bg-slate-100 dark:bg-slate-700/50 cursor-not-allowed">
+                {% endif %}
             </div>
             <div class="w-7/12">
                 <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Deskripsi TP</label>
+                {% if current_user.is_kaprodi %}
                 <textarea name="tp_teks[]" rows="2"
                     class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">{{ tp.teks }}</textarea>
+                {% else %}
+                <div class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600 bg-slate-100 dark:bg-slate-700/50 min-h-[38px] text-slate-700 dark:text-slate-300">{{ tp.teks }}</div>
+                {% endif %}
             </div>
             <div class="w-3/12 relative">
                 <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">SO-PI</label>
+                {% if current_user.is_kaprodi %}
                 <input type="text" name="so_pi[]" value="{{ tp.sopi }}" readonly onclick="openSopiModal(this)"
                     placeholder="Pilih SO-PI..."
                     class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                {% else %}
+                <input type="text" value="{{ tp.sopi }}" readonly
+                    class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600 bg-slate-100 dark:bg-slate-700/50 cursor-not-allowed">
+                {% endif %}
             </div>
+            {% if current_user.is_kaprodi %}
             <button type="button" onclick="this.parentElement.remove(); syncTPSelections();"
                 class="text-red-400 hover:text-red-600 dark:hover:text-red-400 p-2 mt-5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-all"
                 title="Hapus">
@@ -46,9 +63,11 @@
                         d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
                 </svg>
             </button>
+            {% endif %}
         </div>
         {% endfor %}
         {% else %}
+        {% if current_user.is_kaprodi %}
         <div class="flex gap-3 items-start">
             <div class="w-2/12">
                 <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Level</label>
@@ -77,6 +96,9 @@
                 </svg>
             </button>
         </div>
+        {% else %}
+        <p class="text-xs text-slate-400 italic p-3">Belum ada Tujuan Pembelajaran (CPL). Kontak tim kurikulum.</p>
+        {% endif %}
         {% endif %}
     </div>
 
@@ -87,7 +109,7 @@
         </button>
         <button type="button" onclick="saveDraftAndNext('tab-3', this)"
             class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-bold shadow-lg shadow-blue-500/30 transition-all">
-            Save Draft & Ke Rencana Mingguan &rarr;
+            Save Draft & Ke Weekly Course Plan &rarr;
         </button>
     </div>
 </div>

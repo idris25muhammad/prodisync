@@ -1,11 +1,9 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, make_response, abort, current_app, send_from_directory
+from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, current_app, send_from_directory
 from flask_login import login_required, current_user
 from extensions import db
 from models import RPS, MataKuliah, User, TahunAjaran
 from sqlalchemy import or_
 from utils.decorators import kaprodi_required
-from xhtml2pdf import pisa
-from io import BytesIO
 import os
 import json
 import re
@@ -247,8 +245,23 @@ def reject(id):
     return redirect(url_for('rps.list'))
 
 
+@bp.route('/<int:id>/revisi', methods=['POST'])
+@login_required
+@kaprodi_required
+def revisi(id):
+    rps = RPS.query.get_or_404(id)
+    if rps.rps_status != 'approved':
+        flash('Hanya RPS yang sudah di-approve yang dapat direvisi.', 'warning')
+        return redirect(url_for('rps.list'))
+    rps.rps_status = 'assigned'
+    db.session.commit()
+    flash('RPS dikembalikan ke draft untuk direvisi.', 'success')
+    return redirect(url_for('rps.editor', id=id))
+
+
 # ── Helper: Parse form ke model RPS ──────────────────────────────────────────
-def _parse_rps_form(rps):
+def _parse_tp_form(rps):
+    """Bagian Tim Kurikulum: Tujuan Pembelajaran (CPL)."""
     tp_teks = request.form.getlist('tp_teks[]')
     so_pi   = request.form.getlist('so_pi[]')
     levels  = request.form.getlist('tp_level[]')
@@ -262,6 +275,9 @@ def _parse_rps_form(rps):
         for i in range(len(tp_teks)) if tp_teks[i].strip()
     ]
 
+
+def _parse_detail_form(rps):
+    """Bagian Dosen Koordinator: rencana mingguan, sarana, evaluasi, penilaian, dll."""
     minggu_ke  = request.form.getlist('minggu_ke[]')
     tp_ref     = request.form.getlist('tp_ref[]')
     kemampuan  = request.form.getlist('kemampuan[]')
@@ -319,19 +335,13 @@ def _parse_rps_form(rps):
         )
     ]
 
-    old_qr_koor = rps.rps_detail.get('qr_koor') if rps.rps_detail else None
-
-    rps.rps_detail = {
-        'rencana_mingguan'  : rencana_mingguan,
-        'sarana_prasarana'  : sarana,
-        'metode_evaluasi'   : request.form.get('metode_evaluasi', ''),
-        'rencana_evaluasi'  : rencana_evaluasi,
-        'kriteria_penilaian': kriteria,
-        'kesepakatan'       : [k for k in request.form.getlist('kesepakatan[]') if k.strip()],
-        'pustaka'           : [p for p in request.form.getlist('pustaka[]')     if p.strip()],
-        'qr_koor'           : old_qr_koor,
-        'tanggal_koor'      : request.form.get('tanggal_koor', ''),
-    }
+    rps.rencana_mingguan    = rencana_mingguan or None
+    rps.sarana_prasarana    = sarana or None
+    rps.metode_evaluasi     = request.form.get('metode_evaluasi', '') or None
+    rps.rencana_evaluasi    = rencana_evaluasi or None
+    rps.kriteria_penilaian  = kriteria or None
+    rps.kesepakatan         = [k for k in request.form.getlist('kesepakatan[]') if k.strip()] or None
+    rps.pustaka             = [p for p in request.form.getlist('pustaka[]')     if p.strip()] or None
 
 
 def format_indo_date(dt):
@@ -407,12 +417,17 @@ def _load_so_pi_data():
 
 
 
-# ── Helper: Kode metode asesmen (T/P/K/PP/ATS/AAS) untuk Section X ───────────
-_VALID_ASSESSMENT_CODES = {'T', 'P', 'K', 'PP', 'ATS', 'AAS'}
+# ── Helper: Kode metode asesmen (A/Q/MSE/FSE/P/PP) untuk Section X ────────────
+# Pemetaan label baru (IABEE-style) ke kode lama tersimpan:
+#   A = Assignment (dulu T), Q = Quiz (dulu K), MSE = Mid-Semester Exam (dulu ATS),
+#   FSE = Final-Semester Exam (dulu AAS), P = Practice/Project (tetap P),
+#   PP = Project Presentation, Demo or Team meeting (tetap PP)
+_VALID_ASSESSMENT_CODES = {'A', 'Q', 'MSE', 'FSE', 'P', 'PP'}
+_LEGACY_ASSESSMENT_MAP = {'T': 'A', 'K': 'Q', 'ATS': 'MSE', 'AAS': 'FSE'}
 
 
 def _split_multi(raw):
-    """Pecah value gabungan koma (mis. "T, P, K" atau "TP1, TP2") jadi list token bersih."""
+    """Pecah value gabungan koma (mis. "A, P, Q" atau "TP1, TP2") jadi list token bersih."""
     if not raw:
         return []
     return [p.strip() for p in str(raw).split(',') if p.strip()]
@@ -420,8 +435,9 @@ def _split_multi(raw):
 
 def _normalize_assessment_code(token):
     """
-    Normalisasi satu token metode ke kode baku (T/P/K/PP/ATS/AAS) sesuai
-    pilihan di UI. Fallback deteksi dari teks deskriptif tetap dipertahankan
+    Normalisasi satu token metode ke kode baku (A/Q/MSE/FSE/P/PP) sesuai
+    pilihan di UI. Kode lama (T/K/ATS/AAS) ikut dipetakan untuk kompatibilitas
+    data tersimpan. Fallback deteksi dari teks deskriptif tetap dipertahankan
     untuk kompatibilitas data lama yang menyimpan teks penuh (mis. "Tugas").
     """
     t = (token or '').strip()
@@ -430,19 +446,21 @@ def _normalize_assessment_code(token):
     upper = t.upper()
     if upper in _VALID_ASSESSMENT_CODES:
         return upper
+    if upper in _LEGACY_ASSESSMENT_MAP:
+        return _LEGACY_ASSESSMENT_MAP[upper]
     low = t.lower()
     if 'tengah semester' in low or 'uts' in low or 'mid' in low:
-        return 'ATS'
+        return 'MSE'
     if 'akhir semester' in low or 'uas' in low or 'final' in low:
-        return 'AAS'
+        return 'FSE'
     if 'kuis' in low or 'quiz' in low:
-        return 'K'
+        return 'Q'
     if 'presentasi' in low or 'progres' in low or 'progress' in low or 'demo' in low:
         return 'PP'
     if 'praktikum' in low or 'lab' in low or 'proyek' in low or 'project' in low:
         return 'P'
     if 'tugas' in low or 'assignment' in low:
-        return 'T'
+        return 'A'
     return upper[:3]
 
 
@@ -655,19 +673,19 @@ def _build_so_pi_and_clo(rps):
 def _build_so_pi_matrix(rps, so_pi_list):
     """
     Bangun grid SO-PI (baris) x Minggu (kolom) berisi kode asesmen
-    (T/P/K/PP/ATS/AAS) berdasarkan rencana_evaluasi (minggu, tp, metode)
+    (A/Q/MSE/FSE/P/PP) berdasarkan rencana_evaluasi (minggu, tp, metode)
     yang tp-nya merujuk ke tp_data dengan pi_code (sopi) yang sama dengan
     baris SO-PI.
 
     Catatan penting:
       - 'tp' & 'metode' bisa berisi LEBIH DARI SATU nilai sekaligus, dipisah
-        koma (mis. tp="TP1, TP2", metode="T, P, K") -> harus dipecah semua,
-        bukan cuma diambil satu.
+        koma (mis. tp="TP1, TP2", metode="A, P, Q") -> harus dipecah semua,
+        bukan cuma diambil satu. Kode lama (T/K/ATS/AAS) dipetakan otomatis
+        ke label baru oleh _normalize_assessment_code.
       - 'minggu' bisa berupa angka ("1".."14") ATAU label teks masa asesmen
         ("ATS"/"AAS") -> kolomnya tetap harus muncul, bukan cuma yang angka.
     """
-    detail = rps.rps_detail or {}
-    rencana_evaluasi = detail.get('rencana_evaluasi', [])
+    rencana_evaluasi = rps.rencana_evaluasi or []
     tp_by_no = {tp.get('no'): tp for tp in (rps.tp_data or [])}
 
     week_keys = []
@@ -714,14 +732,12 @@ def _build_rps_data(rps, dosen):
     for tp in (rps.tp_data or []):
         peta.setdefault(tp.get('level', 1), []).append(tp)
 
-    detail = rps.rps_detail or {}
-
     # Resolusi Tanggal
-    tgl_koor_val = format_indo_date(rps.tgl_pengesahan_koor) or detail.get('tanggal_koor', '')
+    tgl_koor_val = format_indo_date(rps.tgl_pengesahan_koor)
     tgl_kaprodi_val = format_indo_date(rps.tgl_pengesahan_kaprodi) or (format_indo_date(mk.tgl_pengesahan_kaprodi) if mk else '')
 
     # Resolusi QR
-    qr_koor_val = rps.qr_dosen_koor or detail.get('qr_koor')
+    qr_koor_val = rps.qr_dosen_koor
     qr_kaprodi_val = rps.qr_kaprodi or (mk.qr_kaprodi if mk else None)
 
     # Rencana Mingguan apa adanya — wrapping teks diserahkan ke CSS
@@ -729,7 +745,7 @@ def _build_rps_data(rps, dosen):
     # bukan manual char-wrap seperti waktu masih pakai xhtml2pdf.
     # NB: pakai list comprehension, bukan list(...), karena ada route
     # function bernama `list` di module ini yang nge-shadow builtin.
-    rencana_mingguan_clean = [dict(item) for item in detail.get('rencana_mingguan', [])]
+    rencana_mingguan_clean = [dict(item) for item in (rps.rencana_mingguan or [])]
 
     # Format prasyarat dengan nama mata kuliah jika hanya berisi kode
     prasyarat_val = rps.prasyarat or ''
@@ -747,7 +763,7 @@ def _build_rps_data(rps, dosen):
         prasyarat_display = '-'
 
     # Process Kriteria Penilaian for rowspan merge
-    raw_kriteria = detail.get('kriteria_penilaian', [])
+    raw_kriteria = rps.kriteria_penilaian or []
     kriteria_processed = []
     i = 0
     while i < len(raw_kriteria):
@@ -797,6 +813,7 @@ def _build_rps_data(rps, dosen):
             'tgl_kaprodi'  : tgl_kaprodi_val,
             'tgl_koor'     : tgl_koor_val,
             'disusun_oleh' : dosen.nama if dosen else '',
+            'disetujui_oleh': current_app.config.get('KAPRODI_NAMA', 'Maidel Fani'),
         },
         'deskripsi'          : (mk.deskripsi if mk else '') or '',
         'tujuan_peta'        : {
@@ -810,12 +827,12 @@ def _build_rps_data(rps, dosen):
         'rubric_rows'        : rubric_rows,          # Section IX (1 baris per PI)
         'so_pi_matrix'       : so_pi_matrix,         # Section X
         'rencana_mingguan'   : rencana_mingguan_clean,
-        'sarana_prasarana'   : detail.get('sarana_prasarana',    []),
-        'metode_evaluasi'    : detail.get('metode_evaluasi',     ''),
-        'rencana_evaluasi'   : detail.get('rencana_evaluasi',    []),
+        'sarana_prasarana'   : rps.sarana_prasarana or [],
+        'metode_evaluasi'    : rps.metode_evaluasi or '',
+        'rencana_evaluasi'   : rps.rencana_evaluasi or [],
         'kriteria_penilaian' : kriteria_processed,
-        'kesepakatan'        : detail.get('kesepakatan',         []),
-        'pustaka'            : detail.get('pustaka',             []),
+        'kesepakatan'        : rps.kesepakatan or [],
+        'pustaka'            : rps.pustaka or [],
         'qr_dosen_koor'      : qr_koor_val,
         'qr_kaprodi'         : qr_kaprodi_val,
         'tanggal_koor'       : tgl_koor_val,
@@ -832,15 +849,35 @@ def editor(id):
         rps = RPS.query.filter_by(id=id, user_id=current_user.id).first_or_404()
 
     if request.method == 'POST':
-        if current_user.is_kaprodi:
-            abort(403)
+        if rps.rps_status == 'approved':
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                from flask import jsonify
+                return jsonify({'status': 'error', 'message': 'RPS sudah di-approve, tidak dapat diedit.'}), 403
+            flash('RPS sudah di-approve, tidak dapat diedit.', 'warning')
+            return redirect(url_for('rps.list'))
 
-        rps.semester  = request.form.get('semester',  rps.semester)
-        rps.prasyarat = request.form.get('prasyarat', rps.prasyarat)
-        if rps.matakuliah:
-            rps.matakuliah.deskripsi = request.form.get('deskripsi', rps.matakuliah.deskripsi)
+        if not current_user.is_kaprodi:
+            # Dosen koordinator: hanya boleh mengisi sisanya (tab 3-5).
+            # Identitas, Deskripsi, dan Tujuan Pembelajaran (CPL) hanya bisa diisi tim kurikulum.
+            cpl_defined = bool(
+                rps.tp_data
+                and any(tp.get('sopi', '').strip() for tp in rps.tp_data if isinstance(tp, dict))
+            )
+            if not cpl_defined:
+                flash('CPL belum didefinisikan. Kontak tim kurikulum.', 'danger')
+                return redirect(url_for('rps.list'))
 
-        _parse_rps_form(rps)
+            rps.semester  = request.form.get('semester',  rps.semester)
+            rps.prasyarat = request.form.get('prasyarat', rps.prasyarat)
+            _parse_detail_form(rps)
+        else:
+            # Tim Kurikulum: bisa update SEMUA bagian
+            if rps.matakuliah:
+                rps.matakuliah.deskripsi = request.form.get('deskripsi', rps.matakuliah.deskripsi)
+            _parse_tp_form(rps)
+            _parse_detail_form(rps)
+            rps.semester  = request.form.get('semester',  rps.semester)
+            rps.prasyarat = request.form.get('prasyarat', rps.prasyarat)
 
         # Handle Tanggal Pengesahan Koordinator (Save directly to DB Column)
         tgl_koor_str = request.form.get('tanggal_koor', '').strip()
@@ -864,12 +901,6 @@ def editor(id):
                 # Simpan ke kolom DB
                 rps.qr_dosen_koor = filename
 
-                # Update json juga demi kompatibilitas
-                if rps.rps_detail:
-                    detail = rps.rps_detail.copy()
-                    detail['qr_koor'] = filename
-                    rps.rps_detail = detail
-
         rps.rps_status = 'submitted'
         db.session.commit()
 
@@ -880,33 +911,22 @@ def editor(id):
         flash('Data RPS berhasil disimpan!', 'success')
         return redirect(url_for('rps.list'))
 
-    return render_template('rps_editor.html', matkul=rps, readonly=current_user.is_kaprodi, hitung_progress_rps=hitung_progress_rps)
+    cpl_defined = bool(
+        rps.tp_data
+        and any(tp.get('sopi', '').strip() for tp in rps.tp_data if isinstance(tp, dict))
+    )
+
+    return render_template(
+        'rps_editor.html',
+        matkul=rps,
+        readonly=current_user.is_kaprodi,
+        hitung_progress_rps=hitung_progress_rps,
+        cpl_defined=cpl_defined,
+        is_approved=(rps.rps_status == 'approved'),
+    )
 
 
-# ── Route: Download PDF ───────────────────────────────────────────────────────
-@bp.route('/download/<int:id>')
-@login_required
-def download(id):
-    if current_user.is_kaprodi:
-        rps = RPS.query.get_or_404(id)
-    else:
-        rps = RPS.query.filter_by(id=id, user_id=current_user.id).first_or_404()
 
-    if not rps.rps_detail:
-        flash('Silakan isi form RPS terlebih dahulu!', 'danger')
-        return redirect(url_for('rps.list'))
-
-    dosen    = User.query.get(rps.user_id)
-    rps_data = _build_rps_data(rps, dosen)
-
-    buf = BytesIO()
-    pisa.CreatePDF(render_template('rps_template.html', data=rps_data), dest=buf)
-    buf.seek(0)
-
-    resp = make_response(buf.read())
-    resp.headers['Content-Type']        = 'application/pdf'
-    resp.headers['Content-Disposition'] = f'inline; filename=RPS_{rps.matakuliah.kode}.pdf'
-    return resp
 
 
 # ── Route: Preview RPS ────────────────────────────────────────────────────────
@@ -918,7 +938,8 @@ def preview(id):
     else:
         rps = RPS.query.filter_by(id=id, user_id=current_user.id).first_or_404()
 
-    if not rps.rps_detail:
+    if not (rps.rencana_mingguan or rps.sarana_prasarana or rps.rencana_evaluasi
+            or rps.kriteria_penilaian or rps.kesepakatan or rps.pustaka or rps.tp_data):
         flash('RPS belum diisi.', 'warning')
         return redirect(url_for('rps.list'))
 
@@ -936,11 +957,11 @@ def view_qr(id):
     else:
         rps = RPS.query.filter_by(id=id, user_id=current_user.id).first_or_404()
 
-    if not rps.rps_detail or not rps.rps_detail.get('qr_koor'):
+    if not rps.qr_dosen_koor:
         abort(404)
 
     upload_dir = os.path.join(current_app.root_path, 'storage', 'qr')
-    return send_from_directory(upload_dir, rps.rps_detail.get('qr_koor'))
+    return send_from_directory(upload_dir, rps.qr_dosen_koor)
 
 
 # ── Route: Serve file QR generik (dipakai rps_template.html: qr_dosen_koor & qr_kaprodi) ──

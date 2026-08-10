@@ -5,7 +5,14 @@
 {% block content %}
 
 <script>
-    const savedRpsDetail = {% if matkul.rps_detail %}{{ matkul.rps_detail | tojson | safe }}{% else %}null{% endif %};
+    const savedRpsDetail = {
+        rencana_mingguan: {{ matkul.rencana_mingguan | tojson | safe if matkul.rencana_mingguan else[] }},
+    rencana_evaluasi: {{ matkul.rencana_evaluasi | tojson | safe if matkul.rencana_evaluasi else[] }}
+    };
+    const isKaprodi = {{ 'true' if current_user.is_kaprodi else 'false' }};
+    const cplDefined = {{ 'true' if cpl_defined else 'false' }};
+    const cloList = {{ matkul.tp_data | tojson | safe if matkul.tp_data else[] }};
+    const isApproved = {{ 'true' if is_approved else 'false' }};
 </script>
 
 <div class="space-y-6">
@@ -41,17 +48,41 @@
                 <p class="text-[10px] text-slate-400 mt-1">Lompat langsung ke bagian yang ingin diisi.</p>
             </div>
 
+            {% if matkul.rps_status == 'rejected' and matkul.reason %}
+            <div class="px-2">
+                <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3">
+                    <p class="text-[10px] font-bold text-red-600 dark:text-red-400 uppercase tracking-wide mb-1">Ditolak</p>
+                    <p class="text-xs text-red-700 dark:text-red-300 leading-relaxed">{{ matkul.reason }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if is_approved %}
+            <div class="px-2">
+                <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-3">
+                    <p class="text-[10px] font-bold text-green-600 dark:text-green-400 uppercase tracking-wide mb-1">Approved</p>
+                    <p class="text-xs text-green-700 dark:text-green-300">RPS ini sudah disetujui.</p>
+                    {% if current_user.is_kaprodi %}
+                    <form method="POST" action="{{ url_for('rps.revisi', id=matkul.id) }}" class="mt-2">
+                        <button type="submit" class="w-full py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-colors">
+                            Revisi
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
             <nav class="flex flex-col gap-1 px-2 pb-4 overflow-y-auto">
                 {% set quicknav = [
-                ('Identitas Mata Kuliah', 'tab-1', 'head-1'),
-                ('Deskripsi Mata Kuliah', 'tab-1', 'head-2'),
-                ('Tujuan Pembelajaran', 'tab-2', 'head-3'),
-                ('Rencana Mingguan', 'tab-3', 'head-5'),
-                ('Sarana & Prasarana', 'tab-4', 'head-6'),
-                ('Rencana Evaluasi', 'tab-4', 'head-7'),
-                ('Kriteria Penilaian', 'tab-5', 'head-9'),
-                ('Kesepakatan', 'tab-5', 'head-10'),
-                ('Pustaka & QR Koor', 'tab-5', 'head-11')
+                ('IDENTITAS MATA KULIAH', 'tab-1', 'head-1'),
+                ('COURSE LEARNING OUTCOMES', 'tab-2', 'head-3'),
+                ('WEEKLY COURSE PLAN', 'tab-3', 'head-5'),
+                ('SARANA & PRASARANA', 'tab-4', 'head-6'),
+                ('SO ASSESSMENT PLAN', 'tab-4', 'head-7'),
+                ('STUDENT OUTCOMES ASSESSMENT PLAN', 'tab-5', 'head-9'),
+                ('KESEPAKATAN', 'tab-5', 'head-10'),
+                ('PUSTAKA & QR KOOR', 'tab-5', 'head-11')
                 ] %}
                 {% for label, tid, headId in quicknav %}
                 <button type="button" onclick="jumpToSection('{{ tid }}', '{{ headId }}')"
@@ -67,6 +98,22 @@
             <div
                 class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-8">
                 <form method="POST" enctype="multipart/form-data">
+                    {% if current_user.is_kaprodi %}
+                    <div
+                        class="mb-6 p-4 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20">
+                        <p class="text-sm font-bold text-blue-800 dark:text-blue-300">Akses Tim Kurikulum</p>
+                        <p class="text-xs text-blue-700 dark:text-blue-400 mt-1">Anda dapat mengisi dan memperbarui
+                            seluruh bagian RPS.</p>
+                    </div>
+                    {% else %}
+                    <div id="cpl-warning-banner"
+                        class="mb-6 p-4 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 {% if cpl_defined %}hidden{% endif %}">
+                        <p class="text-sm font-bold text-amber-800 dark:text-amber-300">CPL belum didefinisikan</p>
+                        <p class="text-xs text-amber-700 dark:text-amber-400 mt-1">Bagian Tujuan Pembelajaran belum
+                            diisi tim kurikulum. Anda hanya bisa melihat Identitas &amp; Deskripsi sampai CPL tersedia.
+                            Kontak tim kurikulum jika perlu.</p>
+                    </div>
+                    {% endif %}
                     {% include 'rps/tab1_identitas.html' %}
                     {% include 'rps/tab2_tp.html' %}
                     {% include 'rps/tab3_mingguan.html' %}
@@ -82,6 +129,8 @@
 {% endblock %}
 
 {% block scripts %}
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
 <script src="{{ url_for('static', filename='js/rps-core.js') }}"></script>
 <script src="{{ url_for('static', filename='js/rps-render.js') }}"></script>
 <script src="{{ url_for('static', filename='js/rps-bobot.js') }}"></script>

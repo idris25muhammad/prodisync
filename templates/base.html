@@ -53,7 +53,7 @@
                     {% if current_user.is_kaprodi %}
                     <span
                         class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-200 dark:border-blue-800 leading-none">
-                        Kaprodi
+                        TimKur
                     </span>
                     {% else %}
                     <span
@@ -85,25 +85,27 @@
                         <span>Agenda</span>
                     </a>
 
-                    {# Dropdown 1: Manajemen Data #}
-                    {% set act_mgm = (request.endpoint and (request.endpoint.startswith('matakuliah.') or
-                    request.endpoint.startswith('rps.') or request.endpoint == 'user.list' or
-                    request.endpoint.startswith('pengumuman.'))) %}
+                    {# Dropdown: Kurikulum (merged Data + Kurikulum) #}
+                    {% set act_kuri = (request.endpoint and (request.endpoint.startswith('matakuliah.') or
+                    request.endpoint.startswith('rps.') or request.endpoint.startswith('kurikulum.') or
+                    request.endpoint == 'user.list' or request.endpoint.startswith('pengumuman.'))) %}
                     <div class="relative group">
                         <button
-                            class="px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl flex items-center gap-1.5 transition-colors font-semibold text-sm {{ 'text-blue-600 dark:text-blue-400 font-bold' if act_mgm else '' }}">
+                            class="px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl flex items-center gap-1.5 transition-colors font-semibold text-sm {{ 'text-blue-600 dark:text-blue-400 font-bold' if act_kuri else '' }}">
                             <svg class="w-4 h-4 stroke-current opacity-70" fill="none" stroke="currentColor"
                                 viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                                    d="M12 14l9-5-9-5-9 5 9 5z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 01-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
                             </svg>
-                            <span>Data ▾</span>
+                            <span>Kurikulum ▾</span>
                         </button>
 
                         <div class="absolute left-0 top-full pt-3 w-[560px] hidden group-hover:block z-50">
                             <div
                                 class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl p-5 grid grid-cols-2 gap-5">
-                                {# Column 1: Perkuliahan #}
+                                {# Column 1: Perkuliahan & Kurikulum #}
                                 <div class="border-r border-slate-100 dark:border-slate-800 pr-5">
                                     <h4 class="text-[10px] font-bold text-slate-400 uppercase mb-3 tracking-wider">
                                         Perkuliahan</h4>
@@ -127,7 +129,32 @@
                                                     d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
                                                 </path>
                                             </svg>
-                                            <span class="text-sm font-semibold">RPS (Rencana Program Studi)</span>
+                                            <span class="text-sm font-semibold">Semester Lesson Plan</span>
+                                        </a>
+                                    </div>
+
+                                    <h4 class="text-[10px] font-bold text-slate-400 uppercase mb-3 mt-5 tracking-wider">
+                                        Kurikulum</h4>
+                                    <div class="space-y-1">
+                                        <a href="{{ url_for('kurikulum.integrated') }}"
+                                            class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                                            <svg class="w-5 h-5 stroke-current opacity-70" fill="none"
+                                                stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                                                </path>
+                                            </svg>
+                                            <span class="text-sm font-semibold">Integrated Curriculum</span>
+                                        </a>
+
+                                        <a href="{{ url_for('kurikulum.prasyarat') }}"
+                                            class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                                            <svg class="w-5 h-5 stroke-current opacity-70" fill="none"
+                                                stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                            </svg>
+                                            <span class="text-sm font-semibold">Mata Kuliah Prasyarat</span>
                                         </a>
                                     </div>
                                 </div>
@@ -146,7 +173,7 @@
                                                     d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
                                                 </path>
                                             </svg>
-                                            <span class="text-sm font-semibold">Dosen</span>
+                                            <span class="text-sm font-semibold">Users</span>
                                         </a>
                                         {% endif %}
 
@@ -166,12 +193,12 @@
                         </div>
                     </div>
 
-                    {# Dropdown 2: Panduan & Arsip (Naik ke Nav Utama) #}
-                    {% set act_pa = (request.endpoint and (request.endpoint.startswith('panduan.') or
+                    {# Dropdown: Berkas #}
+                    {% set act_berkas = (request.endpoint and (request.endpoint.startswith('panduan.') or
                     request.endpoint.startswith('arsip.'))) %}
                     <div class="relative group">
                         <button
-                            class="px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl flex items-center gap-1.5 transition-colors font-semibold text-sm {{ 'text-blue-600 dark:text-blue-400 font-bold' if act_pa else '' }}">
+                            class="px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl flex items-center gap-1.5 transition-colors font-semibold text-sm {{ 'text-blue-600 dark:text-blue-400 font-bold' if act_berkas else '' }}">
                             <svg class="w-4 h-4 stroke-current opacity-70" fill="none" stroke="currentColor"
                                 viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -208,55 +235,6 @@
                                         <div>
                                             <p class="text-sm font-bold">Arsip Dokumen</p>
                                             <p class="text-[10px] text-slate-400">Repositori file & berkas</p>
-                                        </div>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {# Dropdown 3: Kurikulum #}
-                    <div class="relative group">
-                        <button
-                            class="px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl flex items-center gap-1.5 transition-colors font-semibold text-sm {{ 'text-blue-600 dark:text-blue-400 font-bold' if request.endpoint and request.endpoint.startswith('kurikulum.') else '' }}">
-                            <svg class="w-4 h-4 stroke-current opacity-70" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 14l9-5-9-5-9 5 9 5z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 01-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                            </svg>
-                            <span>Kurikulum ▾</span>
-                        </button>
-
-                        <div class="absolute left-0 top-full pt-3 w-[360px] hidden group-hover:block z-50">
-                            <div
-                                class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl p-4">
-                                <div class="space-y-1">
-                                    <a href="{{ url_for('kurikulum.integrated') }}"
-                                        class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
-                                        <svg class="w-5 h-5 stroke-current opacity-70" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
-                                            </path>
-                                        </svg>
-                                        <div>
-                                            <p class="text-sm font-bold">Integrated Curriculum</p>
-                                            <p class="text-[10px] text-slate-400">Peta kurikulum terintegrasi</p>
-                                        </div>
-                                    </a>
-
-                                    <a href="{{ url_for('kurikulum.prasyarat') }}"
-                                        class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
-                                        <svg class="w-5 h-5 stroke-current opacity-70" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                                        </svg>
-                                        <div>
-                                            <p class="text-sm font-bold">Mata Kuliah Prasyarat</p>
-                                            <p class="text-[10px] text-slate-400">Aturan prasyarat pengambilan MK</p>
                                         </div>
                                     </a>
                                 </div>
@@ -336,28 +314,28 @@
             <span class="text-[10px]">Agenda</span>
         </a>
 
-        {# 2. Portal Prodi #}
-        {% set act_portal = (request.endpoint and (request.endpoint.startswith('matakuliah.') or
-        request.endpoint.startswith('rps.') or request.endpoint == 'user.list' or
-        request.endpoint.startswith('pengumuman.') or request.endpoint.startswith('panduan.') or
-        request.endpoint.startswith('arsip.'))) %}
-        <button onclick="openMobileSheet('portal-sheet')"
-            class="flex flex-col items-center gap-1 px-3 py-1 rounded-xl transition-all {% if act_portal %}text-blue-600 dark:text-blue-400 font-extrabold{% else %}text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-semibold{% endif %}">
-            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                <path
-                    d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z" />
-            </svg>
-            <span class="text-[10px]">Portal</span>
-        </button>
-
-        {# 3. Kurikulum #}
-        {% set act_kuri = (request.endpoint and request.endpoint.startswith('kurikulum.')) %}
+        {# 2. Kurikulum #}
+        {% set act_kuri_mob = (request.endpoint and (request.endpoint.startswith('matakuliah.') or
+        request.endpoint.startswith('rps.') or request.endpoint.startswith('kurikulum.') or
+        request.endpoint == 'user.list' or request.endpoint.startswith('pengumuman.'))) %}
         <button onclick="openMobileSheet('kurikulum-sheet')"
-            class="flex flex-col items-center gap-1 px-3 py-1 rounded-xl transition-all {% if act_kuri %}text-blue-600 dark:text-blue-400 font-extrabold{% else %}text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-semibold{% endif %}">
+            class="flex flex-col items-center gap-1 px-3 py-1 rounded-xl transition-all {% if act_kuri_mob %}text-blue-600 dark:text-blue-400 font-extrabold{% else %}text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-semibold{% endif %}">
             <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
                 <path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z" />
             </svg>
             <span class="text-[10px]">Kurikulum</span>
+        </button>
+
+        {# 3. Berkas #}
+        {% set act_berkas_mob = (request.endpoint and (request.endpoint.startswith('panduan.') or
+        request.endpoint.startswith('arsip.'))) %}
+        <button onclick="openMobileSheet('berkas-sheet')"
+            class="flex flex-col items-center gap-1 px-3 py-1 rounded-xl transition-all {% if act_berkas_mob %}text-blue-600 dark:text-blue-400 font-extrabold{% else %}text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-semibold{% endif %}">
+            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                <path
+                    d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z" />
+            </svg>
+            <span class="text-[10px]">Berkas</span>
         </button>
 
         {# 4. Lainnya (Titik Tiga Icon) #}
@@ -376,12 +354,12 @@
         <div id="mobile-sheet-backdrop" onclick="closeMobileSheets()"
             class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 hidden transition-opacity">
 
-            {# Sheet 1: Manajemen Data #}
-            <div id="portal-sheet" onclick="event.stopPropagation()"
+            {# Sheet 1: Kurikulum #}
+            <div id="kurikulum-sheet" onclick="event.stopPropagation()"
                 class="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 rounded-t-3xl p-6 shadow-2xl transform translate-y-full transition-transform duration-300 z-50 max-h-[80vh] overflow-y-auto hidden">
                 <div
                     class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 mb-4">
-                    <h3 class="font-extrabold text-base text-slate-800 dark:text-white">Manajemen Data</h3>
+                    <h3 class="font-extrabold text-base text-slate-800 dark:text-white">Kurikulum</h3>
                     <button onclick="closeMobileSheets()"
                         class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center font-bold text-sm">&times;</button>
                 </div>
@@ -396,7 +374,23 @@
                             </a>
                             <a href="{{ url_for('rps.list') }}"
                                 class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 block text-xs font-bold text-slate-800 dark:text-white">
-                                RPS
+                                Semester Lesson Plan
+                            </a>
+                        </div>
+                    </div>
+
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Kurikulum</p>
+                        <div class="space-y-2">
+                            <a href="{{ url_for('kurikulum.integrated') }}"
+                                class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 block">
+                                <p class="text-xs font-bold text-slate-800 dark:text-white">Integrated Curriculum</p>
+                                <p class="text-[10px] text-slate-400 mt-0.5">Peta kurikulum terintegrasi</p>
+                            </a>
+                            <a href="{{ url_for('kurikulum.prasyarat') }}"
+                                class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 block">
+                                <p class="text-xs font-bold text-slate-800 dark:text-white">Mata Kuliah Prasyarat</p>
+                                <p class="text-[10px] text-slate-400 mt-0.5">Aturan prasyarat pengambilan MK</p>
                             </a>
                         </div>
                     </div>
@@ -417,44 +411,29 @@
                             </a>
                         </div>
                     </div>
-
-                    <div>
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Berkas
-                        </p>
-                        <div class="grid grid-cols-2 gap-2">
-                            <a href="{{ url_for('panduan.list') }}"
-                                class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 block text-xs font-bold text-slate-800 dark:text-white">
-                                Panduan Akademik
-                            </a>
-                            <a href="{{ url_for('arsip.index') }}"
-                                class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 block text-xs font-bold text-slate-800 dark:text-white">
-                                Arsip Dokumen
-                            </a>
-                        </div>
-                    </div>
                 </div>
             </div>
 
-            {# Sheet 2: Kurikulum #}
-            <div id="kurikulum-sheet" onclick="event.stopPropagation()"
+            {# Sheet 2: Berkas #}
+            <div id="berkas-sheet" onclick="event.stopPropagation()"
                 class="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 rounded-t-3xl p-6 shadow-2xl transform translate-y-full transition-transform duration-300 z-50 max-h-[80vh] overflow-y-auto hidden">
                 <div
                     class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 mb-4">
-                    <h3 class="font-extrabold text-base text-slate-800 dark:text-white">Kurikulum</h3>
+                    <h3 class="font-extrabold text-base text-slate-800 dark:text-white">Berkas</h3>
                     <button onclick="closeMobileSheets()"
                         class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center font-bold text-sm">&times;</button>
                 </div>
 
                 <div class="space-y-2">
-                    <a href="{{ url_for('kurikulum.integrated') }}"
+                    <a href="{{ url_for('panduan.list') }}"
                         class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 block">
-                        <p class="text-xs font-bold text-slate-800 dark:text-white">Integrated Curriculum</p>
-                        <p class="text-[10px] text-slate-400 mt-0.5">Peta kurikulum terintegrasi</p>
+                        <p class="text-xs font-bold text-slate-800 dark:text-white">Panduan Akademik</p>
+                        <p class="text-[10px] text-slate-400 mt-0.5">Petunjuk & pedoman prodi</p>
                     </a>
-                    <a href="{{ url_for('kurikulum.prasyarat') }}"
+                    <a href="{{ url_for('arsip.index') }}"
                         class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 block">
-                        <p class="text-xs font-bold text-slate-800 dark:text-white">Mata Kuliah Prasyarat</p>
-                        <p class="text-[10px] text-slate-400 mt-0.5">Aturan prasyarat pengambilan MK</p>
+                        <p class="text-xs font-bold text-slate-800 dark:text-white">Arsip Dokumen</p>
+                        <p class="text-[10px] text-slate-400 mt-0.5">Repositori file & berkas</p>
                     </a>
                 </div>
             </div>
@@ -530,8 +509,7 @@
                 <p>&copy; 2026 ProdiSync. All rights reserved.</p>
                 <div class="flex items-center space-x-6">
                     <span>Made with <span class="text-red-500 font-bold">&hearts;</span> ID</span>
-                    <a href="#" class="hover:text-slate-800 dark:hover:text-slate-300">Dokumentasi</a>
-                    <a href="#" class="hover:text-slate-800 dark:hover:text-slate-300">Bantuan</a>
+
                 </div>
             </div>
         </footer>

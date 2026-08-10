@@ -1,5 +1,5 @@
 <div id="tab-1" class="tab-content space-y-6">
-    <h2 id="head-1" class="text-xl font-bold border-b border-slate-200 dark:border-slate-700 pb-3">I. Identitas Mata Kuliah</h2>
+    <h2 id="head-1" class="text-xl font-bold border-b border-slate-200 dark:border-slate-700 pb-3">Identitas Mata Kuliah</h2>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div>
@@ -54,100 +54,97 @@
     </div>
 
     {# ── Bagian Deskripsi dengan WYSIWYG Editor ── #}
-    <h2 id="head-2" class="text-xl font-bold border-b border-slate-200 dark:border-slate-700 pb-3 mt-8">II. Deskripsi Mata Kuliah
+    <h2 id="head-2" class="text-xl font-bold border-b border-slate-200 dark:border-slate-700 pb-3 mt-8">Deskripsi Mata Kuliah
     </h2>
+    {% if not current_user.is_kaprodi %}
+    <div class="space-y-2">
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg p-4 text-sm text-slate-900 dark:text-slate-100 prose max-w-none"
+            id="deskripsi-readonly">{{ matkul.matakuliah.deskripsi | safe if matkul.matakuliah and matkul.matakuliah.deskripsi else '<em class="text-slate-400">Belum ada deskripsi.</em>' }}</div>
+        <input type="hidden" name="deskripsi" value="{{ matkul.matakuliah.deskripsi if matkul.matakuliah else '' }}">
+    </div>
+    {% else %}
     <div class="space-y-2">
         <div id="wysiwyg-editor"
             class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg overflow-hidden text-sm text-slate-900 dark:text-slate-100">
         </div>
         <textarea name="deskripsi" id="deskripsi-hidden"
-            class="hidden">{{ matkul.matakuliah.deskripsi or '' }}</textarea>
+            class="hidden">{{ (matkul.matakuliah.deskripsi or '') | safe }}</textarea>
     </div>
+    {% endif %}
 
 
     <div class="flex justify-end pt-6">
+        {% if current_user.is_kaprodi %}
         <button type="button" onclick="saveDraftAndNext('tab-2', this)"
             class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-bold shadow-lg shadow-blue-500/30 transition-all">
             Save Draft & Ke Tujuan Pembelajaran &rarr;
         </button>
+        {% else %}
+        <button type="button" onclick="showTab('tab-2')"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-bold shadow-lg shadow-blue-500/30 transition-all">
+            Lanjut Ke Tujuan Pembelajaran &rarr;
+        </button>
+        {% endif %}
     </div>
 </div>
 
-{# ── Dependensi & Script Initialization Pell Editor ── #}
-<link rel="stylesheet" href="https://unpkg.com/pell/dist/pell.min.css">
-<script src="https://unpkg.com/pell/dist/pell.min.js"></script>
-
+{# ── Dependensi & Script Initialization Quill Editor ── #}
 <style>
-    /* Styling agar Pell Editor menyatu dengan tema Tailwind (Light & Dark Mode) */
-    .pell-actionbar {
-        background-color: rgb(248 250 252) !important;
-        border-bottom: 1px solid rgb(226 232 240) !important;
-    }
-
-    .dark .pell-actionbar {
-        background-color: rgb(30 41 59) !important;
-        border-bottom: 1px solid rgb(71 85 105) !important;
-    }
-
-    .pell-button {
-        color: rgb(100 116 139) !important;
-        background-color: transparent !important;
-    }
-
-    .dark .pell-button {
-        color: rgb(203 213 225) !important;
-    }
-
-    .pell-button-selected {
-        background-color: rgb(219 234 254) !important;
-        color: rgb(29 78 216) !important;
-    }
-
-    .dark .pell-button-selected {
-        background-color: rgb(30 58 138) !important;
-        color: rgb(96 165 250) !important;
-    }
-
-    .pell-content {
-        min-height: 150px !important;
-        padding: 12px !important;
-        outline: none !important;
-    }
-
-    .dark .pell-content {
-        background-color: rgb(30 41 59) !important;
-    }
+    /* Quill dark mode compatibility */
+    html.dark .ql-toolbar { background: #1e293b; border-color: #334155 !important; }
+    html.dark .ql-container { background: #0f172a; border-color: #334155 !important; color: #e2e8f0; }
+    html.dark .ql-toolbar .ql-stroke { stroke: #94a3b8; }
+    html.dark .ql-toolbar .ql-fill { fill: #94a3b8; }
+    html.dark .ql-toolbar .ql-picker { color: #94a3b8; }
+    html.dark .ql-toolbar .ql-picker-options { background: #1e293b; border-color: #334155; }
+    html.dark .ql-toolbar button:hover .ql-stroke,
+    html.dark .ql-toolbar button.ql-active .ql-stroke { stroke: #60a5fa; }
+    html.dark .ql-toolbar button:hover .ql-fill,
+    html.dark .ql-toolbar button.ql-active .ql-fill { fill: #60a5fa; }
+    html.dark .ql-editor.ql-blank::before { color: #475569; }
+    html.dark .ql-editor blockquote { border-left-color: #334155; color: #94a3b8; }
+    .ql-toolbar { border-radius: 0.75rem 0.75rem 0 0 !important; }
+    .ql-container { border-radius: 0 0 0.75rem 0.75rem !important; font-size: 14px; }
+    .ql-editor { min-height: 180px; padding: 16px 20px; line-height: 1.75; }
 </style>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const hiddenTextarea = document.getElementById('deskripsi-hidden');
-        const editorContainer = document.getElementById('wysiwyg-editor');
+(function() {
+    function initQuillDeskripsi() {
+        var hiddenTextarea = document.getElementById('deskripsi-hidden');
+        var editorContainer = document.getElementById('wysiwyg-editor');
 
-        if (editorContainer && hiddenTextarea) {
-            // Inisialisasi Pell Editor
-            const editor = pell.init({
-                element: editorContainer,
-                onChange: html => {
-                    hiddenTextarea.value = html; // Sinkronisasi otomatis ke textarea tersembunyi saat mengetik
+        if (editorContainer && hiddenTextarea && typeof Quill !== 'undefined') {
+            if (window.deskripsiQuill) return;
+
+            var quill = new Quill('#wysiwyg-editor', {
+                theme: 'snow',
+                modules: {
+                    toolbar: [
+                        [{ 'header': [1, 2, false] }],
+                        ['bold', 'italic', 'underline', 'strike'],
+                        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                        ['link'],
+                        ['clean']
+                    ]
                 },
-                defaultParagraphSeparator: 'p',
-                actions: [
-                    'bold',
-                    'italic',
-                    'underline',
-                    'strikethrough',
-                    'heading1',
-                    'heading2',
-                    'paragraph',
-                    'olist',
-                    'ulist',
-                    'line'
-                ]
+                placeholder: 'Tulis deskripsi mata kuliah di sini...'
             });
 
-            // Memasukkan data awal dari database ke dalam editor
-            editor.content.innerHTML = hiddenTextarea.value;
+            window.deskripsiQuill = quill;
+
+            quill.root.innerHTML = hiddenTextarea.value || '';
+
+            quill.on('text-change', function () {
+                hiddenTextarea.value = quill.root.innerHTML;
+            });
         }
-    });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initQuillDeskripsi);
+    } else {
+        initQuillDeskripsi();
+    }
+})();
 </script>

@@ -26,7 +26,7 @@
 
                 {% if current_user.is_kaprodi %}
                 <div class="flex items-center border-slate-200 dark:border-slate-700 pl-2">
-                    <button id="btn-set-aktif" onclick="setAktifManual()"
+                    <button id="btn-set-aktif" onclick="setAktifManual()" hidden
                         class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-bold transition-all shadow-md shadow-blue-600/10 ml-2"
                         title="Set Aktif">
                         Aktifkan
@@ -65,7 +65,7 @@
     </div>
 
     {# ── Cards Statistik ── #}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <!-- Card 1: Total RPS -->
         <div
             class="relative overflow-hidden bg-white dark:bg-slate-900 p-6 rounded-2xl border border-blue-100 dark:border-blue-900/40 shadow-sm hover:shadow-md transition-all group">
@@ -90,13 +90,12 @@
             </svg>
         </div>
 
-        <!-- Card 2: RPS Lengkap -->
+        <!-- Card 2: Approved -->
         <div
             class="relative overflow-hidden bg-white dark:bg-slate-900 p-6 rounded-2xl border border-emerald-100 dark:border-emerald-900/40 shadow-sm hover:shadow-md transition-all group">
             <div class="relative z-10 flex items-center justify-between">
                 <div>
-                    <p class="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider mb-1">RPS
-                        Lengkap</p>
+                    <p class="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider mb-1">Approved</p>
                     <p class="text-3xl font-black text-emerald-600 dark:text-emerald-400">{{ rps_selesai }}</p>
                 </div>
                 <div
@@ -114,13 +113,12 @@
             </svg>
         </div>
 
-        <!-- Card 3: Masih Draft -->
+        <!-- Card 3: Submitted -->
         <div
             class="relative overflow-hidden bg-white dark:bg-slate-900 p-6 rounded-2xl border border-amber-100 dark:border-amber-900/40 shadow-sm hover:shadow-md transition-all group">
             <div class="relative z-10 flex items-center justify-between">
                 <div>
-                    <p class="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider mb-1">Masih
-                        Draft</p>
+                    <p class="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider mb-1">Submitted</p>
                     <p class="text-3xl font-black text-amber-600 dark:text-amber-400">{{ rps_draft }}</p>
                 </div>
                 <div
@@ -138,13 +136,12 @@
             </svg>
         </div>
 
-        <!-- Card 4: Belum Diisi -->
+        <!-- Card 4: Assigned -->
         <div
             class="relative overflow-hidden bg-white dark:bg-slate-900 p-6 rounded-2xl border border-purple-100 dark:border-purple-900/40 shadow-sm hover:shadow-md transition-all group">
             <div class="relative z-10 flex items-center justify-between">
                 <div>
-                    <p class="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider mb-1">Belum
-                        Diisi</p>
+                    <p class="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider mb-1">Assigned</p>
                     <p class="text-3xl font-black text-purple-600 dark:text-purple-400">{{ rps_belum }}</p>
                 </div>
                 <div
@@ -158,6 +155,27 @@
             <svg class="absolute -right-4 -bottom-4 w-32 h-32 text-purple-500/10 dark:text-purple-400/10 fill-current pointer-events-none transform -rotate-12 transition-transform group-hover:scale-110 group-hover:-rotate-6"
                 viewBox="0 0 24 24">
                 <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
+            </svg>
+        </div>
+
+        <!-- Card 5: Rejected -->
+        <div
+            class="relative overflow-hidden bg-white dark:bg-slate-900 p-6 rounded-2xl border border-red-100 dark:border-red-900/40 shadow-sm hover:shadow-md transition-all group">
+            <div class="relative z-10 flex items-center justify-between">
+                <div>
+                    <p class="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider mb-1">Rejected</p>
+                    <p class="text-3xl font-black text-red-600 dark:text-red-400">{{ rps_reject }}</p>
+                </div>
+                <div
+                    class="w-12 h-12 rounded-xl bg-red-50 dark:bg-red-900/40 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0">
+                    <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                    </svg>
+                </div>
+            </div>
+            <svg class="absolute -right-4 -bottom-4 w-32 h-32 text-red-500/10 dark:text-red-400/10 fill-current pointer-events-none transform -rotate-12 transition-transform group-hover:scale-110 group-hover:-rotate-6"
+                viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
             </svg>
         </div>
     </div>
@@ -276,7 +294,7 @@
         if (!select || !btn) return;
         const selectedOpt = select.options[select.selectedIndex];
         const sudahAktif = selectedOpt && selectedOpt.dataset.aktif === 'true';
-        btn.style.display = sudahAktif ? 'none' : '';
+        btn.hidden = sudahAktif;
     }
 
     // Jalankan saat halaman load agar state awal sudah sinkron
@@ -322,14 +340,14 @@
     Chart.defaults.color = chartTextColor;
     Chart.defaults.font.family = "'Inter', 'sans-serif'";
 
-    {% if rps_selesai + rps_draft + rps_belum > 0 %}
+    {% if rps_selesai + rps_draft + rps_belum + rps_reject > 0 %}
     new Chart(document.getElementById('statusChart'), {
         type: 'doughnut',
         data: {
-            labels: ['Lengkap', 'Draft', 'Belum'],
+            labels: ['Approved', 'Submitted', 'Assigned', 'Rejected'],
             datasets: [{
-                data: [{{ rps_selesai }}, {{ rps_draft }}, {{ rps_belum }}],
-        backgroundColor: ['#10b981', '#f59e0b', '#64748b'],
+                data: [{{ rps_selesai }}, {{ rps_draft }}, {{ rps_belum }}, {{ rps_reject }}],
+        backgroundColor: ['#10b981', '#f59e0b', '#64748b', '#ef4444'],
         borderWidth: 0,
         hoverOffset: 8
             }]

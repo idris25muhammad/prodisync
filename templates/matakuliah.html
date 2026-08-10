@@ -109,14 +109,18 @@
                 </td>
                 <td class="p-5">
                     <div class="flex gap-2 justify-center flex-wrap">
-                        <a href="{{ url_for('rps.edit', id=m.id) }}"
+                        {% if m.rps_status != 'approved' or current_user.is_kaprodi %}
+                        <a href="{{ url_for('rps.editor', id=m.id) }}"
                             class="text-xs font-bold px-3 py-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/60 transition-all">
                             {% if current_user.is_kaprodi %}Lihat RPS{% else %}Edit RPS{% endif %}
                         </a>
-                        <a href="{{ url_for('rps.download', id=m.id) }}"
+                        {% endif %}
+                        {% if m.rps_status == 'approved' %}
+                        <a href="{{ url_for('rps.preview', id=m.id) }}" target="_blank"
                             class="text-xs font-bold px-3 py-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/60 transition-all">
-                            Unduh PDF
+                            🖨️ Print / PDF
                         </a>
+                        {% endif %}
 
                         {% if current_user.is_kaprodi %}
                         {# Fitur Edit & Hapus eksklusif untuk Kaprodi #}

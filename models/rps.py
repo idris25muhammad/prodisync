@@ -39,9 +39,15 @@ class RPS(db.Model):
     qr_dosen_koor          = db.Column(db.String(200), nullable=True)
     tgl_pengesahan_koor    = db.Column(db.Date,        nullable=True)
 
-    # Data RPS (JSON)
-    tp_data    = db.Column(db.JSON, nullable=True)
-    rps_detail = db.Column(db.JSON, nullable=True)
+    # Data RPS (JSON, satu kolom per section agar skoring progress mudah)
+    tp_data             = db.Column(db.JSON, nullable=True)  # Tujuan Pembelajaran (CPL) - Tim Kurikulum
+    rencana_mingguan    = db.Column(db.JSON, nullable=True)  # tab 3
+    sarana_prasarana    = db.Column(db.JSON, nullable=True)  # tab 4
+    metode_evaluasi     = db.Column(db.Text, nullable=True)  # tab 4 (deskripsi metode)
+    rencana_evaluasi    = db.Column(db.JSON, nullable=True)  # tab 4
+    kriteria_penilaian  = db.Column(db.JSON, nullable=True)  # tab 5
+    kesepakatan         = db.Column(db.JSON, nullable=True)  # tab 5
+    pustaka             = db.Column(db.JSON, nullable=True)  # tab 5
 
     # Workflow
     rps_status = db.Column(

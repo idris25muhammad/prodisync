@@ -1,16 +1,28 @@
 // ── Opsi Metode Evaluasi (Statis) ─────────────────────────────────────────────
+// Label baru (IABEE-style). 'kode' adalah value yang disimpan; label lama dipetakan
+// otomatis oleh backend (T→A, K→Q, ATS→MSE, AAS→FSE) saat render ulang.
 const metodeOptions = [
-    { kode: 'T',   label: 'T — Tugas'                              },
-    { kode: 'P',   label: 'P — Praktikum/Proyek'                   },
-    { kode: 'K',   label: 'K — Kuis'                               },
-    { kode: 'ATS', label: 'ATS — Asesmen Tengah Semester'          },
-    { kode: 'AAS', label: 'AAS — Asesmen Akhir Semester'           },
-    { kode: 'PP',  label: 'PP — Presentasi Progres/Proyek'         },
+    { kode: 'A',   label: 'A — Assignment'                          },
+    { kode: 'Q',   label: 'Q — Quiz'                                },
+    { kode: 'MSE', label: 'MSE — Mid-Semester Exam'                 },
+    { kode: 'FSE', label: 'FSE — Final-Semester Exam'               },
+    { kode: 'P',   label: 'P — Practice/Project'                    },
+    { kode: 'PP',  label: 'PP — Project Presentation, Demo or Team meeting' },
 ];
+
+// Pemetaan kode lama → baru utk menampilkan data tersimpan dengan benar
+const metodeCodeMap = { T: 'A', K: 'Q', ATS: 'MSE', AAS: 'FSE', P: 'P', PP: 'PP' };
+
+function normalizeMetodeCode(raw) {
+    const k = (raw || '').trim().toUpperCase();
+    return metodeCodeMap[k] || k;
+}
 
 // ── Render Metode Tags (multi-select per baris) ───────────────────────────────
 function buildMetodeTags(m, savedMetode) {
-    const selected = savedMetode ? savedMetode.split(',').map(s => s.trim()) : [];
+    const selected = savedMetode
+        ? savedMetode.split(',').map(s => normalizeMetodeCode(s)).filter(Boolean)
+        : [];
 
     const optionsHtml = metodeOptions.map(opt => `
         <option value="${opt.kode}" ${selected.includes(opt.kode) ? 'selected' : ''}>
@@ -92,132 +104,98 @@ function renderRencanaMingguan() {
     const container = document.getElementById('minggu-container');
     if (!container) return;
 
-    // Header and Grid Container
-    container.innerHTML = `
-        <div class="flex items-center justify-between mb-4">
-            <div>
-                <h3 class="text-base font-bold text-slate-900 dark:text-white">Rencana Mingguan</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400">Klik setiap kartu untuk mengisi/edit Rencana Mingguan.</p>
-            </div>
-        </div>
-        <div id="minggu-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
-        <div id="minggu-modals"></div>
-    `;
-
-    const grid = document.getElementById('minggu-grid');
-    const modalsContainer = document.getElementById('minggu-modals');
+    var tableRows = '';
+    var modalsHtml = '';
 
     listSemester.forEach(function (m) {
-        const isExam = (m === 'ATS' || m === 'AAS');
-        const saved = getSavedMingguan(m);
+        var isExam = (m === 'ATS' || m === 'AAS');
+        var saved = getSavedMingguan(m);
 
-        const kemampuanVal = saved ? saved.kemampuan : (isExam ? 'Asesmen/Ujian ' + m : '');
-        const bahanVal = saved ? saved.bahan_kajian : (isExam ? 'Materi Ujian' : '');
-        const subBahanVal = saved ? saved.sub_bahan : '';
-        const modalitasVal = saved ? saved.modalitas : (isExam ? 'Luring' : 'Blended Learning');
-        const waktuVal = saved ? saved.waktu : '';
-        const pengalamanVal = saved ? saved.pengalaman : '';
-        const tpRefVal = saved ? saved.tp_ref : '';
+        var kemampuanVal = saved ? saved.kemampuan : (isExam ? 'Asesmen/Ujian ' + m : '');
+        var bahanVal = saved ? saved.bahan_kajian : (isExam ? 'Materi Ujian' : '');
+        var subBahanVal = saved ? saved.sub_bahan : '';
+        var modalitasVal = saved ? saved.modalitas : (isExam ? 'Luring' : "Blended learning: lecture, lab practice, group discussion, PBL (CDIO)");
+        var waktuVal = saved ? saved.waktu : (isExam ? '' : "PB 2x50'; PT 2x60'; BM 2x60'; Practicum 1x170'");
+        var pengalamanVal = saved ? saved.pengalaman : '';
+        var tpRefVal = saved ? saved.tp_ref : '';
 
-        // Card HTML
-        grid.innerHTML += `
-            <div id="card-minggu-${m}" class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-2xl shadow-sm hover:shadow-md hover:border-blue-300 dark:hover:border-blue-700 transition-all cursor-pointer p-5 flex flex-col gap-4 relative overflow-hidden group" onclick="openWeekModal('${m}')">
-                ${isExam ? '<div class="absolute top-0 right-0 w-12 h-12 bg-blue-500/10 dark:bg-blue-500/20 rounded-bl-[40px]"></div>' : ''}
-                <div class="flex flex-col gap-3 items-start">
-                    <span class="inline-flex items-center px-3 py-1.5 rounded-xl text-lg font-black bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100">
-                        ${isExam ? '' : 'Minggu '}${m}
-                    </span>
-                    <div id="status-badge-${m}"></div>
-                </div>
-                <div class="flex-1">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Materi / Kegiatan</p>
-                    <p class="text-sm font-bold text-slate-700 dark:text-slate-200 line-clamp-3 leading-relaxed" id="card-desc-${m}">
-                        ${kemampuanVal || '<span class="italic text-slate-400 font-normal">Belum diisi...</span>'}
-                    </p>
-                </div>
-                <div class="pt-3 border-t border-slate-100 dark:border-slate-700/50 flex justify-between items-center text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                    <span class="text-xs font-bold">Isi Rencana</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
-                </div>
-            </div>
-        `;
+        var tpBadges = '';
+        if (tpRefVal) {
+            var refs = tpRefVal.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+            refs.forEach(function(r) {
+                tpBadges += '<span class="inline-flex items-center text-[10px] font-bold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/50 px-1.5 py-0.5 rounded mr-0.5 mb-0.5">' + r + '</span>';
+            });
+        } else {
+            tpBadges = '<span class="text-[10px] text-slate-400 italic">-</span>';
+        }
 
-        // Modal HTML
-        modalsContainer.innerHTML += `
-            <div id="modal-minggu-${m}" class="fixed inset-0 z-[100] hidden bg-slate-900/50 backdrop-blur-sm items-center justify-center p-4">
-                <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 dark:border-slate-700" onclick="event.stopPropagation()">
-                    <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/30 rounded-t-2xl">
-                        <div>
-                            <h3 class="font-black text-2xl text-slate-800 dark:text-slate-100">${isExam ? m : 'Minggu ' + m}</h3>
-                            <p class="text-xs text-slate-500 font-medium">Isi detail rencana pembelajaran mingguan.</p>
-                        </div>
-                        <button type="button" onclick="closeWeekModal('${m}')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                        </button>
-                    </div>
-                    <div class="p-6 overflow-y-auto flex-1 bg-white dark:bg-slate-900">
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
-                            <input type="hidden" name="minggu_ke[]" value="${m}">
-                            
-                            <div class="md:col-span-4 bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800/50">
-                                <label class="block text-xs font-black text-blue-800 dark:text-blue-300 uppercase mb-2 tracking-wide">TP Ref (Referensi Tujuan Pembelajaran)</label>
-                                <div id="tp-box-${m}" class="flex flex-wrap gap-1 mb-2">
-                                    <span class="text-xs text-blue-500/70 italic font-medium">Memuat TP...</span>
-                                </div>
-                                <input type="hidden" name="tp_ref[]" id="hidden-tp-${m}" value="${tpRefVal}">
-                            </div>
+        var bahanPreview = bahanVal
+            ? bahanVal.replace(/</g, '&lt;').replace(/>/g, '&gt;').substring(0, 80) + (bahanVal.length > 80 ? '&hellip;' : '')
+            : '<span class="italic text-slate-400">Belum diisi</span>';
 
-                            <div class="md:col-span-2 flex flex-col gap-5">
-                                <div>
-                                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Kemampuan Akhir</label>
-                                    <input type="text" name="kemampuan[]" id="kemampuan-${m}" value="${kemampuanVal}" oninput="updateCardDesc('${m}', this.value)"
-                                        class="w-full p-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-400 outline-none dark:bg-slate-800 dark:border-slate-700 bg-slate-50 dark:text-slate-200 transition-shadow">
-                                </div>
-                                <div class="flex-1 flex flex-col">
-                                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Pokok Bahasan</label>
-                                    <textarea name="bahan_kajian[]" id="bahan_kajian-${m}"
-                                        class="w-full flex-1 p-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-400 outline-none dark:bg-slate-800 dark:border-slate-700 bg-slate-50 dark:text-slate-200 transition-shadow resize-none min-h-[120px]">${bahanVal}</textarea>
-                                </div>
-                            </div>
+        var modalitasPreview = modalitasVal
+            ? modalitasVal.replace(/</g, '&lt;').replace(/>/g, '&gt;').substring(0, 50) + (modalitasVal.length > 50 ? '&hellip;' : '')
+            : '<span class="italic text-slate-400">-</span>';
 
-                            <div class="md:col-span-2 space-y-5">
-                                <div>
-                                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Modalitas & Metode</label>
-                                    <textarea name="modalitas[]" id="modalitas-${m}" rows="2"
-                                        class="w-full p-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-400 outline-none dark:bg-slate-800 dark:border-slate-700 bg-slate-50 dark:text-slate-200 transition-shadow">${modalitasVal}</textarea>
-                                </div>
-                                <div>
-                                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Pengalaman Belajar</label>
-                                    <textarea name="pengalaman[]" id="pengalaman-${m}" rows="3"
-                                        class="w-full p-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-400 outline-none dark:bg-slate-800 dark:border-slate-700 bg-slate-50 dark:text-slate-200 transition-shadow">${pengalamanVal}</textarea>
-                                </div>
-                                <div>
-                                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Estimasi Waktu</label>
-                                    <input type="text" name="waktu[]" id="waktu-${m}" value="${waktuVal}" placeholder="1x2x50'"
-                                        class="w-full p-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-400 outline-none dark:bg-slate-800 dark:border-slate-700 bg-slate-50 dark:text-slate-200 transition-shadow">
-                                </div>
-                            </div>
+        tableRows += '<tr id="card-minggu-' + m + '" class="border-b border-slate-100 dark:border-slate-700/50 hover:bg-blue-50/40 dark:hover:bg-blue-900/10 cursor-pointer transition-colors" onclick="openWeekModal(\'' + m + '\')">';
+        tableRows += '<td class="px-3 py-3 text-sm font-black text-slate-800 dark:text-slate-100 whitespace-nowrap">' + (isExam ? m : 'Minggu ' + m) + '</td>';
+        tableRows += '<td class="px-3 py-3"><div id="tp-table-' + m + '" class="flex flex-wrap gap-0.5">' + tpBadges + '</div></td>';
+        tableRows += '<td class="px-3 py-3 text-xs text-slate-700 dark:text-slate-300 leading-relaxed max-w-[260px]" id="card-desc-' + m + '">' + bahanPreview + '</td>';
+        tableRows += '<td class="px-3 py-3 text-xs text-slate-600 dark:text-slate-400 leading-relaxed max-w-[180px]">' + modalitasPreview + '</td>';
+        tableRows += '<td class="px-3 py-3 whitespace-nowrap"><div id="status-badge-' + m + '"></div></td>';
+        tableRows += '</tr>';
 
-                            <div class="md:col-span-4 mt-2">
-                                <label class="block text-[11px] font-bold text-blue-500 uppercase mb-1.5">Sub Pokok Bahasan</label>
-                                <textarea name="sub_bahan[]" id="sub_bahan-${m}" rows="4"
-                                    onfocus="initBullet(this)" onkeydown="handleBullet(event,this)"
-                                    class="w-full p-3 border border-blue-200 dark:border-blue-800/50 rounded-xl text-sm focus:ring-2 focus:ring-blue-400 outline-none dark:bg-slate-800 bg-blue-50/30 dark:bg-blue-900/10 dark:text-slate-200 transition-shadow">${subBahanVal}</textarea>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="p-5 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3 bg-slate-50/50 dark:bg-slate-800/30 rounded-b-2xl">
-                        <button type="button" onclick="closeWeekModal('${m}')" class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all shadow-md shadow-blue-500/20">Simpan & Tutup</button>
-                    </div>
-                </div>
-            </div>
-        `;
+        modalsHtml += '<div id="modal-minggu-' + m + '" class="fixed inset-0 z-[100] hidden bg-slate-900/50 backdrop-blur-sm items-center justify-center p-4">';
+        modalsHtml += '<div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 dark:border-slate-700" onclick="event.stopPropagation()">';
+        modalsHtml += '<div class="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/30 rounded-t-2xl">';
+        modalsHtml += '<div><h3 class="font-black text-2xl text-slate-800 dark:text-slate-100">' + (isExam ? m : 'Minggu ' + m) + '</h3><p class="text-xs text-slate-500 font-medium">Isi detail rencana pembelajaran mingguan.</p></div>';
+        modalsHtml += '<button type="button" onclick="closeWeekModal(\'' + m + '\')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>';
+        modalsHtml += '</div>';
+        modalsHtml += '<div class="p-6 overflow-y-auto flex-1 bg-white dark:bg-slate-900">';
+        modalsHtml += '<div class="space-y-5">';
+        modalsHtml += '<input type="hidden" name="minggu_ke[]" value="' + m + '">';
+        modalsHtml += '<input type="hidden" name="kemampuan[]" value="' + kemampuanVal + '">';
+        modalsHtml += '<input type="hidden" name="pengalaman[]" value="' + pengalamanVal + '">';
+        modalsHtml += '<div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800/50">';
+        modalsHtml += '<label class="block text-xs font-black text-blue-800 dark:text-blue-300 uppercase mb-2 tracking-wide">CLO Ref (Referensi Course Learning Outcomes)</label>';
+        modalsHtml += '<div id="tp-box-' + m + '" class="flex flex-wrap gap-1 mb-2"><span class="text-xs text-blue-500/70 italic font-medium">Memuat CLO...</span></div>';
+        modalsHtml += '<input type="hidden" name="tp_ref[]" id="hidden-tp-' + m + '" value="' + tpRefVal + '">';
+        modalsHtml += '</div>';
+        modalsHtml += '<div><label class="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Pokok Bahasan</label>';
+        modalsHtml += '<textarea name="bahan_kajian[]" id="bahan_kajian-' + m + '" oninput="updateCardDesc(\'' + m + '\', this.value)" class="w-full p-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-400 outline-none dark:bg-slate-800 dark:border-slate-700 bg-slate-50 dark:text-slate-200 transition-shadow resize-none min-h-[100px]">' + bahanVal + '</textarea></div>';
+        modalsHtml += '<div><label class="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Sub Pokok Bahasan</label>';
+        modalsHtml += '<textarea name="sub_bahan[]" id="sub_bahan-' + m + '" rows="4" onfocus="initNumbered(this)" onkeydown="handleNumbered(event,this)" class="w-full p-3 border border-blue-200 dark:border-blue-800/50 rounded-xl text-sm focus:ring-2 focus:ring-blue-400 outline-none dark:bg-slate-800 bg-blue-50/30 dark:bg-blue-900/10 dark:text-slate-200 transition-shadow">' + subBahanVal + '</textarea></div>';
+        modalsHtml += '<div><label class="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Learning Method</label>';
+        modalsHtml += '<textarea name="modalitas[]" id="modalitas-' + m + '" rows="2" class="w-full p-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-400 outline-none dark:bg-slate-800 dark:border-slate-700 bg-slate-50 dark:text-slate-200 transition-shadow">' + modalitasVal + '</textarea></div>';
+        modalsHtml += '<div><label class="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Time</label>';
+        modalsHtml += '<textarea name="waktu[]" id="waktu-' + m + '" rows="2" class="w-full p-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-400 outline-none dark:bg-slate-800 dark:border-slate-700 bg-slate-50 dark:text-slate-200 transition-shadow">' + waktuVal + '</textarea></div>';
+        modalsHtml += '</div></div>';
+        modalsHtml += '<div class="p-5 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3 bg-slate-50/50 dark:bg-slate-800/30 rounded-b-2xl">';
+        modalsHtml += '<button type="button" onclick="saveWeekModal(\'' + m + '\')" class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all shadow-md shadow-blue-500/20">Simpan & Tutup</button>';
+        modalsHtml += '</div></div></div>';
     });
 
+    container.innerHTML = '<div class="flex items-center justify-between mb-4">' +
+        '<div>' +
+        '<p class="text-xs text-slate-500 dark:text-slate-400">Klik baris tabel untuk mengisi/edit rencana mingguan.</p>' +
+        '<p class="text-[10px] text-amber-600 dark:text-amber-400 mt-1">Pastikan CLO dan SO-PI di tab <strong>Course Learning Outcomes</strong> sudah diisi terlebih dahulu.</p></div></div>' +
+        '<div class="overflow-x-auto border border-slate-200 dark:border-slate-700 rounded-xl">' +
+        '<table class="w-full text-left">' +
+        '<thead class="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-700">' +
+        '<tr>' +
+        '<th class="px-3 py-2.5 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Week</th>' +
+        '<th class="px-3 py-2.5 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">CLO Ref</th>' +
+        '<th class="px-3 py-2.5 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Pokok Bahasan</th>' +
+        '<th class="px-3 py-2.5 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Learning Method</th>' +
+        '<th class="px-3 py-2.5 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Status</th>' +
+        '</tr></thead>' +
+        '<tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">' + tableRows + '</tbody>' +
+        '</table></div>' +
+        '<div id="minggu-modals">' + modalsHtml + '</div>';
+
     syncTPSelections();
-    
-    // Initial check for week statuses
-    listSemester.forEach(m => {
+
+    listSemester.forEach(function(m) {
         checkWeekStatus(m);
     });
 }
@@ -229,25 +207,66 @@ window.openWeekModal = function(m) {
         modal.classList.remove('hidden');
         modal.classList.add('flex');
     }
+    ['bahan_kajian', 'modalitas', 'waktu'].forEach(function (p) {
+        const el = document.getElementById(`${p}-${m}`);
+        if (el) el.classList.remove('border-red-500', 'ring-1', 'ring-red-400');
+    });
+    const tpBox = document.getElementById(`tp-box-${m}`);
+    if (tpBox) tpBox.classList.remove('border-red-500', 'ring-1', 'ring-red-400');
 };
 
 window.closeWeekModal = function(m) {
-    const modal = document.getElementById(`modal-minggu-${m}`);
+    var modal = document.getElementById('modal-minggu-' + m);
     if (modal) {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
+        updateTableTpBadges(m);
         checkWeekStatus(m);
     }
 };
 
+window.saveWeekModal = function(m) {
+    const fields = [
+        { id: `bahan_kajian-${m}`,  label: 'Pokok Bahasan' },
+        { id: `modalitas-${m}`,     label: 'Learning Method' },
+        { id: `waktu-${m}`,         label: 'Time' },
+        { id: `hidden-tp-${m}`,     label: 'CLO Ref', warnBorder: false },
+    ];
+
+    const empty = [];
+    fields.forEach(function (f) {
+        const el = document.getElementById(f.id);
+        if (!el) return;
+        if (!el.value.trim()) {
+            empty.push(f.label);
+            if (f.warnBorder !== false) {
+                el.classList.add('border-red-500', 'ring-1', 'ring-red-400');
+            } else {
+                const tpBox = document.getElementById(`tp-box-${m}`);
+                if (tpBox) tpBox.classList.add('border-red-500', 'ring-1', 'ring-red-400');
+            }
+        } else {
+            el.classList.remove('border-red-500', 'ring-1', 'ring-red-400');
+            const tpBox = document.getElementById(`tp-box-${m}`);
+            if (tpBox) tpBox.classList.remove('border-red-500', 'ring-1', 'ring-red-400');
+        }
+    });
+
+    if (empty.length > 0) {
+        alert(`Mohon lengkapi bidang berikut sebelum menyimpan:\n• ${empty.join('\n• ')}`);
+        return;
+    }
+
+    closeWeekModal(m);
+};
+
 window.checkWeekStatus = function(m) {
-    const kemampuan = document.getElementById(`kemampuan-${m}`)?.value.trim() || '';
     const bahan_kajian = document.getElementById(`bahan_kajian-${m}`)?.value.trim() || '';
     const modalitas = document.getElementById(`modalitas-${m}`)?.value.trim() || '';
-    const pengalaman = document.getElementById(`pengalaman-${m}`)?.value.trim() || '';
     const waktu = document.getElementById(`waktu-${m}`)?.value.trim() || '';
+    const tpRef = document.getElementById(`hidden-tp-${m}`)?.value.trim() || '';
     
-    const isSelesai = kemampuan && bahan_kajian && modalitas && pengalaman && waktu;
+    const isSelesai = bahan_kajian && modalitas && waktu && tpRef;
     const badgeContainer = document.getElementById(`status-badge-${m}`);
     
     if (badgeContainer) {
@@ -260,9 +279,33 @@ window.checkWeekStatus = function(m) {
 };
 
 window.updateCardDesc = function(m, val) {
-    const descEl = document.getElementById(`card-desc-${m}`);
+    var descEl = document.getElementById('card-desc-' + m);
     if (descEl) {
-        descEl.innerHTML = val ? val : '<span class="italic text-slate-400 font-normal">Belum diisi...</span>';
+        if (val) {
+            var safe = val.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            descEl.innerHTML = safe.substring(0, 80) + (safe.length > 80 ? '&hellip;' : '');
+        } else {
+            descEl.innerHTML = '<span class="italic text-slate-400">Belum diisi</span>';
+        }
+    }
+};
+
+
+window.updateTableTpBadges = function(m) {
+    var hiddenTp = document.getElementById('hidden-tp-' + m);
+    var tableCell = document.getElementById('tp-table-' + m);
+    if (!hiddenTp || !tableCell) return;
+
+    var tpRefVal = hiddenTp.value.trim();
+    if (tpRefVal) {
+        var refs = tpRefVal.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+        var html = '';
+        refs.forEach(function(r) {
+            html += '<span class="inline-flex items-center text-[10px] font-bold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/50 px-1.5 py-0.5 rounded mr-0.5 mb-0.5">' + r + '</span>';
+        });
+        tableCell.innerHTML = html;
+    } else {
+        tableCell.innerHTML = '<span class="text-[10px] text-slate-400 italic">-</span>';
     }
 };
 
@@ -279,7 +322,7 @@ function renderRencanaEvaluasi() {
         const saved  = getSavedEvaluasi(m);
 
         const tpVal         = saved ? saved.tp         : '';
-        const metodeVal     = saved ? saved.metode     : (isExam ? (m === 'ATS' ? 'ATS' : 'AAS') : '');
+        const metodeVal     = saved ? saved.metode     : (isExam ? (m === 'ATS' ? 'MSE' : 'FSE') : '');
         const keteranganVal = saved ? saved.keterangan : '';
 
         const bgClass = isExam

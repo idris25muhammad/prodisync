@@ -81,7 +81,7 @@ window.updateKriteriaTotal = function () {
         total += val;
 
         const komponen = komponenInput.value.trim();
-        if (komponen === 'Partisipatif' || komponen === 'Hasil Proyek') {
+        if (komponen === 'Partisipatif' || komponen === 'Proyek' || komponen === 'Hasil Proyek') {
             totalPblKomponen += val;
         }
     });
@@ -141,7 +141,7 @@ window.updateKriteriaTotal = function () {
             pblTotalEl.classList.add('text-red-600', 'dark:text-red-400');
         }
         warningEl.classList.add('text-red-600', 'dark:text-red-400');
-        warningEl.textContent = 'Karena matakuliah PBL, total Partisipatif + Hasil Proyek minimal 50%.';
+        warningEl.textContent = 'Karena matakuliah PBL, total Partisipatif + Proyek minimal 50%.';
         submitBtn.disabled = true;
         submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
         return;
@@ -200,6 +200,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (
                 komponenInput.value.trim() === 'Partisipatif' ||
+                komponenInput.value.trim() === 'Proyek' ||
                 komponenInput.value.trim() === 'Hasil Proyek'
             ) {
                 totalPblKomponen += bobot;
@@ -214,7 +215,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (isPbl && totalPblKomponen < 50) {
             e.preventDefault();
-            alert('Karena ini matakuliah PBL, total bobot Partisipatif + Hasil Proyek minimal 50%. Sekarang totalnya ' + totalPblKomponen + '%.');
+            alert('Karena ini matakuliah PBL, total bobot Partisipatif + Proyek minimal 50%. Sekarang totalnya ' + totalPblKomponen + '%.');
         }
     });
 });

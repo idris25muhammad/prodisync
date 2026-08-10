@@ -3,7 +3,7 @@
 
 <div class="flex justify-between items-center mb-8">
     <div>
-        <h1 class="text-3xl font-extrabold">Rencana Program Studi</h1>
+        <h1 class="text-3xl font-extrabold">Semester Lesson Plan</h1>
         <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Kelola dan pantau status RPS per mata kuliah dan
             tahun ajaran.</p>
     </div>
@@ -51,159 +51,322 @@
         </div>
     </div>
 
-    <div>
-        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Filter Semester</label>
-        <div id="filter-semester-container" class="flex flex-wrap gap-2 items-center">
-            <!-- Radio semester dinamis (Radio Button UI) -->
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Filter Semester</label>
+            <div id="filter-semester-container" class="flex flex-wrap gap-2 items-center">
+                <!-- Radio semester dinamis (Radio Button UI) -->
+            </div>
         </div>
-    </div>
 
-    <div class="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-        <a href="{{ url_for('rps.list') }}"
-            class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition-all">Reset</a>
-        <button type="submit"
-            class="px-5 py-2.5 rounded-xl text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 transition-all">Terapkan
-            Filter</button>
+        <div class="flex gap-3">
+            <a href="{{ url_for('rps.list') }}"
+                class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition-all self-end">Reset</a>
+            <button type="submit"
+                class="px-5 py-2.5 rounded-xl text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 transition-all self-end">Terapkan
+                Filter</button>
+        </div>
     </div>
 </form>
 
-{# ── Tabel / Grid Card RPS ── #}
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-    {% for rps_obj, mk, dosen_obj in rps_list %}
-    {% set progress = hitung_progress_rps(rps_obj) %}
-    <div
-        class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm hover:shadow-md transition-shadow flex flex-col overflow-hidden">
-
-        {# Header: Kode & Status #}
-        <div
-            class="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start gap-2 bg-slate-50/50 dark:bg-slate-800/30">
-            <div class="font-mono font-extrabold text-blue-600 dark:text-blue-400 text-lg">{{ mk.kode }}</div>
+{# ── Detail Slide-over Panel ── #}
+<div id="detail-panel"
+    class="fixed inset-y-0 right-0 z-50 w-full max-w-sm bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-700 shadow-2xl transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-700">
+        <div>
+            <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">Detail RPS</p>
+            <h3 id="dp-kode" class="font-mono font-extrabold text-blue-600 dark:text-blue-400 text-xl leading-none"></h3>
+        </div>
+        <button onclick="closeDetail()"
+            class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </button>
+    </div>
+    <div class="flex-1 overflow-y-auto px-5 py-5 space-y-5">
+        <div>
+            <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Mata Kuliah</p>
+            <p id="dp-nama" class="font-semibold text-slate-800 dark:text-slate-100 text-sm leading-snug"></p>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
             <div>
-                {% if rps_obj.rps_status == 'assigned' %}
-                <span
-                    class="px-2.5 py-1 text-[10px] rounded-md bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300 font-bold uppercase tracking-wider shadow-sm">Assigned</span>
-                {% elif rps_obj.rps_status == 'submitted' %}
-                <span
-                    class="px-2.5 py-1 text-[10px] rounded-md bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold uppercase tracking-wider shadow-sm">Submitted</span>
-                {% elif rps_obj.rps_status == 'approved' %}
-                <span
-                    class="px-2.5 py-1 text-[10px] rounded-md bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-bold uppercase tracking-wider shadow-sm">Approved</span>
-                {% elif rps_obj.rps_status == 'rejected' %}
-                <span
-                    class="px-2.5 py-1 text-[10px] rounded-md bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 font-bold uppercase tracking-wider shadow-sm">Rejected</span>
-                {% endif %}
+                <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">SKS</p>
+                <p id="dp-sks" class="font-semibold text-slate-700 dark:text-slate-200 text-sm"></p>
+            </div>
+            <div>
+                <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Semester</p>
+                <p id="dp-semester" class="font-semibold text-slate-700 dark:text-slate-200 text-sm"></p>
             </div>
         </div>
-
-        {# Body: Nama, SKS, Dosen, Progress #}
-        <div class="p-4 flex-1 flex flex-col">
-            <h3 class="font-bold text-slate-800 dark:text-slate-100 text-[15px] leading-snug mb-3 line-clamp-2"
-                title="{{ mk.nama }}">{{ mk.nama }}</h3>
-
-            <div class="text-xs text-slate-500 dark:text-slate-400 space-y-1.5 mb-5 flex-1 font-medium">
-                <p class="flex items-center gap-1.5"><span class="w-4 text-center">📚</span> {{ rps_obj.sks }} SKS</p>
-                <p class="flex items-center gap-1.5"><span class="w-4 text-center">📅</span> {{
-                    rps_obj.tahun_ajaran.tahun ~ ' ' ~ rps_obj.tahun_ajaran.semester if rps_obj.tahun_ajaran else '—' }}
-                </p>
-                {% if current_user.is_kaprodi %}
-                <p class="flex items-center gap-1.5 truncate" title="{{ dosen_obj.nama if dosen_obj else '—' }}">
-                    <span class="w-4 text-center">👤</span> {{ dosen_obj.nama if dosen_obj else '—' }}
-                </p>
-                {% endif %}
+        <div>
+            <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Tahun Ajaran</p>
+            <p id="dp-ta" class="font-semibold text-slate-700 dark:text-slate-200 text-sm"></p>
+        </div>
+        <div>
+            <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Dosen Koordinator</p>
+            <p id="dp-dosen" class="font-semibold text-slate-700 dark:text-slate-200 text-sm"></p>
+        </div>
+        <div>
+            <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Status</p>
+            <div id="dp-status"></div>
+        </div>
+        <div>
+            <div class="flex justify-between items-center mb-2">
+                <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Progress Pengisian</p>
+                <span id="dp-progress-val" class="text-sm font-black text-blue-600 dark:text-blue-400"></span>
             </div>
-
-            {# Progress Bar #}
-            <div class="mt-auto">
-                <div class="flex justify-between items-center mb-1.5">
-                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Progress</span>
-                    <span
-                        class="text-xs font-black {% if progress == 100 %}text-green-600 dark:text-green-400{% else %}text-blue-600 dark:text-blue-400{% endif %}">{{
-                        progress }}%</span>
-                </div>
-                <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden shadow-inner">
-                    <div class="h-2 rounded-full transition-all duration-500 {% if progress == 100 %}bg-green-500{% else %}bg-blue-500{% endif %}"
-                        style="width: {{ progress }}%"></div>
-                </div>
+            <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2.5 overflow-hidden">
+                <div id="dp-progress-bar" class="h-2.5 rounded-full transition-all duration-700 bg-blue-500"></div>
             </div>
         </div>
-
-        {# Footer: Actions #}
-        <div
-            class="p-3 bg-slate-50 dark:bg-slate-800/50 flex flex-wrap gap-2 justify-center border-t border-slate-100 dark:border-slate-800">
-            <a href="{{ url_for('rps.editor', id=rps_obj.id) }}" title="Lihat/Edit"
-                class="flex items-center justify-center p-2 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 hover:bg-blue-200 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path
-                        d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                </svg>
-            </a>
-            <a href="{{ url_for('rps.preview', id=rps_obj.id) }}" title="Unduh PDF"
-                class="flex items-center justify-center p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-200 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd"
-                        d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
-                        clip-rule="evenodd" />
-                </svg>
-            </a>
-
-            {% if current_user.is_kaprodi %}
-            <button type="button"
-                onclick="openEditMetaModal({{ rps_obj.id }}, {{ rps_obj.sks }}, {{ rps_obj.semester or '' }}, '{{ rps_obj.tahun_ajaran_id }}', '{{ dosen_obj.id if dosen_obj else '' }}', '{{ dosen_obj.nama | replace("'", "\\'") if dosen_obj else '' }}', '{{ rps_obj.prasyarat or '' }}', '{{ rps_obj.tgl_pengesahan_kaprodi or '' }}', '{{ rps_obj.qr_kaprodi or '' }}')"
-                title="Edit Meta"
-                class="flex items-center justify-center p-2 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 hover:bg-amber-200 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd"
-                        d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z"
-                        clip-rule="evenodd" />
-                </svg>
-            </button>
-            <button type="button"
-                onclick="confirmDelete('{{ url_for('rps.delete', id=rps_obj.id) }}', '{{ mk.nama | replace("'", "\\'") }}')"
-                title="Hapus"
-                class="flex items-center justify-center p-2 rounded-lg bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 hover:bg-red-200 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd"
-                        d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                        clip-rule="evenodd" />
-                </svg>
-            </button>
-
-            {% if rps_obj.rps_status == 'submitted' %}
-            <form method="POST" action="{{ url_for('rps.approve', id=rps_obj.id) }}" class="inline">
-                <button type="submit" title="Approve"
-                    class="flex items-center justify-center p-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors shadow-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd"
-                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                            clip-rule="evenodd" />
-                    </svg>
-                </button>
-            </form>
-            <button type="button" onclick="openRejectModal({{ rps_obj.id }}, '{{ mk.nama | replace("'", "\\'") }}')"
-                title="Reject"
-                class="flex items-center justify-center p-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd"
-                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                        clip-rule="evenodd" />
-                </svg>
-            </button>
-            {% endif %}
-            {% endif %}
+        <div>
+            <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Prasyarat</p>
+            <p id="dp-prasyarat" class="font-medium text-slate-600 dark:text-slate-300 text-sm"></p>
         </div>
+    </div>
+    <div id="dp-actions" class="px-5 py-4 border-t border-slate-200 dark:border-slate-700 flex flex-col gap-2">
+    </div>
+</div>
+<div id="detail-overlay" onclick="closeDetail()"
+    class="fixed inset-0 z-40 bg-black/40 hidden transition-opacity duration-300"></div>
+
+{# ── Tabel RPS ── #}
+<div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+    {% if rps_list %}
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-700">
+                    <th class="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-500 w-8">#</th>
+                    <th class="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-500">Kode</th>
+                    <th class="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-500">Mata Kuliah</th>
+                    <th class="text-center px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-500">SKS</th>
+                    {% if current_user.is_kaprodi %}
+                    <th class="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-500">Dosen</th>
+                    {% endif %}
+                    <th class="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-500">Tahun Ajaran</th>
+                    <th class="text-center px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-500">Status</th>
+                    <th class="text-center px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-500">Progress</th>
+                    <th class="text-center px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-500">Aksi</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                {% for rps_obj, mk, dosen_obj in rps_list %}
+                {% set progress = hitung_progress_rps(rps_obj) %}
+                <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors group">
+                    <td class="px-4 py-3 text-slate-400 text-xs font-medium">{{ loop.index }}</td>
+                    <td class="px-4 py-3">
+                        <span class="font-mono font-bold text-blue-600 dark:text-blue-400 text-xs">{{ mk.kode }}</span>
+                    </td>
+                    <td class="px-4 py-3 max-w-xs">
+                        <p class="font-semibold text-slate-800 dark:text-slate-100 text-[13px] leading-snug line-clamp-2" title="{{ mk.nama }}">{{ mk.nama }}</p>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <span class="text-xs font-bold text-slate-600 dark:text-slate-300">{{ rps_obj.sks }}</span>
+                    </td>
+                    {% if current_user.is_kaprodi %}
+                    <td class="px-4 py-3 max-w-[160px]">
+                        <p class="text-xs text-slate-600 dark:text-slate-300 truncate font-medium" title="{{ dosen_obj.nama if dosen_obj else '—' }}">
+                            {{ dosen_obj.nama if dosen_obj else '—' }}
+                        </p>
+                    </td>
+                    {% endif %}
+                    <td class="px-4 py-3">
+                        <span class="text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">
+                            {{ rps_obj.tahun_ajaran.tahun ~ ' ' ~ rps_obj.tahun_ajaran.semester if rps_obj.tahun_ajaran else '—' }}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        {% if rps_obj.rps_status == 'assigned' %}
+                        <span class="inline-block px-2 py-0.5 text-[10px] rounded-md bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 font-bold uppercase tracking-wide">Assigned</span>
+                        {% elif rps_obj.rps_status == 'submitted' %}
+                        <span class="inline-block px-2 py-0.5 text-[10px] rounded-md bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 font-bold uppercase tracking-wide">Submitted</span>
+                        {% elif rps_obj.rps_status == 'approved' %}
+                        <span class="inline-block px-2 py-0.5 text-[10px] rounded-md bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 font-bold uppercase tracking-wide">Approved</span>
+                        {% elif rps_obj.rps_status == 'rejected' %}
+                        <span class="inline-block px-2 py-0.5 text-[10px] rounded-md bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 font-bold uppercase tracking-wide">Rejected</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="flex items-center gap-2 min-w-[80px]">
+                            <div class="flex-1 bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                                <div class="h-1.5 rounded-full {% if progress == 100 %}bg-green-500{% else %}bg-blue-500{% endif %} transition-all"
+                                    style="width: {{ progress }}%"></div>
+                            </div>
+                            <span class="text-[11px] font-bold {% if progress == 100 %}text-green-600 dark:text-green-400{% else %}text-blue-600 dark:text-blue-400{% endif %} w-7 text-right shrink-0">{{ progress }}%</span>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="flex items-center justify-center gap-1.5">
+                            {# Tombol Detail (Eye) #}
+                            <button type="button"
+                                onclick="openDetail(
+                                    '{{ mk.kode }}',
+                                    '{{ mk.nama | replace("'", "\\'") }}',
+                                    '{{ rps_obj.sks }}',
+                                    '{{ rps_obj.semester or "—" }}',
+                                    '{{ (rps_obj.tahun_ajaran.tahun ~ " " ~ rps_obj.tahun_ajaran.semester) if rps_obj.tahun_ajaran else "—" }}',
+                                    '{{ dosen_obj.nama | replace("'", "\\'") if dosen_obj else "—" }}',
+                                    '{{ rps_obj.rps_status }}',
+                                    {{ progress }},
+                                    '{{ rps_obj.prasyarat or "—" }}',
+                                    {{ rps_obj.id }},
+                                    {{ 'true' if current_user.is_kaprodi else 'false' }},
+                                    '{{ rps_obj.matakuliah.kode if rps_obj.matakuliah else mk.kode }}'
+                                )"
+                                title="Lihat Detail"
+                                class="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                </svg>
+                            </button>
+
+                            {# Tombol Edit RPS - sembunyikan jika approved (kecuali kaprodi tetap bisa lihat) #}
+                            {% if rps_obj.rps_status != 'approved' or current_user.is_kaprodi %}
+                            <a href="{{ url_for('rps.editor', id=rps_obj.id) }}" title="{% if current_user.is_kaprodi %}Lihat RPS{% else %}Edit RPS{% endif %}"
+                                class="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                </svg>
+                            </a>
+                            {% endif %}
+
+                            {# Tombol Preview/Print PDF - hanya jika approved #}
+                            {% if rps_obj.rps_status == 'approved' %}
+                            <a href="{{ url_for('rps.preview', id=rps_obj.id) }}" target="_blank" title="Preview & Print PDF"
+                                class="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                                </svg>
+                            </a>
+                            {% endif %}
+
+                            {% if current_user.is_kaprodi %}
+                            {# Tombol Edit Meta #}
+                            <button type="button"
+                                onclick="openEditMetaModal({{ rps_obj.id }}, {{ rps_obj.sks }}, {{ rps_obj.semester or '' }}, '{{ rps_obj.tahun_ajaran_id }}', '{{ dosen_obj.id if dosen_obj else '' }}', '{{ dosen_obj.nama | replace("'", "\\'") if dosen_obj else '' }}', '{{ rps_obj.prasyarat or '' }}', '{{ rps_obj.tgl_pengesahan_kaprodi or '' }}', '{{ rps_obj.qr_kaprodi or '' }}')"
+                                title="Edit Metadata"
+                                class="p-1.5 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                            </button>
+
+                            {# Tombol Hapus #}
+                            <button type="button"
+                                onclick="confirmDelete('{{ url_for('rps.delete', id=rps_obj.id) }}', '{{ mk.nama | replace("'", "\\'") }}')"
+                                title="Hapus"
+                                class="p-1.5 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/60 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                            </button>
+
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {# Info total #}
+    <div class="px-5 py-3 bg-slate-50 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+        <p class="text-xs text-slate-400 font-medium">Menampilkan <strong class="text-slate-600 dark:text-slate-300">{{ rps_list | length }}</strong> RPS</p>
     </div>
     {% else %}
-    <div
-        class="col-span-1 sm:col-span-2 lg:col-span-4 p-16 flex flex-col items-center justify-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
-        <div class="text-4xl mb-4">📭</div>
+    <div class="p-16 flex flex-col items-center justify-center">
+        <div class="text-5xl mb-4">📭</div>
         <p class="text-slate-500 font-medium">Belum ada RPS yang tersedia.</p>
         {% if current_user.is_kaprodi %}
-        <p class="text-slate-400 mt-1 text-sm">Klik <strong class="text-blue-600 dark:text-blue-400">+ Tambah
-                RPS</strong> untuk membuat RPS baru.</p>
+        <p class="text-slate-400 mt-1 text-sm">Klik <strong class="text-blue-600 dark:text-blue-400">+ Tambah RPS</strong> untuk membuat RPS baru.</p>
         {% endif %}
     </div>
-    {% endfor %}
+    {% endif %}
 </div>
+
+<script>
+    // ── Detail Panel ─────────────────────────────────────────────────────────────
+    const statusBadge = {
+        assigned:  '<span class="inline-block px-2.5 py-1 text-xs rounded-md bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 font-bold uppercase tracking-wide">Assigned</span>',
+        submitted: '<span class="inline-block px-2.5 py-1 text-xs rounded-md bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 font-bold uppercase tracking-wide">Submitted</span>',
+        approved:  '<span class="inline-block px-2.5 py-1 text-xs rounded-md bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 font-bold uppercase tracking-wide">Approved</span>',
+        rejected:  '<span class="inline-block px-2.5 py-1 text-xs rounded-md bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 font-bold uppercase tracking-wide">Rejected</span>',
+    };
+
+    function openDetail(kode, nama, sks, semester, ta, dosen, status, progress, prasyarat, id, isKaprodi, mkKode) {
+        document.getElementById('dp-kode').textContent        = kode;
+        document.getElementById('dp-nama').textContent        = nama;
+        document.getElementById('dp-sks').textContent         = sks + ' SKS';
+        document.getElementById('dp-semester').textContent    = 'Semester ' + semester;
+        document.getElementById('dp-ta').textContent          = ta;
+        document.getElementById('dp-dosen').textContent       = dosen;
+        document.getElementById('dp-status').innerHTML        = statusBadge[status] || status;
+        document.getElementById('dp-prasyarat').textContent   = prasyarat;
+        document.getElementById('dp-progress-val').textContent = progress + '%';
+        const bar = document.getElementById('dp-progress-bar');
+        bar.style.width = progress + '%';
+        bar.className = 'h-2.5 rounded-full transition-all duration-700 ' + (progress === 100 ? 'bg-green-500' : 'bg-blue-500');
+
+        const actionsEl = document.getElementById('dp-actions');
+        actionsEl.innerHTML = `
+            ${(status !== 'approved' || isKaprodi) ? `
+            <a href="/rps/editor/${id}"
+                class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold transition-colors shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
+                ${isKaprodi ? 'Lihat RPS' : 'Edit RPS'}
+            </a>
+            ` : ''}
+            ${status === 'approved' ? `
+            <a href="/rps/preview/${id}" target="_blank"
+                class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold transition-colors shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                </svg>
+                Preview &amp; Print PDF
+            </a>
+            ` : ''}
+            ${isKaprodi && status === 'submitted' ? `
+            <div class="flex gap-2 mt-1">
+                <form method="POST" action="/rps/${id}/approve" class="flex-1">
+                    <button type="submit"
+                        class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-bold transition-colors shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        Approve
+                    </button>
+                </form>
+                <button type="button"
+                    onclick="closeDetail(); openRejectModal(${id}, decodeURIComponent('${encodeURIComponent(nama)}'))"
+                    class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition-colors shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                    Reject
+                </button>
+            </div>` : ''}
+        `;
+
+        document.getElementById('detail-panel').classList.remove('translate-x-full');
+        document.getElementById('detail-overlay').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeDetail() {
+        document.getElementById('detail-panel').classList.add('translate-x-full');
+        document.getElementById('detail-overlay').classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
+</script>
+
+
 
 {# ── Modal Reject ── #}
 <div id="rejectModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 px-4">
@@ -238,7 +401,7 @@
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onclick="document.getElementById('modal-tambah').classList.add('hidden')"></div>
     <div
-        class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 dark:border-slate-700 z-10 max-h-[90vh] overflow-y-auto">
+        class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl border border-slate-200 dark:border-slate-700 z-10 max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
             <h2 class="text-lg font-bold">Tambah RPS Baru</h2>
             <button onclick="document.getElementById('modal-tambah').classList.add('hidden')"

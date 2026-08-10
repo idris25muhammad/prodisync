@@ -1,8 +1,8 @@
 <div id="tab-5" class="tab-content hidden space-y-6">
     <div class="border-b border-slate-200 dark:border-slate-700 pb-3">
-        <h2 id="head-9" class="text-xl font-bold">IX. Kriteria Penilaian</h2>
+        <h2 id="head-9" class="text-xl font-bold">STUDENT OUTCOMES ASSESSMENT PLAN</h2>
         <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Komponen utama tetap, sub-komponen dapat ditambah. Total bobot harus 100%.
+            Tentukan bobot penilaian untuk setiap komponen. Komponen utama tetap, sub-komponen dapat ditambah. Total bobot harus 100%.
         </p>
     </div>
 
@@ -21,19 +21,45 @@
             </label>
         </div>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
-            Jika Ya, maka total bobot kategori Partisipatif dan Hasil Proyek minimal 50%.
+            Jika Ya, maka total bobot kategori Partisipatif dan Proyek minimal 50%.
         </p>
     </div>
 
     <div class="space-y-4">
         {% set komponen_list = [
         'Partisipatif',
-        'Hasil Proyek',
         'Tugas',
         'Kuis',
-        'Kognitif ATS',
-        'Kognitif AAS'
+        'ATS',
+        'AAS',
+        'Proyek'
         ] %}
+
+        {% set default_kriteria = {
+            'Partisipatif': [
+                {'sub_komponen': 'Teamwork', 'persentase': 10},
+                {'sub_komponen': 'Profesionalitas', 'persentase': 10}
+            ],
+            'Tugas': [
+                {'sub_komponen': 'Tugas praktik lab', 'persentase': 10}
+            ],
+            'Kuis': [
+                {'sub_komponen': 'Kuis teoritis/konseptual', 'persentase': 10}
+            ],
+            'ATS': [
+                {'sub_komponen': 'Pemahaman teori', 'persentase': 5},
+                {'sub_komponen': 'Praktikum', 'persentase': 5}
+            ],
+            'AAS': [
+                {'sub_komponen': 'Pemahaman teori', 'persentase': 5},
+                {'sub_komponen': 'Praktikum', 'persentase': 5}
+            ],
+            'Proyek': [
+                {'sub_komponen': 'Perancangan', 'persentase': 5},
+                {'sub_komponen': 'Presentasi', 'persentase': 5},
+                {'sub_komponen': 'Hasil Produk', 'persentase': 30}
+            ]
+        } %}
 
         {% for komponen in komponen_list %}
         <div class="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
@@ -51,61 +77,86 @@
             </div>
 
             <div class="p-4 space-y-3" id="group-{{ komponen|replace(' ', '-')|replace('/', '-') }}">
-                {% set found = namespace(has=false) %}
-                {% if matkul.rps_detail and matkul.rps_detail.kriteria_penilaian %}
-                {% for k in matkul.rps_detail.kriteria_penilaian %}
-                {% if k.komponen == komponen %}
-                {% set found.has = true %}
-                <div class="subkomponen-row flex flex-col md:flex-row gap-3 items-start" data-komponen="{{ komponen }}">
-                    <input type="hidden" name="komponen_nilai[]" value="{{ komponen }}">
+                {% if matkul.kriteria_penilaian %}
+                    {% set found = namespace(has=false) %}
+                    {% for k in matkul.kriteria_penilaian %}
+                        {% if k.komponen == komponen %}
+                            {% set found.has = true %}
+                            <div class="subkomponen-row flex flex-col md:flex-row gap-3 items-start" data-komponen="{{ komponen }}">
+                                <input type="hidden" name="komponen_nilai[]" value="{{ komponen }}">
 
-                    <div class="w-full md:w-9/12">
-                        <textarea name="sub_komponen[]" rows="1" placeholder="Deskripsi sub komponen"
-                            class="w-full p-2 border rounded text-sm outline-none dark:bg-slate-800 dark:border-slate-600">{{ k.sub_komponen }}</textarea>
+                                <div class="w-full md:w-9/12">
+                                    <textarea name="sub_komponen[]" rows="1" placeholder="Deskripsi sub komponen"
+                                        class="w-full p-2 border rounded text-sm outline-none dark:bg-slate-800 dark:border-slate-600">{{ k.sub_komponen }}</textarea>
+                                </div>
+
+                                <div class="w-full md:w-3/12 flex gap-2">
+                                    <input type="number" name="persentase[]" value="{{ k.persentase }}" min="0" max="100" step="1"
+                                        placeholder="0"
+                                        class="kriteria-bobot w-full p-2 border rounded text-sm text-center outline-none dark:bg-slate-800 dark:border-slate-600">
+                                    <button type="button" onclick="removeSubKomponen(this)"
+                                        class="text-red-400 hover:text-red-600 dark:hover:text-red-400 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-all"
+                                        title="Hapus">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                                            class="w-5 h-5">
+                                            <path
+                                                d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if not found.has %}
+                    <div class="subkomponen-row flex flex-col md:flex-row gap-3 items-start" data-komponen="{{ komponen }}">
+                        <input type="hidden" name="komponen_nilai[]" value="{{ komponen }}">
+
+                        <div class="w-full md:w-9/12">
+                            <textarea name="sub_komponen[]" rows="1" placeholder="Deskripsi sub komponen"
+                                class="w-full p-2 border rounded text-sm outline-none dark:bg-slate-800 dark:border-slate-600"></textarea>
+                        </div>
+
+                        <div class="w-full md:w-3/12 flex gap-2">
+                            <input type="number" name="persentase[]" value="" min="0" max="100" step="1" placeholder="0"
+                                class="kriteria-bobot w-full p-2 border rounded text-sm text-center outline-none dark:bg-slate-800 dark:border-slate-600">
+                            <button type="button" onclick="removeSubKomponen(this)"
+                                class="text-red-400 hover:text-red-600 dark:hover:text-red-400 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-all"
+                                title="Hapus">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                                    class="w-5 h-5">
+                                    <path
+                                        d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
+                    {% endif %}
+                {% else %}
+                    {% for default_sub in default_kriteria[komponen] %}
+                    <div class="subkomponen-row flex flex-col md:flex-row gap-3 items-start" data-komponen="{{ komponen }}">
+                        <input type="hidden" name="komponen_nilai[]" value="{{ komponen }}">
 
-                    <div class="w-full md:w-3/12 flex gap-2">
-                        <input type="number" name="persentase[]" value="{{ k.persentase }}" min="0" max="100" step="1"
-                            placeholder="0"
-                            class="kriteria-bobot w-full p-2 border rounded text-sm text-center outline-none dark:bg-slate-800 dark:border-slate-600">
-                        <button type="button" onclick="removeSubKomponen(this)"
-                            class="text-red-400 hover:text-red-600 dark:hover:text-red-400 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-all"
-                            title="Hapus">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
-                                class="w-5 h-5">
-                                <path
-                                    d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-                            </svg>
-                        </button>
+                        <div class="w-full md:w-9/12">
+                            <textarea name="sub_komponen[]" rows="1" placeholder="Deskripsi sub komponen"
+                                class="w-full p-2 border rounded text-sm outline-none dark:bg-slate-800 dark:border-slate-600">{{ default_sub.sub_komponen }}</textarea>
+                        </div>
+
+                        <div class="w-full md:w-3/12 flex gap-2">
+                            <input type="number" name="persentase[]" value="{{ default_sub.persentase }}" min="0" max="100" step="1" placeholder="0"
+                                class="kriteria-bobot w-full p-2 border rounded text-sm text-center outline-none dark:bg-slate-800 dark:border-slate-600">
+                            <button type="button" onclick="removeSubKomponen(this)"
+                                class="text-red-400 hover:text-red-600 dark:hover:text-red-400 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-all"
+                                title="Hapus">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                                    class="w-5 h-5">
+                                    <path
+                                        d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
-                </div>
-                {% endif %}
-                {% endfor %}
-                {% endif %}
-
-                {% if not found.has %}
-                <div class="subkomponen-row flex flex-col md:flex-row gap-3 items-start" data-komponen="{{ komponen }}">
-                    <input type="hidden" name="komponen_nilai[]" value="{{ komponen }}">
-
-                    <div class="w-full md:w-9/12">
-                        <textarea name="sub_komponen[]" rows="1" placeholder="Deskripsi sub komponen"
-                            class="w-full p-2 border rounded text-sm outline-none dark:bg-slate-800 dark:border-slate-600"></textarea>
-                    </div>
-
-                    <div class="w-full md:w-3/12 flex gap-2">
-                        <input type="number" name="persentase[]" value="" min="0" max="100" step="1" placeholder="0"
-                            class="kriteria-bobot w-full p-2 border rounded text-sm text-center outline-none dark:bg-slate-800 dark:border-slate-600">
-                        <button type="button" onclick="removeSubKomponen(this)"
-                            class="text-red-400 hover:text-red-600 dark:hover:text-red-400 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-all"
-                            title="Hapus">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
-                                class="w-5 h-5">
-                                <path
-                                    d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
+                    {% endfor %}
                 {% endif %}
             </div>
         </div>
@@ -119,7 +170,7 @@
             <span id="kriteria-total" class="text-lg font-black text-blue-600 dark:text-blue-400">0%</span>
         </div>
         <div class="flex items-center justify-between">
-            <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Total Partisipatif + Hasil
+            <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Total Partisipatif +
                 Proyek</span>
             <span id="kriteria-pbl-total" class="text-lg font-black text-slate-700 dark:text-slate-200">0%</span>
         </div>
@@ -131,7 +182,7 @@
     <div class="grid grid-cols-1 gap-6 mt-8">
         <div>
             <div class="flex justify-between items-end border-b border-slate-200 dark:border-slate-700 pb-2 mb-3">
-                <h2 id="head-10" class="text-lg font-bold">X. Kesepakatan</h2>
+                <h2 id="head-10" class="text-lg font-bold">Kesepakatan</h2>
                 <div class="flex gap-3">
                     <button type="button" onclick="useKesepakatanTemplate()"
                         class="text-xs text-emerald-600 hover:underline">
@@ -145,8 +196,8 @@
             </div>
 
             <div id="kesepakatan-container" class="space-y-2">
-                {% if matkul.rps_detail and matkul.rps_detail.kesepakatan %}
-                {% for k in matkul.rps_detail.kesepakatan %}
+                {% if matkul.kesepakatan %}
+                {% for k in matkul.kesepakatan %}
                 <div class="flex gap-2">
                     <input type="text" name="kesepakatan[]" value="{{ k }}"
                         class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
@@ -172,13 +223,13 @@
 
         <div>
             <div class="flex justify-between items-end border-b border-slate-200 dark:border-slate-700 pb-2 mb-3">
-                <h2 id="head-11" class="text-lg font-bold">XI. Pustaka</h2>
+                <h2 id="head-11" class="text-lg font-bold">Pustaka</h2>
                 <button type="button" onclick="addList('pustaka-container','pustaka','Judul buku...')"
                     class="text-xs text-blue-600 hover:underline">+ Tambah</button>
             </div>
             <div id="pustaka-container" class="space-y-2">
-                {% if matkul.rps_detail and matkul.rps_detail.pustaka %}
-                {% for p in matkul.rps_detail.pustaka %}
+                {% if matkul.pustaka %}
+                {% for p in matkul.pustaka %}
                 <div class="flex gap-2">
                     <input type="text" name="pustaka[]" value="{{ p }}"
                         class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
@@ -204,12 +255,12 @@
 
     <!-- PENGESAHAN & QR KOORDINATOR -->
     <div class="mt-8 border-t border-slate-200 dark:border-slate-700 pt-6">
-        <h2 class="text-lg font-bold mb-4">XII. Pengesahan & Tanda Tangan</h2>
+        <h2 class="text-lg font-bold mb-4">Pengesahan & Tanda Tangan</h2>
 
         <div class="mb-5 max-w-md">
             <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tanggal Pengesahan Koordinator</label>
             <input type="date" name="tanggal_koor"
-                value="{{ matkul.tgl_pengesahan_koor or (matkul.rps_detail.tanggal_koor if matkul.rps_detail else '') }}"
+                value="{{ matkul.tgl_pengesahan_koor or '' }}"
                 class="w-full p-2.5 border rounded-lg text-sm dark:bg-slate-800 dark:border-slate-600 outline-none focus:ring-2 focus:ring-blue-500">
         </div>
 
@@ -227,7 +278,7 @@
                     dark:file:bg-blue-900/30 dark:file:text-blue-400
                     dark:text-slate-400">
 
-            {% if matkul.rps_detail and matkul.rps_detail.qr_koor %}
+            {% if matkul.qr_dosen_koor %}
             <div
                 class="shrink-0 flex items-center gap-2 px-3 py-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-xs rounded border border-green-200 dark:border-green-800">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none"
@@ -236,7 +287,7 @@
                     <polyline points="22 4 12 14.01 9 11.01"></polyline>
                 </svg>
                 QR Tersimpan: <a href="{{ url_for('rps.view_qr', id=matkul.id) }}" target="_blank"
-                    class="underline font-semibold">{{ matkul.rps_detail.qr_koor }}</a>
+                    class="underline font-semibold">{{ matkul.qr_dosen_koor }}</a>
             </div>
             {% endif %}
         </div>

@@ -14,8 +14,26 @@ function safeGet(id) {
     return document.getElementById(id);
 }
 
+// ── Role-based access ────────────────────────────────────────────────────────
+function canAccessTab(tabId) {
+    if (typeof isKaprodi === 'undefined' || typeof cplDefined === 'undefined') return true;
+
+    if (typeof isApproved !== 'undefined' && isApproved && !isKaprodi) {
+        alert('RPS sudah di-approve, tidak dapat diedit.');
+        return false;
+    }
+
+    const koorTabs = ['tab-3', 'tab-4', 'tab-5'];
+
+    // Tim Kurikulum boleh akses semua tab. Dosen koordinator butuh CPL
+    // untuk membuka bagian di luar Identitas/Deskripsi/Tujuan Pembelajaran.
+    if (!isKaprodi && !cplDefined && koorTabs.indexOf(tabId) !== -1) return false;
+    return true;
+}
+
 // ── Tab Navigation ────────────────────────────────────────────────────────────
 window.showTab = function (tabId) {
+    if (!canAccessTab(tabId)) return;
     activeTabId = tabId;
 
     document.querySelectorAll('.tab-content').forEach(function (el) {
@@ -52,6 +70,12 @@ window.showTab = function (tabId) {
 };
 
 window.saveDraftAndNext = async function(tabId, btnElement) {
+    if (!canAccessTab(tabId)) return;
+
+    if (typeof isApproved !== 'undefined' && isApproved) {
+        alert('RPS sudah di-approve. Silakan klik Revisi terlebih dahulu.');
+        return;
+    }
     if (btnElement) {
         btnElement.dataset.originalHtml = btnElement.innerHTML;
         btnElement.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 inline-block text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Menyimpan...`;
@@ -149,9 +173,52 @@ window.handleBullet = function (e, el) {
     el.selectionStart = el.selectionEnd = s + 3;
 };
 
-// ── TP Sync ───────────────────────────────────────────────────────────────────
+// ── Auto Numbered List ────────────────────────────────────────────────────────
+window.initNumbered = function (el) {
+    if (el && el.value.trim() === '') el.value = '1. ';
+};
+
+window.handleNumbered = function (e, el) {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+
+    const s = el.selectionStart;
+    const v = el.value;
+    const before = v.substring(0, s);
+    const after = v.substring(el.selectionEnd);
+
+    // Hitung nomor berikutnya dari baris bernomor yang sudah ada
+    let next = 1;
+    const numbered = v.match(/^\s*(\d+)\.\s/gm);
+    if (numbered && numbered.length) {
+        next = parseInt(numbered[numbered.length - 1].replace(/\D/g, ''), 10) + 1;
+    }
+
+    el.value = before + '\n' + next + '. ' + after;
+    el.selectionStart = el.selectionEnd = s + String(next).length + 3;
+};
+
+// ── CLO/TP Sync ──────────────────────────────────────────────────────────────
+function getCloList() {
+    // Prioritas dari data tp_data (cloList) yang di-render di halaman.
+    // Fallback baca dari textarea tp_teks[] (untuk CLO yang baru ditambahkan
+    // di tab 2 sebelum disimpan).
+    const tas = document.querySelectorAll('textarea[name="tp_teks[]"]');
+    const textareas = Array.from(tas).map(function (t) { return t.value; }).filter(function (v) { return v.trim(); });
+
+    if (textareas.length > 0) {
+        return textareas;
+    }
+
+    if (typeof cloList !== 'undefined' && Array.isArray(cloList) && cloList.length > 0) {
+        return cloList.map(function (c) { return (c && c.teks) || ''; }).filter(function (v) { return v.trim(); });
+    }
+
+    return [];
+}
+
 function syncTPSelections() {
-    const tpCount = document.querySelectorAll('textarea[name="tp_teks[]"]').length;
+    const tpCount = getCloList().length;
     listSemester.forEach(function (m) {
         updateCheckboxGroup(m, 'mingguan', tpCount);
         updateCheckboxGroup(m, 'evaluasi', tpCount);
@@ -166,7 +233,7 @@ function updateCheckboxGroup(m, type, tpCount) {
     if (!container || !hiddenInput) return;
 
     if (tpCount === 0) {
-        container.innerHTML = '<span class="text-[10px] text-red-500 italic">Belum ada TP di Tab 2</span>';
+        container.innerHTML = '<span class="text-[10px] text-red-500 italic">Belum ada CLO di bagian Course Learning Outcomes</span>';
         hiddenInput.value = '';
         return;
     }
@@ -179,15 +246,15 @@ function updateCheckboxGroup(m, type, tpCount) {
         const sel = hiddenInput.value.split(',').map(s => s.trim()).filter(Boolean);
         
         if (sel.length === 0) {
-            container.innerHTML = '<span class="text-[10px] text-slate-400 italic">Belum diplot di Rencana Mingguan</span>';
+            container.innerHTML = '<span class="text-[10px] text-slate-400 italic">Belum diplot di Weekly Course Plan</span>';
             return;
         }
 
-        const tpNodes = document.querySelectorAll('textarea[name="tp_teks[]"]');
+        const tpList = getCloList();
         let html = '';
         sel.forEach(val => {
-            const idx = parseInt(val.replace('TP', '')) - 1;
-            const tpTeks = (tpNodes[idx]) ? tpNodes[idx].value.trim() : '';
+            const idx = parseInt(val.replace(/\D/g, '')) - 1;
+            const tpTeks = (tpList[idx]) ? String(tpList[idx]).trim() : '';
             const tooltip = tpTeks
                 .replace(/"/g, '&quot;')
                 .substring(0, 120) + (tpTeks.length > 120 ? '...' : '');
@@ -203,9 +270,9 @@ function updateCheckboxGroup(m, type, tpCount) {
                 ${tpTeks ? `
                 <div class="pointer-events-none absolute bottom-full left-0 mb-1 z-50
                     hidden group-hover/tp:block
-                    w-56 bg-slate-900 dark:bg-slate-700 text-white text-[10px]
-                    leading-relaxed rounded-lg px-2.5 py-2 shadow-xl">
-                    <span class="font-bold text-blue-300">${val}:</span>
+                    w-56 bg-slate-900 dark:bg-slate-700 text-white text-[9px]
+                    leading-snug rounded-lg px-2 py-1.5 shadow-xl">
+                    <span class="font-semibold text-blue-300">${val}:</span>
                     <span class="block mt-0.5 text-slate-200">${tooltip}</span>
                     <div class="absolute top-full left-3 border-4 border-transparent border-t-slate-900 dark:border-t-slate-700"></div>
                 </div>` : ''}
@@ -216,15 +283,16 @@ function updateCheckboxGroup(m, type, tpCount) {
     }
 
     const sel = hiddenInput.value.split(',').map(function (s) {
-        return s.trim();
+        // Normalisasi "TP1" lama -> "CLO1" agar cocok dengan value checkbox baru
+        return s.trim().replace(/^TP(\d+)$/i, 'CLO$1');
     }).filter(Boolean);
 
-    const tpNodes = document.querySelectorAll('textarea[name="tp_teks[]"]');
+    const tpList = getCloList();
     let html = '';
 
     for (let i = 1; i <= tpCount; i++) {
-        const val = 'TP' + i;
-        const tpTeks = tpNodes[i - 1] ? tpNodes[i - 1].value.trim() : '';
+        const val = 'CLO' + i;
+        const tpTeks = tpList[i - 1] ? String(tpList[i - 1]).trim() : '';
         const tooltip = tpTeks
             .replace(/"/g, '&quot;')
             .substring(0, 120) + (tpTeks.length > 120 ? '...' : '');
@@ -243,9 +311,9 @@ function updateCheckboxGroup(m, type, tpCount) {
             ${tpTeks ? `
             <div class="pointer-events-none absolute bottom-full left-0 mb-1 z-50
                 hidden group-hover/tp:block
-                w-56 bg-slate-900 dark:bg-slate-700 text-white text-[10px]
-                leading-relaxed rounded-lg px-2.5 py-2 shadow-xl">
-                <span class="font-bold text-blue-300">${val}:</span>
+                w-56 bg-slate-900 dark:bg-slate-700 text-white text-[9px]
+                leading-snug rounded-lg px-2 py-1.5 shadow-xl">
+                <span class="font-semibold text-blue-300">${val}:</span>
                 <span class="block mt-0.5 text-slate-200">${tooltip}</span>
                 <div class="absolute top-full left-3 border-4 border-transparent border-t-slate-900 dark:border-t-slate-700"></div>
             </div>` : ''}
@@ -268,8 +336,7 @@ window.updateHiddenTP = function (m, type) {
         }).join(', ');
         
     if (type === 'mingguan') {
-        const tpCount = document.querySelectorAll('textarea[name="tp_teks[]"]').length;
-        updateCheckboxGroup(m, 'evaluasi', tpCount);
+        updateCheckboxGroup(m, 'evaluasi', getCloList().length);
     }
 };
 

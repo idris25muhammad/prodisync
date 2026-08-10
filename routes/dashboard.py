@@ -7,21 +7,75 @@ bp = Blueprint('dashboard', __name__)
 
 
 def hitung_progress_rps(rps):
-    """Hitung persentase kelengkapan pengisian RPS (0-100)."""
-    score = 0
-    total = 6
+    """Hitung persentase kelengkapan pengisian RPS (0-100).
 
-    if rps.matakuliah and rps.matakuliah.deskripsi:
+    Hanya mengukur bagian yang menjadi tanggung jawab dosen (bukan kaprodi).
+    Bobot disesuaikan dengan kompleksitas pengisian tiap bagian:
+      - rencana_mingguan   : 3 poin  (tab-3, 16 minggu — paling berat)
+      - rencana_evaluasi   : 2 poin  (tab-4 Assessment Plan, 16 minggu)
+      - kriteria_penilaian : 2 poin  (tab-5 Grading Criteria)
+      - sarana_prasarana   : 1 poin  (tab-4 Facilities)
+      - kesepakatan        : 1 poin  (tab-5 Course Policies)
+      - pustaka            : 1 poin  (tab-5 References)
+    Total: 10 poin
+
+    Perhitungan proporsional per item agar 1 minggu saja tidak langsung 100%.
+    """
+    score = 0.0
+    total = 10
+    total_minggu = 16
+
+    # tab-3: Weekly Course Plan (bobot 3, 16 minggu)
+    if rps.rencana_mingguan and len(rps.rencana_mingguan) > 0:
+        filled = 0
+        for m in rps.rencana_mingguan:
+            bahan = (m.get('bahan_kajian') or '').strip()
+            modalitas = (m.get('modalitas') or '').strip()
+            waktu = (m.get('waktu') or '').strip()
+            tp_ref = (m.get('tp_ref') or '').strip()
+            if bahan and modalitas and waktu and tp_ref:
+                filled += 1
+        score += (filled / total_minggu) * 3
+
+    # tab-4: Assessment Plan (bobot 2, 16 minggu)
+    if rps.rencana_evaluasi and len(rps.rencana_evaluasi) > 0:
+        filled = 0
+        for r in rps.rencana_evaluasi:
+            tp = (r.get('tp') or '').strip()
+            metode = (r.get('metode') or '').strip()
+            if tp and metode:
+                filled += 1
+        score += (filled / total_minggu) * 2
+
+    # tab-5: Kriteria Penilaian (bobot 2, proporsional terhadap total 100%)
+    if rps.kriteria_penilaian and len(rps.kriteria_penilaian) > 0:
+        total_persen = 0.0
+        for k in rps.kriteria_penilaian:
+            try:
+                p = float(k.get('persentase', 0) or 0)
+            except (ValueError, TypeError):
+                p = 0.0
+            total_persen += p
+        if total_persen >= 100:
+            score += 2
+        else:
+            has_filled = any(
+                (k.get('sub_komponen') or '').strip()
+                for k in rps.kriteria_penilaian
+            )
+            if has_filled:
+                score += max(0.4, (total_persen / 100) * 2)
+
+    # tab-4: Sarana & Prasarana
+    if rps.sarana_prasarana and len(rps.sarana_prasarana) > 0:
         score += 1
-    if rps.tp_data and len(rps.tp_data) > 0:
+
+    # tab-5: Kesepakatan (Course Policies)
+    if rps.kesepakatan and len(rps.kesepakatan) > 0:
         score += 1
-    if rps.rps_detail and rps.rps_detail.get('rencana_mingguan'):
-        score += 1
-    if rps.rps_detail and rps.rps_detail.get('rencana_evaluasi'):
-        score += 1
-    if rps.rps_detail and rps.rps_detail.get('kriteria_penilaian'):
-        score += 1
-    if rps.rps_detail and rps.rps_detail.get('pustaka'):
+
+    # tab-5: Pustaka (References)
+    if rps.pustaka and len(rps.pustaka) > 0:
         score += 1
 
     return round((score / total) * 100)
@@ -47,9 +101,10 @@ def index():
 
         dosens = User.query.filter_by(role='dosen').all()
 
-        rps_selesai = 0
-        rps_draft   = 0
-        rps_belum   = 0
+        rps_selesai = 0  # approved
+        rps_draft   = 0  # submitted
+        rps_belum   = 0  # assigned
+        rps_reject  = 0  # rejected
         per_dosen     = []
         progress_items = []
 
@@ -61,10 +116,12 @@ def index():
                 'progress': progress
             })
 
-            if progress >= 100:
+            if rps.rps_status == 'approved':
                 rps_selesai += 1
-            elif progress > 0:
+            elif rps.rps_status == 'submitted':
                 rps_draft += 1
+            elif rps.rps_status == 'rejected':
+                rps_reject += 1
             else:
                 rps_belum += 1
 
@@ -90,6 +147,7 @@ def index():
             rps_selesai=rps_selesai,
             rps_draft=rps_draft,
             rps_belum=rps_belum,
+            rps_reject=rps_reject,
             progress_labels=[x['label']    for x in progress_items],
             progress_values=[x['progress'] for x in progress_items],
             dosen_labels=[x['nama']   for x in per_dosen],
