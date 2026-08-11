@@ -2,30 +2,30 @@
   "student_outcome": [
     {
       "so_code": "SO1",
-      "so_description": "Mampu mengidentifikasi dan menerapkan pengetahuan yang dibutuhkan dalam matematika, ilmu alam, komputasi, dasar-dasar rekayasa, dan keahlian teknik yang sesuai dengan disiplin untuk prosedur, proses, sistem, atau metodologi rekayasa yang telah ditentukan dan diterapkan.",
+      "so_description": "Menerapkan pengetahuan matematika, ilmu pengetahuan alam, komputasi, dasar-dasar rekayasa, dan spesialisasi keamanan siber sesuai body of knowledge yang diakui secara internasional (CyBOK) pada prosedur, proses, sistem, dan metodologi rekayasa terapan.",
       "performance_indicator": [
         {
-          "pi_code": "1a",
-          "pi_description": "Menerapkan dasar-dasar jaringan, kriptografi, dan sistem operasi untuk menyelesaikan permasalahan keamanan.",
+          "pi_code": "PI-01.1",
+          "pi_description": "Menerapkan matematika diskret, probabilitas, dan statistika untuk menyelesaikan persoalan kuantitatif keamanan (ruang kunci, entropi, laju deteksi)",
           "level": 3
         },
         {
-          "pi_code": "1b",
-          "pi_description": "Menggunakan alat keamanan siber (misalnya Wireshark, Metasploit) untuk analisis ancaman.",
+          "pi_code": "PI-01.2",
+          "pi_description": "Menjelaskan mekanisme sistem operasi, jaringan, dan basis data yang menjadi landasan bekerjanya suatu kontrol keamanan",
           "level": 3
         },
         {
-          "pi_code": "1c",
-          "pi_description": "Menyelesaikan masalah menggunakan pemrograman aman dan otomatisasi.",
+          "pi_code": "PI-01.3",
+          "pi_description": "Memilih primitif kriptografi yang sesuai untuk sasaran keamanan tertentu (kerahasiaan, integritas, non-repudiasi) beserta alasannya",
           "level": 3
         },
         {
-          "pi_code": "1d",
-          "pi_description": "Menganalisis kerentanan perangkat lunak menggunakan teknik reverse engineering atau analisis statis/dinamis.",
-          "level": 4
+          "pi_code": "PI-01.4",
+          "pi_description": "Memetakan kontrol keamanan suatu organisasi ke kerangka tata kelola terstandar (ISO 27001, NIST CSF)",
+          "level": 3
         },
         {
-          "pi_code": "1e",
+          "pi_code": "PI-01.5",
           "pi_description": "Menerapkan prinsip-prinsip dasar kriptografi dalam perlindungan data.",
           "level": 3
         }
@@ -33,175 +33,311 @@
     },
     {
       "so_code": "SO2",
-      "so_description": "Mampu mengidentifikasi, menyimpulkan, merumuskan, meneliti dan mengevaluasi literatur, serta menganalisis permasalahan rekayasa yang didefinisikan secara luas dengan mencapai kesimpulan yang dapat dibuktikan menggunakan alat analisis yang sesuai dengan disiplin atau bidang spesialisasi.",
+      "so_description": "Menganalisis permasalahan rekayasa keamanan siber broadly-defined melalui identifikasi, penarikan inferensi, perumusan, dan penelusuran serta evaluasi literatur untuk mencapai kesimpulan yang dapat dibuktikan, menggunakan perkakas analitis yang sesuai dengan bidang spesialisasinya.",
       "performance_indicator": [
         {
-          "pi_code": "2a",
-          "pi_description": "Menggunakan dan mengutip standar/literatur yang relevan dalam keamanan siber.",
+          "pi_code": "PI-02.1",
+          "pi_description": "Mengidentifikasi aset, aktor ancaman, dan permukaan serangan pada sistem yang diberikan",
           "level": 3
         },
         {
-          "pi_code": "2b",
-          "pi_description": "Menganalisis dan membandingkan pendekatan atau kerangka kerja alternatif untuk menyelesaikan masalah keamanan siber yang terdefinisi.",
+          "pi_code": "PI-02.2",
+          "pi_description": "Menyusun model ancaman terstruktur (STRIDE, attack tree, MITRE ATT&CK) atas sistem tersebut",
+          "level": 4
+        },
+        {
+          "pi_code": "PI-02.3",
+          "pi_description": "Mengevaluasi mutu dan relevansi sumber teknis (CVE, advisory, publikasi ilmiah) sebagai landasan analisis",
+          "level": 3
+        },
+        {
+          "pi_code": "PI-02.4",
+          "pi_description": "Memeringkat risiko teknis menggunakan metode terstandar (CVSS, matriks risiko) dengan justifikasi tiap parameter",
+          "level": 4
+        },
+        {
+          "pi_code": "PI-02.5",
+          "pi_description": "Menyimpulkan akar penyebab kerentanan berdasarkan rantai bukti analitis, bukan gejala permukaan",
           "level": 4
         }
       ]
     },
     {
       "so_code": "SO3",
-      "so_description": "Mampu merancang sistem, komponen, atau proses untuk memenuhi kebutuhan yang teridentifikasi dalam menyelesaikan permasalahan rekayasa yang didefinisikan secara luas dan sesuai dengan disiplin, dengan mempertimbangkan dampaknya dalam aspek kesehatan, keselamatan, ekonomi, hukum, masyarakat, dan lingkungan.",
+      "so_description": "Merancang sistem, komponen, atau proses keamanan siber untuk memenuhi kebutuhan teridentifikasi dalam menyelesaikan permasalahan rekayasa broadly-defined, dengan pertimbangan keselamatan dan kesehatan publik, biaya siklus hidup, net zero carbon, serta aspek sumber daya, budaya, sosial, dan lingkungan.",
       "performance_indicator": [
         {
-          "pi_code": "3a",
-          "pi_description": "Merancang arsitektur sistem yang aman.",
+          "pi_code": "PI-03.1",
+          "pi_description": "Merumuskan kebutuhan keamanan (security requirements) yang terukur dari kebutuhan bisnis organisasi",
+          "level": 3
+        },
+        {
+          "pi_code": "PI-03.2",
+          "pi_description": "Merancang arsitektur keamanan berlapis beserta segmentasi dan penempatan kontrolnya",
           "level": 4
         },
         {
-          "pi_code": "3b",
-          "pi_description": "Membangun komponen keamanan yang sesuai dengan praktik terbaik.",
+          "pi_code": "PI-03.3",
+          "pi_description": "Merancang skema identitas, autentikasi, dan otorisasi yang sesuai model ancaman",
           "level": 4
         },
         {
-          "pi_code": "3c",
-          "pi_description": "Mengevaluasi pertukaran (trade-off) dan memberikan justifikasi atas keputusan desain.",
+          "pi_code": "PI-03.4",
+          "pi_description": "Menerapkan prinsip secure by design dan privacy by design pada rancangan perangkat lunak atau sistem",
           "level": 4
         },
         {
-          "pi_code": "3d",
-          "pi_description": "Menerapkan kerangka kerja berbasis risiko (misalnya ISO 27001, KAMI V4) dalam proses desain.",
+          "pi_code": "PI-03.5",
+          "pi_description": "Menimbang trade-off rancangan terhadap biaya siklus hidup, konsumsi sumber daya, dan batasan regulasi",
           "level": 3
         }
       ]
     },
     {
       "so_code": "SO4",
-      "so_description": "Mampu menemukan, memilih, dan mengorganisasi data relevan dari kode, basis data, dan literatur; serta merancang dan melakukan eksperimen untuk menghasilkan kesimpulan yang valid dalam investigasi terhadap permasalahan rekayasa yang didefinisikan secara luas.",
+      "so_description": "Menginvestigasi permasalahan rekayasa keamanan siber broadly-defined melalui penelusuran, pemilihan, dan pengorganisasian data relevan dari standar, basis data, dan literatur, serta perancangan dan pelaksanaan eksperimen untuk menghasilkan kesimpulan yang sahih.",
       "performance_indicator": [
         {
-          "pi_code": "4a",
-          "pi_description": "Menganalisis data monitoring/log untuk mengidentifikasi ancaman.",
+          "pi_code": "PI-04.1",
+          "pi_description": "Menelusuri dan mengorganisasikan data dari standar, basis data kerentanan, dan literatur sebagai dasar investigasi",
+          "level": 3
+        },
+        {
+          "pi_code": "PI-04.2",
+          "pi_description": "Merancang prosedur pengujian dengan variabel, kendali, dan kriteria keberhasilan yang eksplisit",
           "level": 4
         },
         {
-          "pi_code": "4b",
-          "pi_description": "Memberikan rekomendasi berbasis bukti (evidence-based).",
+          "pi_code": "PI-04.3",
+          "pi_description": "Melaksanakan pengujian keamanan sesuai metodologi baku (PTES, OWASP WSTG) dan mendokumentasikannya secara dapat direproduksi",
+          "level": 4
+        },
+        {
+          "pi_code": "PI-04.4",
+          "pi_description": "Mengumpulkan dan memelihara integritas bukti digital beserta chain of custody",
           "level": 3
         },
         {
-          "pi_code": "4c",
-          "pi_description": "Menggunakan metode pengujian terstruktur (misalnya MITRE ATT&CK, OWASP).",
-          "level": 3
-        },
-        {
-          "pi_code": "4d",
-          "pi_description": "Melakukan penetration test atau audit keamanan.",
+          "pi_code": "PI-04.5",
+          "pi_description": "Menarik kesimpulan dari data per-iterasi (data mentah), bukan semata dari statistik ringkasan",
           "level": 4
         }
       ]
     },
     {
       "so_code": "SO5",
-      "so_description": "Mampu menggunakan dan memanfaatkan semua sumber daya dan teknologi yang dibutuhkan, termasuk prediksi dan pemodelan, untuk menyelesaikan permasalahan rekayasa yang didefinisikan secara luas.",
+      "so_description": "Memanfaatkan sumber daya dan teknologi keamanan siber yang diperlukan, termasuk pemodelan dan prediksi, serta menyikapi keterbatasannya, untuk menyelesaikan permasalahan rekayasa broadly-defined.",
       "performance_indicator": [
         {
-          "pi_code": "5a",
-          "pi_description": "Mengevaluasi dampak pengujian terhadap kesinambungan atau keamanan sistem.",
+          "pi_code": "PI-05.1",
+          "pi_description": "Memilih perkakas keamanan yang tepat untuk suatu tujuan beserta alasan penolakan alternatifnya",
           "level": 3
         },
         {
-          "pi_code": "5b",
-          "pi_description": "Menggunakan alat simulasi atau pemodelan (misalnya threat modeling, network emulation) untuk memprediksi dan mengurangi risiko keamanan.",
+          "pi_code": "PI-05.2",
+          "pi_description": "Mengonfigurasi dan mengoperasikan perkakas pemantauan keamanan (SIEM, IDS/IPS, EDR) hingga menghasilkan deteksi yang benar",
           "level": 4
+        },
+        {
+          "pi_code": "PI-05.3",
+          "pi_description": "Mengembangkan skrip atau alur kerja otomasi untuk tugas keamanan yang berulang",
+          "level": 4
+        },
+        {
+          "pi_code": "PI-05.4",
+          "pi_description": "Membangun model prediktif atau simulasi (statistik/ML) untuk mendukung keputusan keamanan",
+          "level": 4
+        },
+        {
+          "pi_code": "PI-05.5",
+          "pi_description": "Mengevaluasi keterbatasan perkakas yang dipakai: cakupan, false positive/negative, asumsi tersembunyi",
+          "level": 3
         }
       ]
     },
     {
       "so_code": "SO6",
-      "so_description": "Mampu secara konsisten mematuhi etika profesional dan norma praktik teknologi rekayasa termasuk kepatuhan terhadap hukum nasional dan internasional, dengan menghormati keberagaman dan inklusi.",
+      "so_description": "Mengevaluasi dampak solusi rekayasa keamanan siber terhadap masyarakat, ekonomi, keberlanjutan, keselamatan dan kesehatan, kerangka hukum, serta lingkungan, dalam menyelesaikan permasalahan rekayasa broadly-defined.",
       "performance_indicator": [
         {
-          "pi_code": "6a",
-          "pi_description": "Mengintegrasikan pertimbangan hukum dan etika dalam desain keamanan.",
+          "pi_code": "PI-06.1",
+          "pi_description": "Menganalisis dampak insiden atau kontrol keamanan terhadap perilaku dan kelompok pengguna",
           "level": 3
         },
         {
-          "pi_code": "6b",
-          "pi_description": "Mengidentifikasi dan merespons isu etika dalam praktik keamanan siber melalui studi kasus atau skenario.",
+          "pi_code": "PI-06.2",
+          "pi_description": "Mengestimasi dampak ekonomi insiden atau investasi keamanan (kerugian, ROSI)",
+          "level": 3
+        },
+        {
+          "pi_code": "PI-06.3",
+          "pi_description": "Menilai konsekuensi keselamatan dan kesehatan dari kegagalan keamanan pada sistem siber-fisik atau infrastruktur kritis",
+          "level": 3
+        },
+        {
+          "pi_code": "PI-06.4",
+          "pi_description": "Mengevaluasi implikasi hukum dan privasi suatu solusi terhadap UU PDP dan regulasi lintas yurisdiksi",
+          "level": 3
+        },
+        {
+          "pi_code": "PI-06.5",
+          "pi_description": "Menilai konsekuensi keberlanjutan solusi keamanan (konsumsi energi komputasi, siklus hidup perangkat)",
           "level": 2
         }
       ]
     },
     {
       "so_code": "SO7",
-      "so_description": "Mampu berfungsi secara efektif dalam menyelesaikan berbagai tugas, baik secara individu maupun sebagai anggota atau pemimpin dalam tim yang beragam, inklusif, dan multidisipliner di berbagai lingkungan kerja.",
+      "so_description": "Mematuhi secara konsisten etika profesi dan norma praktik rekayasa teknologi keamanan siber, termasuk kepatuhan terhadap hukum nasional dan internasional, dengan menghormati keberagaman dan inklusi.",
       "performance_indicator": [
         {
-          "pi_code": "7a",
-          "pi_description": "Bekerja sama dalam menyelesaikan tugas dan berkontribusi pada tujuan tim.",
-          "level": 2
-        },
-        {
-          "pi_code": "7b",
-          "pi_description": "Memimpin tim, menyelesaikan konflik, dan mengelola dinamika kelompok.",
+          "pi_code": "PI-07.1",
+          "pi_description": "Mematuhi batas ruang lingkup dan otorisasi tertulis dalam setiap kegiatan pengujian keamanan",
           "level": 3
         },
         {
-          "pi_code": "7c",
-          "pi_description": "Melakukan refleksi terhadap kinerja tim dan mengusulkan perbaikan.",
+          "pi_code": "PI-07.2",
+          "pi_description": "Menerapkan prosedur responsible/coordinated disclosure atas temuan kerentanan",
+          "level": 3
+        },
+        {
+          "pi_code": "PI-07.3",
+          "pi_description": "Menunjukkan integritas akademik dan profesional melalui atribusi sumber serta pelaporan hasil apa adanya",
           "level": 2
+        },
+        {
+          "pi_code": "PI-07.4",
+          "pi_description": "Menampilkan perilaku inklusif dan menghormati keberagaman dalam interaksi profesional",
+          "level": 2
+        },
+        {
+          "pi_code": "PI-07.5",
+          "pi_description": "Memutuskan sikap atas dilema etika keamanan siber dengan justifikasi merujuk kode etik dan hukum yang berlaku",
+          "level": 3
         }
       ]
     },
     {
       "so_code": "SO8",
-      "so_description": "Mampu menerapkan komunikasi tertulis, lisan, dan grafis secara efektif dan inklusif dalam berbagai komunitas dan lingkungan yang didefinisikan secara luas dengan memperhatikan perbedaan budaya, bahasa, dan cara belajar.",
+      "so_description": "Berfungsi secara efektif dalam melaksanakan beragam tugas, baik sebagai individu maupun sebagai anggota atau pemimpin dalam tim yang beragam, inklusif, dan multidisiplin pada berbagai tatanan kerja.",
       "performance_indicator": [
         {
-          "pi_code": "8a",
-          "pi_description": "Menyusun laporan teknis dan dokumentasi secara jelas.",
+          "pi_code": "PI-08.1",
+          "pi_description": "Menuntaskan tanggung jawab individu sesuai lingkup dan tenggat yang disepakati tim",
+          "level": 2
+        },
+        {
+          "pi_code": "PI-08.2",
+          "pi_description": "Berkontribusi aktif pada pencapaian sasaran bersama serta pembagian beban yang setara",
+          "level": 2
+        },
+        {
+          "pi_code": "PI-08.3",
+          "pi_description": "Menjalankan peran kepemimpinan: memfasilitasi rapat, mendelegasikan tugas, dan mengambil keputusan tim",
           "level": 3
         },
         {
-          "pi_code": "8b",
-          "pi_description": "Berkomunikasi secara efektif dengan tim teknis maupun non-teknis.",
+          "pi_code": "PI-08.4",
+          "pi_description": "Mengelola perbedaan pendapat hingga tercapai keputusan yang diterima anggota tim",
           "level": 3
         },
         {
-          "pi_code": "8c",
-          "pi_description": "Mengembangkan diagram visual (misalnya model ancaman, alur sistem) untuk mendukung penjelasan teknis.",
-          "level": 3
+          "pi_code": "PI-08.5",
+          "pi_description": "Berkolaborasi secara produktif dengan anggota berlatar disiplin non-keteknikan",
+          "level": 2
         }
       ]
     },
     {
       "so_code": "SO9",
-      "so_description": "Mampu menerapkan prinsip-prinsip manajemen rekayasa dalam proyek, baik sebagai anggota maupun pemimpin dalam tim multidisipliner.",
+      "so_description": "Mengomunikasikan aktivitas rekayasa keamanan siber broadly-defined secara efektif dalam bentuk tertulis, lisan, dan grafis, mencakup penggunaan standar keteknikan dan bahasa yang diakui secara internasional, dengan memperhatikan perbedaan budaya, bahasa, dan cara belajar.",
       "performance_indicator": [
         {
-          "pi_code": "9a",
-          "pi_description": "Menerapkan alat agile atau manajemen proyek untuk mengoordinasikan hasil kerja.",
+          "pi_code": "PI-09.1",
+          "pi_description": "Menyusun laporan teknis yang terstruktur, mengikuti standar keteknikan dan konvensi sitasi",
           "level": 3
         },
         {
-          "pi_code": "9b",
-          "pi_description": "Mengembangkan dan mengelola jadwal proyek, pencapaian target (milestone), dan sumber daya untuk mencapai tujuan yang telah ditentukan.",
+          "pi_code": "PI-09.2",
+          "pi_description": "Menyampaikan presentasi lisan yang menyesuaikan kedalaman teknis dengan audiens sasaran",
           "level": 3
+        },
+        {
+          "pi_code": "PI-09.3",
+          "pi_description": "Menyajikan informasi melalui bentuk grafis: diagram arsitektur, alur, dan visualisasi data",
+          "level": 3
+        },
+        {
+          "pi_code": "PI-09.4",
+          "pi_description": "Menghasilkan komunikasi lisan dan tertulis dalam bahasa Inggris pada konteks rekayasa keamanan siber",
+          "level": 3
+        },
+        {
+          "pi_code": "PI-09.5",
+          "pi_description": "Menyesuaikan istilah dan register komunikasi dengan memperhatikan perbedaan budaya dan bahasa lawan bicara",
+          "level": 2
         }
       ]
     },
     {
       "so_code": "SO10",
-      "so_description": "Mampu secara mandiri melakukan pengembangan diri dan pembelajaran sepanjang hayat, serta berpikir kritis dan inovatif.",
+      "so_description": "Menerapkan prinsip manajemen rekayasa pada proyek keamanan siber, baik sebagai anggota maupun pemimpin dalam tim multidisiplin, mencakup perencanaan, pengorganisasian, kepemimpinan, pengoperasian, pengendalian, dan manajemen risiko.",
       "performance_indicator": [
         {
-          "pi_code": "10a",
-          "pi_description": "Menunjukkan kemampuan belajar mandiri melalui jurnal reflektif, sumber daring, atau eksplorasi mandiri yang relevan dengan topik PBL.",
+          "pi_code": "PI-10.1",
+          "pi_description": "Menyusun rencana proyek yang memuat WBS, jadwal, dan tonggak capaian",
+          "level": 3
+        },
+        {
+          "pi_code": "PI-10.2",
+          "pi_description": "Mengalokasikan sumber daya dan menyusun estimasi biaya proyek beserta dasar perhitungannya",
+          "level": 3
+        },
+        {
+          "pi_code": "PI-10.3",
+          "pi_description": "Memantau dan mengendalikan kemajuan proyek terhadap rencana dasar, serta mengambil tindakan koreksi",
+          "level": 3
+        },
+        {
+          "pi_code": "PI-10.4",
+          "pi_description": "Menyusun dan memutakhirkan register risiko proyek beserta rencana mitigasinya",
+          "level": 3
+        },
+        {
+          "pi_code": "PI-10.5",
+          "pi_description": "Menerapkan manajemen konfigurasi dan pengendalian perubahan pada artefak proyek",
+          "level": 3
+        }
+      ]
+    },
+    {
+      "so_code": "SO11",
+      "so_description": "Melaksanakan pembelajaran mandiri dan sepanjang hayat serta berpikir kritis dalam menyikapi tuntutan perkembangan teknologi dan isu keamanan siber terkini.",
+      "performance_indicator": [
+        {
+          "pi_code": "PI-11.1",
+          "pi_description": "Mengidentifikasi kesenjangan kompetensi diri dan menyusun rencana belajar yang terjadwal",
           "level": 2
         },
         {
-          "pi_code": "10b",
-          "pi_description": "Mengusulkan dan menerapkan ide atau pendekatan inovatif dalam menyelesaikan masalah kompleks keamanan siber dalam proyek PBL multidisipliner.",
+          "pi_code": "PI-11.2",
+          "pi_description": "Menguasai teknologi atau perkakas keamanan baru secara mandiri tanpa instruksi formal, dibuktikan melalui unjuk kerja",
           "level": 4
+        },
+        {
+          "pi_code": "PI-11.3",
+          "pi_description": "Menilai secara kritis kredibilitas dan kemutakhiran sumber informasi teknis terkini",
+          "level": 3
+        },
+        {
+          "pi_code": "PI-11.4",
+          "pi_description": "Merefleksikan hasil belajar mandiri dan menetapkan langkah pengembangan berikutnya",
+          "level": 2
+        },
+        {
+          "pi_code": "PI-11.5",
+          "pi_description": "Membagikan pengetahuan hasil belajar mandiri kepada sejawat melalui forum atau dokumentasi",
+          "level": 2
         }
       ]
     }
