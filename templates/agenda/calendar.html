@@ -317,7 +317,7 @@
 
     async function loadEvents() {
         try {
-            const res = await fetch('/agenda/api/events');
+            const res = await fetch("{{ url_for('agenda.events_api') }}");
             eventsData = await res.json();
             renderCalendar();
         } catch (e) {
