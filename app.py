@@ -8,9 +8,28 @@ from argon2.exceptions import VerifyMismatchError
 
 ph = PasswordHasher()
 
+class PrefixMiddleware:
+    """Set SCRIPT_NAME dari header proxy (X-Forwarded-Prefix / X-Script-Name)
+    agar url_for() & request.script_root menyertakan prefix subpath
+    (mis. /prodisync) di production. No-op di dev (header kosong)."""
+
+    def __init__(self, app):
+        self.app = app
+
+    def __call__(self, environ, start_response):
+        prefix = environ.get('HTTP_X_FORWARDED_PREFIX', '') or environ.get('HTTP_X_SCRIPT_NAME', '')
+        if prefix:
+            environ['SCRIPT_NAME'] = prefix
+            path_info = environ.get('PATH_INFO', '')
+            if path_info.startswith(prefix):
+                environ['PATH_INFO'] = path_info[len(prefix):]
+        return self.app(environ, start_response)
+
+
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+    app.wsgi_app = PrefixMiddleware(app.wsgi_app)
 
     db.init_app(app)
     migrate.init_app(app, db)
