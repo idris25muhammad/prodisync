@@ -110,6 +110,18 @@
                                     <h4 class="text-[10px] font-bold text-slate-400 uppercase mb-3 tracking-wider">
                                         Perkuliahan</h4>
                                     <div class="space-y-1">
+                                        {% if current_user.is_kaprodi %}
+                                        <a href="{{ url_for('so_pi.index') }}"
+                                            class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                                            <svg class="w-5 h-5 stroke-current opacity-70" fill="none"
+                                                stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z">
+                                                </path>
+                                            </svg>
+                                            <span class="text-sm font-semibold">SO-PI</span>
+                                        </a>
+                                        {% endif %}
                                         <a href="{{ url_for('matakuliah.list') }}"
                                             class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
                                             <svg class="w-5 h-5 stroke-current opacity-70" fill="none"
@@ -317,7 +329,8 @@
         {# 2. Kurikulum #}
         {% set act_kuri_mob = (request.endpoint and (request.endpoint.startswith('matakuliah.') or
         request.endpoint.startswith('rps.') or request.endpoint.startswith('kurikulum.') or
-        request.endpoint == 'user.list' or request.endpoint.startswith('pengumuman.'))) %}
+        request.endpoint == 'user.list' or request.endpoint.startswith('pengumuman.') or
+        request.endpoint.startswith('so_pi.'))) %}
         <button onclick="openMobileSheet('kurikulum-sheet')"
             class="flex flex-col items-center gap-1 px-3 py-1 rounded-xl transition-all {% if act_kuri_mob %}text-blue-600 dark:text-blue-400 font-extrabold{% else %}text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-semibold{% endif %}">
             <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
@@ -367,6 +380,13 @@
                 <div class="space-y-4">
                     <div>
                         <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Perkuliahan</p>
+                        {% if current_user.is_kaprodi %}
+                        <a href="{{ url_for('so_pi.index') }}"
+                            class="p-3.5 mb-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 block">
+                            <p class="text-xs font-bold text-slate-800 dark:text-white">SO-PI</p>
+                            <p class="text-[10px] text-slate-400 mt-0.5">Master Student Outcome &amp; Performance Indicator</p>
+                        </a>
+                        {% endif %}
                         <div class="grid grid-cols-2 gap-2">
                             <a href="{{ url_for('matakuliah.list') }}"
                                 class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 block text-xs font-bold text-slate-800 dark:text-white">

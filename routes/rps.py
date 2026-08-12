@@ -5,7 +5,6 @@ from models import RPS, MataKuliah, User, TahunAjaran
 from sqlalchemy import or_
 from utils.decorators import kaprodi_required
 import os
-import json
 import re
 import time
 from datetime import datetime
@@ -371,49 +370,81 @@ def auto_wrap_text(text, max_len=16):
     return '\n'.join(processed_lines)
 
 
-# ── Helper: Load & cache so-pi.json (SO, PI, Proficiency Level master data) ──
-_SO_PI_CACHE = None
-
+# ── Helper: Load SO-PI master data dari database ────────────────────────────
 def _load_so_pi_data():
     """
-    Load static/data/so-pi.json sekali lalu cache di memori proses.
-    Return dict:
+    Load master Student Outcome / Performance Indicator dari tabel database
+    (StudentOutcome, PerformanceIndicator, ProficiencyLevel).
+    Return dict dengan kontrak yang sama seperti versi lama yang membaca
+    static/data/so-pi.json:
       - so_map    : {so_code: so_description}
       - pi_map    : {pi_code: {'description': ..., 'so_code': ..., 'level': int}}
       - levels    : {level_int: label}
-      - so_pi_rows: list baris SO-PI urut sesuai JSON (untuk Section IV, semua PI ditampilkan)
+      - so_pi_rows: list baris SO-PI urut (untuk Section IV, semua PI aktif)
     """
-    global _SO_PI_CACHE
-    if _SO_PI_CACHE is None:
-        path = os.path.join(current_app.root_path, 'static', 'data', 'so-pi.json')
-        so_map, pi_map, levels, so_pi_rows = {}, {}, {}, []
-        try:
-            with open(path, 'r', encoding='utf-8') as f:
-                raw = json.load(f)
-            for so in raw.get('student_outcome', []):
-                so_map[so['so_code']] = so.get('so_description', '')
-                for pi in so.get('performance_indicator', []):
-                    lvl = pi.get('level', 1)
-                    pi_map[pi['pi_code']] = {
-                        'description': pi.get('pi_description', ''),
-                        'so_code'    : so['so_code'],
-                        'level'      : lvl,
-                    }
-                    so_pi_rows.append({
-                        'so_code'        : so['so_code'],
-                        'so_description' : so.get('so_description', ''),
-                        'pi_code'        : pi['pi_code'],
-                        'pi_description' : pi.get('pi_description', ''),
-                        'level'          : lvl,
-                    })
-            for lvl in raw.get('proficiency_levels', []):
-                levels[lvl['level']] = lvl.get('label', '')
-            for row in so_pi_rows:
-                row['level_label'] = levels.get(row['level'], '')
-        except (FileNotFoundError, json.JSONDecodeError):
-            pass
-        _SO_PI_CACHE = {'so_map': so_map, 'pi_map': pi_map, 'levels': levels, 'so_pi_rows': so_pi_rows}
-    return _SO_PI_CACHE
+    from models import StudentOutcome, ProficiencyLevel, so_sort_key
+
+    so_map, pi_map, levels, so_pi_rows = {}, {}, {}, []
+    for lvl in ProficiencyLevel.query.order_by(ProficiencyLevel.level.asc()).all():
+        levels[lvl.level] = lvl.label
+
+    for so in sorted(
+            StudentOutcome.query.filter_by(is_active=True).all(),
+            key=lambda s: so_sort_key(s.so_code)):
+        so_map[so.so_code] = so.so_description
+        for pi in sorted(so.indicators, key=lambda p: p.pi_code):
+            pi_map[pi.pi_code] = {
+                'description': pi.pi_description,
+                'so_code'    : so.so_code,
+                'level'      : pi.level,
+            }
+            so_pi_rows.append({
+                'so_code'        : so.so_code,
+                'so_description' : so.so_description,
+                'pi_code'        : pi.pi_code,
+                'pi_description' : pi.pi_description,
+                'level'          : pi.level,
+            })
+
+    for row in so_pi_rows:
+        row['level_label'] = levels.get(row['level'], '')
+    return {'so_map': so_map, 'pi_map': pi_map, 'levels': levels, 'so_pi_rows': so_pi_rows}
+
+
+# ── Route: API SO-PI (untuk modal pemilih SO-PI di editor RPS) ─────────────
+@bp.route('/api/so-pi')
+@login_required
+def api_so_pi():
+    """
+    Sumber data dinamis pengganti static/data/so-pi.json untuk modal
+    pemilih SO-PI. Bentuk JSON persis seperti file lama:
+      {student_outcome: [{so_code, so_description, performance_indicator: [...]}],
+       proficiency_levels: [{level, label}]}
+    """
+    from flask import jsonify
+    from models import StudentOutcome, ProficiencyLevel, so_sort_key
+
+    student_outcome = []
+    for so in sorted(
+            StudentOutcome.query.filter_by(is_active=True).all(),
+            key=lambda s: so_sort_key(s.so_code)):
+        student_outcome.append({
+            'so_code'             : so.so_code,
+            'so_description'      : so.so_description,
+            'performance_indicator': [
+                {
+                    'pi_code'       : pi.pi_code,
+                    'pi_description': pi.pi_description,
+                    'level'         : pi.level,
+                }
+                for pi in sorted(so.indicators, key=lambda p: p.pi_code)
+            ],
+        })
+    proficiency_levels = [
+        {'level': lvl.level, 'label': lvl.label}
+        for lvl in ProficiencyLevel.query.order_by(ProficiencyLevel.level.asc()).all()
+    ]
+    return jsonify({'student_outcome': student_outcome, 'proficiency_levels': proficiency_levels})
 
 
 
@@ -572,14 +603,14 @@ def _build_so_pi_and_clo(rps):
     """
     Section IV & Section X: hanya SO-PI yang benar-benar dipakai di RPS ini
     (dirujuk lewat tp_data[].sopi). Deskripsi & Level PI diambil dari
-    so-pi.json (levelnya sudah fix per PI di master data, bukan input
-    manual per RPS).
+    master data database (levelnya sudah fix per PI di master data, bukan
+    input manual per RPS).
 
     Section V (CLO): dari rps.tp_data, tiap TP jadi 1 baris CLO.
-      tp_data: [{'no': 1, 'teks': '...', 'sopi': 'SO1-1a'}, ...]
+      tp_data: [{'no': 1, 'teks': '...', 'sopi': 'SO1-PI-01.1'}, ...]
       'sopi' bisa berisi 1 atau beberapa kode gabungan (comma-separated),
       di-parse via _parse_sopi_codes() menjadi pi_code murni untuk lookup
-      ke so-pi.json (mis. '1a' -> SO1 / PI 1a).
+      ke master data (mis. 'PI-01.1' -> SO1 / PI 01.1).
     """
     ref = _load_so_pi_data()
     tp_list = rps.tp_data or []
@@ -591,7 +622,7 @@ def _build_so_pi_and_clo(rps):
             if code not in used_pi_codes:
                 used_pi_codes.append(code)
 
-    # Section IV - hanya baris SO-PI yang dipakai, level dari master so-pi.json
+    # Section IV - hanya baris SO-PI yang dipakai, level dari master data
     so_pi_list = []
     for pi_code in used_pi_codes:
         pi_info = ref['pi_map'].get(pi_code)
@@ -908,7 +939,10 @@ def editor(id):
             from flask import jsonify
             return jsonify({'status': 'success', 'message': 'Draft tersimpan otomatis'})
 
-        flash('Data RPS berhasil disimpan!', 'success')
+        if current_user.is_kaprodi:
+            flash('Data RPS berhasil disimpan!', 'success')
+        else:
+            flash('RPS berhasil disimpan dan telah dikirim untuk review. Menunggu approval dari Kaprodi/Tim Kurikulum.', 'success')
         return redirect(url_for('rps.list'))
 
     cpl_defined = bool(

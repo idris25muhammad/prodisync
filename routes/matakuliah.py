@@ -60,6 +60,7 @@ def add():
     kurik = request.form.get('kurikulum', '').strip()
     desk  = request.form.get('deskripsi', '').strip()
     tipe  = request.form.get('tipe',      'wajib').strip()
+    sks   = request.form.get('sks', type=int) or None
 
     if not kode or not nama:
         flash('Kode dan Nama mata kuliah wajib diisi.', 'danger')
@@ -75,6 +76,7 @@ def add():
         kurikulum=kurik,
         deskripsi=desk,
         tipe=tipe,
+        sks=sks,
     )
 
     db.session.add(mk)
@@ -109,6 +111,7 @@ def edit(id):
     mk.kurikulum = kurik_edit
     mk.deskripsi = request.form.get('deskripsi', '').strip()
     mk.tipe      = request.form.get('tipe', 'wajib').strip()
+    mk.sks       = request.form.get('sks', type=int) or None
 
     db.session.commit()
     flash('Mata kuliah berhasil diperbarui!', 'success')

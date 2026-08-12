@@ -16,11 +16,31 @@
 </script>
 
 <div class="space-y-6">
-    <div>
-        <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white">RPS Editor</h1>
-        <p class="text-slate-500 dark:text-slate-400 mt-1">
-            Edit RPS disini lebih mudah. Gak pusing sama word.
-        </p>
+    <div class="flex justify-between items-start flex-wrap gap-4">
+        <div>
+            <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white">RPS Editor</h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-1">
+                <span class="text-xs text-slate-400">Login sebagai:</span>
+                <span class="font-semibold text-slate-700 dark:text-slate-200">{{ current_user.nama }}</span>
+                <span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ml-1.5 {% if current_user.is_kaprodi %}bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-200 dark:border-blue-800{% else %}bg-orange-50 text-orange-700 dark:bg-orange-950/60 dark:text-orange-400 border border-orange-200 dark:border-orange-800{% endif %}">{{ 'TimKur' if current_user.is_kaprodi else 'Dosen' }}</span>
+            </p>
+        </div>
+        {% if current_user.is_kaprodi and matkul.rps_status == 'submitted' %}
+        <div class="flex gap-2 shrink-0">
+            <form method="POST" action="{{ url_for('rps.approve', id=matkul.id) }}">
+                <button type="submit"
+                    class="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-bold transition-colors shadow-md shadow-green-500/30">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                    Approve
+                </button>
+            </form>
+            <button type="button" onclick="openRejectModal()"
+                class="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition-colors shadow-md shadow-red-500/30">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                Reject
+            </button>
+        </div>
+        {% endif %}
     </div>
 
     <div class="flex flex-col md:flex-row">
@@ -81,8 +101,8 @@
                 ('SARANA & PRASARANA', 'tab-4', 'head-6'),
                 ('SO ASSESSMENT PLAN', 'tab-4', 'head-7'),
                 ('STUDENT OUTCOMES ASSESSMENT PLAN', 'tab-5', 'head-9'),
-                ('KESEPAKATAN', 'tab-5', 'head-10'),
-                ('PUSTAKA & QR KOOR', 'tab-5', 'head-11')
+('COURSE POLICIES', 'tab-5', 'head-10'),
+('TEXTBOOKS & MATERIALS', 'tab-5', 'head-11')
                 ] %}
                 {% for label, tid, headId in quicknav %}
                 <button type="button" onclick="jumpToSection('{{ tid }}', '{{ headId }}')"
@@ -129,6 +149,42 @@
 {% endblock %}
 
 {% block scripts %}
+
+{# ── Modal Reject ── #}
+<div id="rejectModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 px-4 backdrop-blur-sm">
+    <div class="w-full max-w-lg rounded-2xl bg-white shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+        <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4 dark:border-slate-700">
+            <div>
+                <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">Reject RPS</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400">Masukkan alasan penolakan.</p>
+            </div>
+            <button type="button" onclick="closeRejectModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 rounded-lg text-xl leading-none">&times;</button>
+        </div>
+        <form method="POST" action="{{ url_for('rps.reject', id=matkul.id) }}" class="px-5 py-4 space-y-4">
+            <textarea name="reason" rows="5" required
+                class="w-full rounded-lg border border-slate-300 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-100"
+                placeholder="Contoh: CPL belum sinkron dengan CPMK, daftar pustaka perlu diperbarui."></textarea>
+            <div class="flex justify-end gap-2 pt-2">
+                <button type="button" onclick="closeRejectModal()"
+                    class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-bold">Batal</button>
+                <button type="submit"
+                    class="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition-colors shadow-md">Submit Reject</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openRejectModal() {
+    document.getElementById('rejectModal').classList.remove('hidden');
+    document.getElementById('rejectModal').classList.add('flex');
+}
+function closeRejectModal() {
+    document.getElementById('rejectModal').classList.add('hidden');
+    document.getElementById('rejectModal').classList.remove('flex');
+}
+</script>
+
 <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
 <script src="{{ url_for('static', filename='js/rps-core.js') }}"></script>

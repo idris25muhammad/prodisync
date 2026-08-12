@@ -58,6 +58,7 @@
         <thead>
             <tr class="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider">
                 <th class="px-5 py-4">Kode</th>
+                <th class="px-5 py-4 text-center">SKS</th>
                 <th class="px-5 py-4">Nama Mata Kuliah</th>
                 <th class="px-5 py-4">Tipe</th>
                 <th class="px-5 py-4">Kurikulum</th>
@@ -71,6 +72,7 @@
             {% for mk in matkuls %}
             <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                 <td class="px-5 py-4 font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">{{ mk.kode }}</td>
+                <td class="px-5 py-4 text-center font-bold">{{ mk.sks or 3 }}</td>
                 <td class="px-5 py-4 font-medium">{{ mk.nama }}</td>
                 <td class="px-5 py-4 text-sm whitespace-nowrap">
                     {% if mk.tipe == 'pilihan' %}
@@ -90,7 +92,7 @@
                 {% if current_user.is_kaprodi %}
                 <td class="px-5 py-4">
                     <div class="flex justify-center gap-2">
-                        <button onclick="openEditModal({{ mk.id }}, '{{ mk.kode }}', '{{ mk.nama | replace("'", "\\'") }}', '{{ mk.kurikulum or '' }}', '{{ mk.deskripsi | replace("'", "\\'") if mk.deskripsi else '' }}', '{{ mk.tipe or 'wajib' }}')"
+                        <button onclick="openEditModal({{ mk.id }}, '{{ mk.kode }}', '{{ mk.nama | replace("'", "\\'") }}', '{{ mk.kurikulum or '' }}', '{{ mk.deskripsi | replace("'", "\\'") if mk.deskripsi else '' }}', '{{ mk.tipe or 'wajib' }}', {{ mk.sks or 3 }})"
                             class="text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 hover:bg-amber-200 transition-all">
                             Edit
                         </button>
@@ -176,10 +178,15 @@
                 class="text-slate-400 hover:text-slate-600 text-2xl leading-none font-bold">&times;</button>
         </div>
         <form method="POST" action="{{ url_for('matakuliah.add') }}" class="p-6 space-y-4">
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-3 gap-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Kode Matkul *</label>
                     <input type="text" name="kode" required placeholder="MK-401"
+                        class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">SKS</label>
+                    <input type="number" name="sks" min="1" max="9" value="3" placeholder="3"
                         class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800">
                 </div>
                 <div>
@@ -187,12 +194,12 @@
                     <input type="text" name="kurikulum" placeholder="Kurikulum 2023"
                         class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800">
                 </div>
-                <div class="col-span-2">
+                <div class="col-span-3">
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nama Mata Kuliah *</label>
                     <input type="text" name="nama" required placeholder="Keamanan Jaringan"
                         class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800">
                 </div>
-                <div class="col-span-2">
+                <div class="col-span-3">
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tipe Mata Kuliah *</label>
                     <div class="flex gap-6 items-center pt-1">
                         <label class="flex items-center gap-2 cursor-pointer text-sm font-medium">
@@ -205,7 +212,7 @@
                         </label>
                     </div>
                 </div>
-                <div class="col-span-2">
+                <div class="col-span-3">
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Deskripsi</label>
                     <textarea name="deskripsi" rows="2" placeholder="Deskripsi singkat mata kuliah (opsional)..."
                         class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800 resize-none"></textarea>
@@ -235,10 +242,15 @@
                 class="text-slate-400 hover:text-slate-600 text-2xl leading-none font-bold">&times;</button>
         </div>
         <form id="form-edit" method="POST" class="p-6 space-y-4">
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-3 gap-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Kode *</label>
                     <input type="text" id="edit-kode" name="kode" required
+                        class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">SKS</label>
+                    <input type="number" id="edit-sks" name="sks" min="1" max="9"
                         class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800">
                 </div>
                 <div>
@@ -246,12 +258,12 @@
                     <input type="text" id="edit-kurikulum" name="kurikulum"
                         class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800">
                 </div>
-                <div class="col-span-2">
+                <div class="col-span-3">
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nama *</label>
                     <input type="text" id="edit-nama" name="nama" required
                         class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800">
                 </div>
-                <div class="col-span-2">
+                <div class="col-span-3">
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tipe Mata Kuliah *</label>
                     <div class="flex gap-6 items-center pt-1">
                         <label class="flex items-center gap-2 cursor-pointer text-sm font-medium">
@@ -264,7 +276,7 @@
                         </label>
                     </div>
                 </div>
-                <div class="col-span-2">
+                <div class="col-span-3">
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Deskripsi</label>
                     <textarea id="edit-deskripsi" name="deskripsi" rows="2"
                         class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800 resize-none"></textarea>
@@ -306,12 +318,13 @@
 {% endif %}
 
 <script>
-    function openEditModal(id, kode, nama, kurikulum, deskripsi, tipe) {
+    function openEditModal(id, kode, nama, kurikulum, deskripsi, tipe, sks) {
         document.getElementById('form-edit').action = `{{ url_for('matakuliah.list') }}edit/${id}`;
         document.getElementById('edit-kode').value      = kode;
         document.getElementById('edit-nama').value      = nama;
         document.getElementById('edit-kurikulum').value = kurikulum;
         document.getElementById('edit-deskripsi').value = deskripsi;
+        document.getElementById('edit-sks').value       = sks;
         
         if (tipe === 'pilihan') {
             document.getElementById('edit-tipe-pilihan').checked = true;

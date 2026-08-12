@@ -13,6 +13,16 @@
         {% endif %}
     </div>
 
+    {% if not current_user.is_kaprodi %}
+    <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 flex items-start gap-3">
+        <svg class="w-5 h-5 text-blue-500 dark:text-blue-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <div>
+            <p class="text-sm font-bold text-blue-800 dark:text-blue-300">CLO disiapkan oleh Tim Kurikulum</p>
+            <p class="text-xs text-blue-600 dark:text-blue-400 mt-1">Course Learning Outcomes di bawah sudah ditentukan oleh Tim Kurikulum. Jika ada perubahan atau belum diisi, hubungi Tim Kurikulum.</p>
+        </div>
+    </div>
+    {% endif %}
+
     <div id="tp-container"
         class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700 space-y-4">
         {% if matkul.tp_data %}
@@ -83,7 +93,7 @@
             </div>
             <div class="w-3/12 relative">
                 <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">SO-PI</label>
-                <input type="text" name="so_pi[]" value="SO1-1a" readonly onclick="openSopiModal(this)"
+                <input type="text" name="so_pi[]" value="" readonly onclick="openSopiModal(this)"
                     placeholder="Pilih SO-PI..."
                     class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
             </div>
@@ -163,11 +173,11 @@
     async function loadSopiData() {
         if (sopiDataCache) return sopiDataCache;
         try {
-            const response = await fetch("{{ url_for('static', filename='data/so-pi.json') }}");
+            const response = await fetch("{{ url_for('rps.api_so_pi') }}");
             sopiDataCache = await response.json();
             return sopiDataCache;
         } catch (e) {
-            console.error("Gagal memuat so-pi.json", e);
+            console.error("Gagal memuat data SO-PI", e);
             return null;
         }
     }
@@ -182,7 +192,7 @@
 
         const data = await loadSopiData();
         if (!data || !data.student_outcome) {
-            container.innerHTML = '<div class="p-4 bg-red-50 text-red-600 rounded-lg border border-red-200">Gagal memuat data SO-PI. Pastikan file so-pi.json tersedia.</div>';
+            container.innerHTML = '<div class="p-4 bg-red-50 text-red-600 rounded-lg border border-red-200">Gagal memuat data SO-PI. Pastikan master SO-PI sudah dikonfigurasi tim kurikulum.</div>';
             return;
         }
 

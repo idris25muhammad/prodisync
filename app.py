@@ -2,6 +2,7 @@ from flask import Flask
 from config import Config
 from extensions import db, login_manager, migrate
 from models import User, TahunAjaran, Panduan, MataKuliah, RPS, Pengumuman, ArsipDokumen, Agenda
+from models import StudentOutcome, PerformanceIndicator, ProficiencyLevel
 from werkzeug.security import generate_password_hash
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
@@ -41,7 +42,7 @@ def create_app():
 
     from routes import (
         auth_bp, dashboard_bp, matakuliah_bp, rps_bp, user_bp,
-        kurikulum_bp, tahun_ajaran_bp, panduan_bp, pengumuman_bp, arsip_bp, agenda_bp
+        kurikulum_bp, tahun_ajaran_bp, panduan_bp, pengumuman_bp, arsip_bp, agenda_bp, so_pi_bp
     )
     app.register_blueprint(user_bp)
     app.register_blueprint(auth_bp)
@@ -54,6 +55,7 @@ def create_app():
     app.register_blueprint(pengumuman_bp)
     app.register_blueprint(arsip_bp)
     app.register_blueprint(agenda_bp)
+    app.register_blueprint(so_pi_bp)
 
     # TA Aktif
     @app.context_processor
@@ -232,6 +234,49 @@ def create_app():
 
         db.session.commit()
         print(f'✅ Seed matakuliah selesai: {inserted} ditambahkan, {skipped} dilewati (sudah ada).')
+
+    # ── CLI: flask seed-so-pi ──────────────────────────────────────────────────
+    @app.cli.command('seed-so-pi')
+    def seed_so_pi():
+        """Seed master SO-PI dari static/data/so-pi.json (aman dijalankan ulang)."""
+        import json as _json
+        import os as _os
+
+        path = _os.path.join(app.root_path, 'static', 'data', 'so-pi.json')
+        if not _os.path.exists(path):
+            print('⚠️  static/data/so-pi.json tidak ditemukan, seed dilewati.')
+            return
+
+        with open(path, 'r', encoding='utf-8') as f:
+            raw = _json.load(f)
+
+        lvl_inserted = 0
+        for lvl in raw.get('proficiency_levels', []):
+            if not ProficiencyLevel.query.filter_by(level=lvl['level']).first():
+                db.session.add(ProficiencyLevel(level=lvl['level'], label=lvl.get('label', '')))
+                lvl_inserted += 1
+
+        so_inserted = pi_inserted = 0
+        for so in raw.get('student_outcome', []):
+            existing_so = StudentOutcome.query.filter_by(so_code=so['so_code']).first()
+            if not existing_so:
+                existing_so = StudentOutcome(so_code=so['so_code'], so_description=so.get('so_description', ''))
+                db.session.add(existing_so)
+                db.session.flush()
+                so_inserted += 1
+            for pi in so.get('performance_indicator', []):
+                if not PerformanceIndicator.query.filter_by(
+                        student_outcome_id=existing_so.id, pi_code=pi['pi_code']).first():
+                    db.session.add(PerformanceIndicator(
+                        student_outcome_id=existing_so.id,
+                        pi_code=pi['pi_code'],
+                        pi_description=pi.get('pi_description', ''),
+                        level=pi.get('level', 1),
+                    ))
+                    pi_inserted += 1
+
+        db.session.commit()
+        print(f'✅ Seed SO-PI selesai: {so_inserted} SO, {pi_inserted} PI, {lvl_inserted} level ditambahkan.')
 
     return app
 

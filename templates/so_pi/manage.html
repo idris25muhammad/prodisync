@@ -1,0 +1,391 @@
+{% extends 'base.html' %}
+
+{% block title %}SO-PI{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-end flex-wrap gap-4">
+        <div>
+            <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white">Student Outcome &amp; Performance Indicator</h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-1">
+                Master data SO &amp; PI. Perubahan langsung terlihat di pemilih SO-PI dan preview RPS.
+            </p>
+        </div>
+        <button onclick="openSoAdd()"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-blue-500/30 transition-all">
+            + Tambah SO
+        </button>
+    </div>
+
+    {% if toggled_id %}
+    {% for o in outcomes %}
+    {% if o.id == toggled_id %}
+    <div class="flex items-center gap-4 {% if o.is_active %}bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800{% else %}bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800{% endif %} border rounded-2xl p-4">
+        <div class="w-10 h-10 rounded-full {% if o.is_active %}bg-green-100 dark:bg-green-800/50 text-green-600 dark:text-green-300{% else %}bg-amber-100 dark:bg-amber-800/50 text-amber-600 dark:text-amber-300{% endif %} flex items-center justify-center text-lg font-bold shrink-0">{{ '&#10003;'|safe if o.is_active else '!' }}</div>
+        <div class="flex-1">
+            <p class="text-sm font-bold {% if o.is_active %}text-green-800 dark:text-green-200{% else %}text-amber-800 dark:text-amber-200{% endif %}">{{ o.so_code }} berhasil {{ 'diaktifkan' if o.is_active else 'dinonaktifkan' }}</p>
+            {% if not o.is_active %}
+            <p class="text-xs text-amber-600 dark:text-amber-400 mt-0.5">SO ini tidak akan muncul di pemilih SO-PI dan preview RPS.</p>
+            {% endif %}
+        </div>
+        <a href="{{ url_for('so_pi.index') }}" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 text-xl leading-none font-bold">&times;</a>
+    </div>
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+
+    {% set blocked_id = request.args.get('blocked') | int %}
+    {% if blocked_id %}
+    {% for o in outcomes %}
+    {% if o.id == blocked_id %}
+    <div class="flex items-center gap-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4">
+        <div class="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-800/50 text-amber-600 dark:text-amber-300 flex items-center justify-center text-lg font-bold shrink-0">!</div>
+        <div class="flex-1">
+            <p class="text-sm font-bold text-amber-800 dark:text-amber-200">{{ o.so_code }} tidak bisa dinonaktifkan</p>
+            <p class="text-xs text-amber-600 dark:text-amber-400 mt-0.5">Student Outcome ini masih dipakai oleh satu atau lebih RPS yang sudah ada.</p>
+        </div>
+        <a href="{{ url_for('so_pi.index') }}" class="text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 text-xl leading-none font-bold">&times;</a>
+    </div>
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+
+    {# ── Filter ── #}
+    <div class="flex items-center gap-3">
+        <label class="text-[10px] font-bold text-slate-500 uppercase">Tampilkan</label>
+        <select onchange="window.location.href='{{ url_for('so_pi.index') }}?status='+this.value"
+            class="p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
+            <option value="aktif" {% if filter_status == 'aktif' %}selected{% endif %}>Aktif</option>
+            <option value="nonaktif" {% if filter_status == 'nonaktif' %}selected{% endif %}>Nonaktif</option>
+            <option value="semua" {% if filter_status == 'semua' %}selected{% endif %}>Semua</option>
+        </select>
+    </div>
+
+    {# ── Edit Label Level Proficiency ── #}
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-5">
+        <div class="mb-4">
+            <h2 class="font-black text-slate-800 dark:text-slate-100">Level Proficiency (IABEE)</h2>
+            <p class="text-xs text-slate-500 mt-0.5">Label dipakai sebagai catatan kaki di Section IV &amp; IX preview RPS.</p>
+        </div>
+        <form method="POST" action="{{ url_for('so_pi.levels_edit') }}" class="space-y-3">
+            {% for lvl in levels %}
+            <div class="flex items-center gap-3">
+                <span class="w-16 shrink-0 px-2.5 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-xs font-bold text-center">Lv {{ lvl.level }}</span>
+                <input type="text" name="label_{{ lvl.level }}" value="{{ lvl.label }}"
+                    class="flex-1 p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
+            </div>
+            {% endfor %}
+            <div class="flex justify-end pt-2">
+                <button type="submit"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-sm font-bold transition-all shadow-md shadow-blue-500/20">
+                    Simpan Label
+                </button>
+            </div>
+        </form>
+    </div>
+
+    {# ── Daftar SO ── #}
+    <div class="space-y-5">
+        {% if outcomes %}
+        {% for so in outcomes %}
+        <div id="so-card-{{ so.id }}"
+            class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden {% if not so.is_active %}opacity-60{% endif %}">
+            <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex flex-wrap gap-3 items-start justify-between">
+                <div class="flex-1 min-w-[240px]">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="font-black text-slate-800 dark:text-slate-100 text-lg">{{ so.so_code }}</span>
+                        {% if not so.is_active %}
+                        <span class="px-2 py-0.5 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-md text-[10px] font-bold uppercase">Nonaktif</span>
+                        {% endif %}
+                    </div>
+                    <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed mt-1">{{ so.so_description }}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="openSoEdit({{ so.id }})"
+                        class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Edit</button>
+                    <form method="POST" action="{{ url_for('so_pi.so_toggle', id=so.id) }}" class="inline">
+                        <button type="submit"
+                            class="px-3 py-1.5 rounded-lg {% if so.is_active %}bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400{% else %}bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400{% endif %} text-xs font-bold hover:opacity-80 transition-all">
+                            {{ 'Nonaktifkan' if so.is_active else 'Aktifkan' }}
+                        </button>
+                    </form>
+                    <form method="POST" action="{{ url_for('so_pi.so_delete', id=so.id) }}"
+                        onsubmit="return confirm('Hapus SO {{ so.so_code }} beserta semua PI-nya?')" class="inline">
+                        <button type="submit"
+                            class="px-3 py-1.5 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-bold hover:bg-red-100 dark:hover:bg-red-900/50 transition-all">Hapus</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="p-5">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                        Performance Indicators ({{ so.indicators | length }})
+                    </h3>
+                    <button onclick="openPiAdd({{ so.id }}, '{{ so.so_code }}')"
+                        class="px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 text-xs font-bold hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-all">
+                        + Tambah PI
+                    </button>
+                </div>
+
+                {% if so.indicators %}
+                <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                    <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700 text-sm">
+                        <thead class="bg-slate-50 dark:bg-slate-800/60">
+                            <tr>
+                                <th class="px-4 py-2.5 text-left text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Kode</th>
+                                <th class="px-4 py-2.5 text-left text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Deskripsi</th>
+                                <th class="px-4 py-2.5 text-center text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase w-16">Level</th>
+                                <th class="px-4 py-2.5 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase w-28">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                            {% for pi in so.indicators %}
+                            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                                <td class="px-4 py-2.5 font-bold text-slate-700 dark:text-slate-200 whitespace-nowrap">{{ pi.pi_code }}</td>
+                                <td class="px-4 py-2.5 text-slate-600 dark:text-slate-400 leading-relaxed">{{ pi.pi_description }}</td>
+                                <td class="px-4 py-2.5 text-center">
+                                    <span class="inline-block px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-xs font-bold">{{ pi.level }}</span>
+                                </td>
+                                <td class="px-4 py-2.5">
+                                    <div class="flex justify-end gap-2">
+                                        <button onclick="openPiEdit({{ pi.id }})"
+                                            class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-xs font-bold">Edit</button>
+                                        <form method="POST" action="{{ url_for('so_pi.pi_delete', id=pi.id) }}"
+                                            onsubmit="return confirm('Hapus PI {{ pi.pi_code }}?')" class="inline">
+                                            <button type="submit"
+                                                class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-xs font-bold">Hapus</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-xs text-slate-400 italic p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">Belum ada Performance Indicator untuk SO ini.</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-10 text-center">
+            <p class="text-sm text-slate-400 italic">Belum ada Student Outcome. Klik "Tambah SO" untuk mulai.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{# ── Modal: Tambah SO ── #}
+<div id="modal-so-add" class="fixed inset-0 z-[100] hidden bg-black/50 items-center justify-center px-4 backdrop-blur-sm">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-xl shadow-2xl border border-slate-200 dark:border-slate-700">
+        <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+            <h3 class="font-black text-lg text-slate-800 dark:text-slate-100">Tambah Student Outcome</h3>
+            <button type="button" onclick="closeModal('modal-so-add')"
+                class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-xl leading-none">&times;</button>
+        </div>
+        <form method="POST" action="{{ url_for('so_pi.so_add') }}" class="p-5 space-y-4">
+            <div>
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Kode SO</label>
+                <input type="text" name="so_code" required placeholder="contoh: SO12"
+                    class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Deskripsi SO</label>
+                <textarea name="so_description" required rows="4"
+                    class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600"></textarea>
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" onclick="closeModal('modal-so-add')"
+                    class="px-5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all text-sm">Batal</button>
+                <button type="submit"
+                    class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all shadow-md shadow-blue-500/20 text-sm">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ── Modal: Edit SO ── #}
+<div id="modal-so-edit" class="fixed inset-0 z-[100] hidden bg-black/50 items-center justify-center px-4 backdrop-blur-sm">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-xl shadow-2xl border border-slate-200 dark:border-slate-700">
+        <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+            <h3 class="font-black text-lg text-slate-800 dark:text-slate-100">Edit Student Outcome</h3>
+            <button type="button" onclick="closeModal('modal-so-edit')"
+                class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-xl leading-none">&times;</button>
+        </div>
+        <form id="form-so-edit" method="POST" action="" class="p-5 space-y-4">
+            <div>
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Kode SO</label>
+                <input type="text" id="so-edit-code" name="so_code" required
+                    class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Deskripsi SO</label>
+                <textarea id="so-edit-desc" name="so_description" required rows="4"
+                    class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600"></textarea>
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" onclick="closeModal('modal-so-edit')"
+                    class="px-5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all text-sm">Batal</button>
+                <button type="submit"
+                    class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all shadow-md shadow-blue-500/20 text-sm">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ── Modal: Tambah PI ── #}
+<div id="modal-pi-add" class="fixed inset-0 z-[100] hidden bg-black/50 items-center justify-center px-4 backdrop-blur-sm">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-xl shadow-2xl border border-slate-200 dark:border-slate-700">
+        <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+            <h3 class="font-black text-lg text-slate-800 dark:text-slate-100">Tambah Performance Indicator</h3>
+            <button type="button" onclick="closeModal('modal-pi-add')"
+                class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-xl leading-none">&times;</button>
+        </div>
+        <form method="POST" action="{{ url_for('so_pi.pi_add') }}" class="p-5 space-y-4">
+            <input type="hidden" id="pi-add-so-id" name="student_outcome_id" value="">
+            <div>
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">SO Tujuan</label>
+                <input type="text" id="pi-add-so-label" readonly
+                    class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600 bg-slate-100 dark:bg-slate-700/50 cursor-not-allowed">
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Kode PI</label>
+                <input type="text" name="pi_code" required placeholder="contoh: PI-12.1"
+                    class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Deskripsi PI</label>
+                <textarea name="pi_description" required rows="3"
+                    class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600"></textarea>
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Level Proficiency</label>
+                <select name="level"
+                    class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
+                    <option value="1">1 - {{ levels[0].label if levels else '' }}</option>
+                    <option value="2" selected>2 - {{ levels[1].label if levels and levels|length > 1 else '' }}</option>
+                    <option value="3">3 - {{ levels[2].label if levels and levels|length > 2 else '' }}</option>
+                    <option value="4">4 - {{ levels[3].label if levels and levels|length > 3 else '' }}</option>
+                    <option value="5">5 - {{ levels[4].label if levels and levels|length > 4 else '' }}</option>
+                </select>
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" onclick="closeModal('modal-pi-add')"
+                    class="px-5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all text-sm">Batal</button>
+                <button type="submit"
+                    class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all shadow-md shadow-blue-500/20 text-sm">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ── Modal: Edit PI ── #}
+<div id="modal-pi-edit" class="fixed inset-0 z-[100] hidden bg-black/50 items-center justify-center px-4 backdrop-blur-sm">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-xl shadow-2xl border border-slate-200 dark:border-slate-700">
+        <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+            <h3 class="font-black text-lg text-slate-800 dark:text-slate-100">Edit Performance Indicator</h3>
+            <button type="button" onclick="closeModal('modal-pi-edit')"
+                class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-xl leading-none">&times;</button>
+        </div>
+        <form id="form-pi-edit" method="POST" action="" class="p-5 space-y-4">
+            <div>
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Kode PI</label>
+                <input type="text" id="pi-edit-code" name="pi_code" required
+                    class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Deskripsi PI</label>
+                <textarea id="pi-edit-desc" name="pi_description" required rows="3"
+                    class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600"></textarea>
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Level Proficiency</label>
+                <select id="pi-edit-level" name="level"
+                    class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
+                    <option value="1">1 - {{ levels[0].label if levels else '' }}</option>
+                    <option value="2">2 - {{ levels[1].label if levels and levels|length > 1 else '' }}</option>
+                    <option value="3">3 - {{ levels[2].label if levels and levels|length > 2 else '' }}</option>
+                    <option value="4">4 - {{ levels[3].label if levels and levels|length > 3 else '' }}</option>
+                    <option value="5">5 - {{ levels[4].label if levels and levels|length > 4 else '' }}</option>
+                </select>
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" onclick="closeModal('modal-pi-edit')"
+                    class="px-5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all text-sm">Batal</button>
+                <button type="submit"
+                    class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all shadow-md shadow-blue-500/20 text-sm">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function closeModal(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.add('hidden');
+        el.classList.remove('flex');
+    }
+
+    function openModal(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.remove('hidden');
+        el.classList.add('flex');
+    }
+
+    function openSoAdd() {
+        openModal('modal-so-add');
+    }
+
+    const soData = {
+        {% for so in outcomes %}
+        {{ so.id }}: {
+            code: {{ so.so_code | tojson }},
+            desc: {{ so.so_description | tojson }}
+        },
+        {% endfor %}
+    };
+
+    function openSoEdit(id) {
+        const d = soData[id];
+        if (!d) return;
+        document.getElementById('form-so-edit').action = "{{ url_for('so_pi.so_edit', id=0) }}".replace('/0', '/' + id);
+        document.getElementById('so-edit-code').value = d.code;
+        document.getElementById('so-edit-desc').value = d.desc;
+        openModal('modal-so-edit');
+    }
+
+    function openPiAdd(soId, soCode) {
+        document.getElementById('pi-add-so-id').value = soId;
+        document.getElementById('pi-add-so-label').value = soCode;
+        openModal('modal-pi-add');
+    }
+
+    const piData = {
+        {% for so in outcomes %}
+        {% for pi in so.indicators %}
+        {{ pi.id }}: {
+            code: {{ pi.pi_code | tojson }},
+            desc: {{ pi.pi_description | tojson }},
+            level: {{ pi.level }}
+        },
+        {% endfor %}
+        {% endfor %}
+    };
+
+    function openPiEdit(id) {
+        const d = piData[id];
+        if (!d) return;
+        document.getElementById('form-pi-edit').action = "{{ url_for('so_pi.pi_edit', id=0) }}".replace('/0', '/' + id);
+        document.getElementById('pi-edit-code').value = d.code;
+        document.getElementById('pi-edit-desc').value = d.desc;
+        document.getElementById('pi-edit-level').value = d.level;
+        openModal('modal-pi-edit');
+    }
+</script>
+{% endblock %}
