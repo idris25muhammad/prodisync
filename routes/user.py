@@ -4,7 +4,7 @@ from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from extensions import db
 from models import User
-from utils.decorators import role_required
+from utils.decorators import kaprodi_required
 
 
 bp = Blueprint('user', __name__, url_prefix='/users')
@@ -13,7 +13,7 @@ ph = PasswordHasher()
 
 @bp.route('/')
 @login_required
-@role_required('kaprodi')
+@kaprodi_required
 def list():
     users = User.query.order_by(User.role.asc(), User.nama.asc()).all()
     return render_template('users.html', users=users)
@@ -21,7 +21,7 @@ def list():
 
 @bp.route('/add', methods=['POST'])
 @login_required
-@role_required('kaprodi')
+@kaprodi_required
 def add():
     nama = request.form.get('nama', '').strip()
     username = request.form.get('username', '').strip()
@@ -101,7 +101,7 @@ def add():
 
 @bp.route('/edit/<int:id>', methods=['POST'])
 @login_required
-@role_required('kaprodi')
+@kaprodi_required
 def edit(id):
     user = User.query.get_or_404(id)
 
@@ -188,7 +188,7 @@ def edit(id):
 
 @bp.route('/delete/<int:id>', methods=['POST'])
 @login_required
-@role_required('kaprodi')
+@kaprodi_required
 def delete(id):
     user = User.query.get_or_404(id)
 
@@ -204,7 +204,7 @@ def delete(id):
 
 @bp.route('/reset-password/<int:id>', methods=['POST'])
 @login_required
-@role_required('kaprodi')
+@kaprodi_required
 def reset_password(id):
     user = User.query.get_or_404(id)
     new_password = request.form.get('password', '').strip()

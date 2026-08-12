@@ -1,6 +1,6 @@
 from flask import Flask
 from config import Config
-from extensions import db, login_manager, migrate
+from extensions import db, login_manager, migrate, csrf
 from models import User, TahunAjaran, Panduan, MataKuliah, RPS, Pengumuman, ArsipDokumen, Agenda
 from models import StudentOutcome, PerformanceIndicator, ProficiencyLevel
 from werkzeug.security import generate_password_hash
@@ -35,6 +35,7 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
+    csrf.init_app(app)
 
     @login_manager.user_loader
     def load_user(user_id):
@@ -56,6 +57,17 @@ def create_app():
     app.register_blueprint(arsip_bp)
     app.register_blueprint(agenda_bp)
     app.register_blueprint(so_pi_bp)
+
+    # Cegah browser menyimpan halaman HTML (cache / back-forward cache)
+    # agar setelah logout/ganti user, tombol Back tidak menampilkan
+    # halaman user lama dari cache.
+    @app.after_request
+    def no_cache_html(resp):
+        if resp.mimetype == 'text/html':
+            resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            resp.headers['Pragma'] = 'no-cache'
+            resp.headers['Expires'] = '0'
+        return resp
 
     # TA Aktif
     @app.context_processor

@@ -46,6 +46,16 @@ def serve_image(filename):
     filepath  = os.path.join(image_dir, filename)
     if not os.path.exists(filepath):
         abort(404)
+
+    # Dosen hanya boleh melihat gambar yang dipakai pengumuman yang terlihat (dosen/publik)
+    if not current_user.is_kaprodi:
+        visible = Pengumuman.query.filter(
+            Pengumuman.visibility.in_(['dosen', 'publik']),
+            Pengumuman.konten.contains(filename),
+        ).first()
+        if not visible:
+            abort(403)
+
     return send_from_directory(image_dir, filename)
 
 
@@ -92,6 +102,13 @@ def download_file(filename):
     if not os.path.exists(filepath):
         flash('File tidak ditemukan atau sudah dihapus.', 'danger')
         return redirect(url_for('pengumuman.index'))
+
+    # Dosen hanya boleh mengunduh lampiran pengumuman yang bukan draft
+    if not current_user.is_kaprodi:
+        p = Pengumuman.query.filter_by(file_path=filename).first()
+        if not p or p.visibility == 'draft':
+            abort(403)
+
     return send_from_directory(storage_dir, filename)
 
 
@@ -261,7 +278,7 @@ def edit(id):
 # ─────────────────────────────────────────────────────────────────
 #  HAPUS
 # ─────────────────────────────────────────────────────────────────
-@bp.route('/hapus/<int:id>')
+@bp.route('/hapus/<int:id>', methods=['POST'])
 @login_required
 @kaprodi_required
 def hapus(id):

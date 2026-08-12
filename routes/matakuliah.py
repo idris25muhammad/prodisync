@@ -118,7 +118,7 @@ def edit(id):
     return redirect(url_for('matakuliah.list'))
 
 
-@bp.route('/delete/<int:id>')
+@bp.route('/delete/<int:id>', methods=['POST'])
 @login_required
 @kaprodi_required
 def delete(id):

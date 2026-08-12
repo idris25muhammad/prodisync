@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>ProdiSync - Sistem Manajemen Prodi</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,6 +29,70 @@
         } else {
             document.documentElement.classList.remove('dark');
         }
+    </script>
+    <script>
+        // Guard Back/Forward Cache: jika halaman direstore dari bfcache
+        // (mis. tombol Back setelah logout/ganti user), paksa reload dari server
+        // agar session yang sudah logout tidak menampilkan halaman user lama.
+        window.addEventListener('pageshow', function (e) {
+            if (e.persisted) {
+                window.location.reload();
+            }
+        });
+    </script>
+    <script>
+        // CSRF: injeksi token ke semua form + header X-CSRFToken utk AJAX.
+        // Token diambil dari <meta name="csrf-token">.
+        (function () {
+            var token = '';
+            var meta = document.querySelector('meta[name="csrf-token"]');
+            if (meta) { token = meta.getAttribute('content'); }
+
+            function injectForms() {
+                if (!token) return;
+                document.querySelectorAll('form').forEach(function (form) {
+                    if (form.querySelector('input[name="csrf_token"]')) return;
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'csrf_token';
+                    input.value = token;
+                    form.appendChild(input);
+                });
+            }
+            document.addEventListener('DOMContentLoaded', injectForms);
+            if (document.readyState === 'interactive' || document.readyState === 'complete') {
+                injectForms();
+            }
+
+            // Sertakan X-CSRFToken pada semua request AJAX (fetch & XHR).
+            var origFetch = window.fetch;
+            if (origFetch && token) {
+                window.fetch = function (input, init) {
+                    init = init || {};
+                    init.headers = init.headers || {};
+                    if (init.method && init.method.toUpperCase() !== 'GET' && init.method.toUpperCase() !== 'HEAD') {
+                        if (init.headers instanceof Headers) {
+                            init.headers.set('X-CSRFToken', token);
+                        } else {
+                            init.headers['X-CSRFToken'] = token;
+                        }
+                    }
+                    return origFetch(input, init);
+                };
+            }
+
+            // Konversi aksi hapus berbasis link (anchor) menjadi POST + CSRF,
+            // agar route mutasi tidak bisa disalahgunakan lewat GET.
+            document.addEventListener('click', function (e) {
+                var a = e.target && e.target.closest ? e.target.closest('#hapus-link, #btn-delete-agenda') : null;
+                if (a && a.getAttribute('href') && a.getAttribute('href') !== '#') {
+                    e.preventDefault();
+                    fetch(a.href, { method: 'POST' })
+                        .then(function () { window.location.reload(); })
+                        .catch(function () { window.location.reload(); });
+                }
+            });
+        })();
     </script>
     {% block scripts %}
     <script src="...rps-core.js"></script>

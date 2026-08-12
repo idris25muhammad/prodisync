@@ -302,13 +302,22 @@
 
     function setAktifManual() {
         const id = document.getElementById('ta-select').value;
-        if (id) window.location.href = '/tahun-ajaran/set-aktif/' + id;
+        if (!id) return;
+        const csrf = (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
+        fetch('/tahun-ajaran/set-aktif/' + id, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrf }
+        }).then(function () { window.location.reload(); });
     }
 
     function deleteSelectedTA() {
         const id = document.getElementById('ta-select').value;
         if (id && confirm('Yakin ingin menghapus TA yang terpilih?')) {
-            window.location.href = '/tahun-ajaran/' + id + '/delete';
+            const csrf = (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
+            fetch('/tahun-ajaran/' + id + '/delete', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrf }
+            }).then(function () { window.location.reload(); });
         }
     }
 

@@ -1,13 +1,15 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from extensions import db
 from models import TahunAjaran
-from flask_login import login_required, current_user
+from flask_login import login_required
+from utils.decorators import kaprodi_required
 
 # Nama blueprint ini harus sesuai dengan yang digunakan di url_for
 bp = Blueprint('tahun_ajaran', __name__)
 
 @bp.route('/add', methods=['POST'])
 @login_required
+@kaprodi_required
 def add():
     tahun = request.form.get('tahun', '').strip()
     semester = request.form.get('semester', '').strip()
@@ -38,13 +40,10 @@ def add():
     return redirect(url_for('dashboard.index'))
     
 
-@bp.route('/tahun-ajaran/set-aktif/<int:id>', methods=['GET'])
+@bp.route('/tahun-ajaran/set-aktif/<int:id>', methods=['POST'])
 @login_required
+@kaprodi_required
 def set_aktif(id):
-    if not current_user.is_kaprodi:
-        flash("Unauthorized", "danger")
-        return redirect(url_for('dashboard.index'))
-    
     # Nonaktifkan semua
     TahunAjaran.query.update({'is_aktif': False})
     
@@ -58,11 +57,8 @@ def set_aktif(id):
 
 @bp.route('/tahun-ajaran/<int:id>/edit', methods=['POST'])
 @login_required
+@kaprodi_required
 def edit(id):
-    if not current_user.is_kaprodi:
-        flash("Unauthorized", "danger")
-        return redirect(url_for('dashboard.index'))
-        
     ta = TahunAjaran.query.get_or_404(id)
     ta.tahun = request.form.get('tahun')
     ta.semester = request.form.get('semester')
@@ -71,13 +67,10 @@ def edit(id):
     flash('Tahun ajaran berhasil diperbarui.', 'success')
     return redirect(url_for('dashboard.index'))
 
-@bp.route('/tahun-ajaran/<int:id>/delete', methods=['GET'])
+@bp.route('/tahun-ajaran/<int:id>/delete', methods=['POST'])
 @login_required
+@kaprodi_required
 def delete(id):
-    if not current_user.is_kaprodi:
-        flash("Unauthorized", "danger")
-        return redirect(url_for('dashboard.index'))
-        
     ta = TahunAjaran.query.get_or_404(id)
     db.session.delete(ta)
     db.session.commit()

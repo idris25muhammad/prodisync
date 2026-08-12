@@ -161,7 +161,7 @@ def edit(id):
     return redirect(url_for('agenda.index'))
 
 
-@bp.route('/delete/<int:id>', methods=['GET', 'POST'])
+@bp.route('/delete/<int:id>', methods=['POST'])
 @login_required
 @kaprodi_required
 def delete(id):

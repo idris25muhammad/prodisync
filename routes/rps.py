@@ -198,7 +198,7 @@ def edit_meta(id):
 
 
 # ── Route: Hapus RPS ──────────────────────────────────────────────────────────
-@bp.route('/delete/<int:id>')
+@bp.route('/delete/<int:id>', methods=['POST'])
 @login_required
 def delete(id):
     if current_user.is_kaprodi:
@@ -1167,5 +1167,23 @@ def view_qr(id):
 @bp.route('/qr-file/<path:filename>')
 @login_required
 def qr_file(filename):
+    # Dosen hanya boleh mengambil QR milik RPS yang dia pegang sendiri.
+    # Kaprodi boleh mengakses semua.
+    if not current_user.is_kaprodi:
+        rps_punya = RPS.query.filter(
+            or_(RPS.qr_dosen_koor == filename, RPS.qr_kaprodi == filename)
+        ).all()
+        allowed = any(r.user_id == current_user.id for r in rps_punya)
+        if not allowed:
+            # QR kaprodi bawaan mata kuliah (mk.qr_kaprodi) boleh diakses
+            # dosen jika MK-nya punya RPS milik dia.
+            mk = MataKuliah.query.filter(MataKuliah.qr_kaprodi == filename).first()
+            if mk:
+                allowed = RPS.query.filter_by(
+                    matakuliah_id=mk.id, user_id=current_user.id
+                ).first() is not None
+        if not allowed:
+            abort(403)
+
     qr_dir = os.path.join(current_app.root_path, 'storage', 'qr')
     return send_from_directory(qr_dir, filename)

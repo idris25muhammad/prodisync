@@ -1,6 +1,6 @@
 import os
-from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, send_from_directory
-from flask_login import login_required
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, send_from_directory, abort
+from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from extensions import db
 from models import Panduan
@@ -18,6 +18,12 @@ def allowed_file(filename):
 @bp.route('/download/<filename>')
 @login_required # Hanya user yang sudah login yang bisa mengakses file ini
 def download_file(filename):
+    # Dosen tidak boleh mengunduh panduan nonaktif
+    if not current_user.is_kaprodi:
+        panduan = Panduan.query.filter_by(file_path=filename).first()
+        if not panduan or not panduan.is_aktif:
+            abort(403)
+
     # Mengambil base path folder storage eksternal
     storage_dir = os.path.join(current_app.root_path, 'storage', 'dokumen_panduan')
     
@@ -148,7 +154,7 @@ def edit(id):
     flash('Data panduan berhasil diperbarui!', 'success')
     return redirect(url_for('panduan.list'))
 
-@bp.route('/delete/<int:id>')
+@bp.route('/delete/<int:id>', methods=['POST'])
 @login_required
 @kaprodi_required
 def delete(id):
