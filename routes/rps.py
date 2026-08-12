@@ -756,6 +756,148 @@ def _build_so_pi_matrix(rps, so_pi_list):
     return {'weeks': weeks, 'rows': rows}
 
 
+# ── Helper: Export JSON Course (format mengikuti static/data/course_dummy.json) ─
+# Field yang belum tersimpan di DB diisi dengan default/template sesuai keputusan:
+#   - is_pbl            : default False (tidak pernah disimpan ke DB)
+#   - target_attainment : hardcode 60
+#   - study_program     : constanta default "RKS"
+#   - criteria          : generate 5 level rubrik (score + subjects) dari template
+#   - cpl_pis           : kosong (pemetaan sub-komponen -> CPL/SO/PI belum ada di DB)
+# Kode PI memakai format proyek (mis. "PI-01.1"), bukan format course_dummy ("1a").
+_COURSE_DEFAULT_STUDY_PROGRAM = 'RKS'
+_COURSE_DEFAULT_TARGET = 60
+
+# Template rubrik 5 level: (level, label, score_min, score_max)
+_COURSE_CRITERIA_TEMPLATE = [
+    (1, 'Sangat Kurang',  0,  30),
+    (2, 'Kurang',         31, 55),
+    (3, 'Cukup',          56, 70),
+    (4, 'Baik',           71, 89),
+    (5, 'Sangat Baik',    90, 100),
+]
+
+_COURSE_CRITERIA_SUBJECTS = {
+    1: 'Hasil {name} sangat minim dan tidak sesuai dengan instruksi yang diberikan.',
+    2: 'Hasil {name} kurang lengkap dan terdapat banyak kesalahan pada konsep utama.',
+    3: 'Hasil {name} cukup baik, konsep dasar dipahami dengan benar.',
+    4: 'Hasil {name} lengkap dan dikerjakan dengan baik, analisis benar dan terstruktur.',
+    5: 'Hasil {name} sangat sempurna, analisis mendalam, kritis, dan kreatif.',
+}
+
+
+def _parse_sopi_pairs(raw):
+    """
+    Parse field sopi ("SO1-PI-01.1, SO1-PI-01.2") menjadi pasangan (so_code, pi_code).
+    Return list tuple, mis. [('SO1', 'PI-01.1'), ('SO1', 'PI-01.2')].
+    """
+    pairs = []
+    for part in (raw or '').split(','):
+        part = part.strip()
+        if not part:
+            continue
+        if '-' in part:
+            so, pi = part.split('-', 1)
+            so, pi = so.strip(), pi.strip()
+            if so and pi:
+                pairs.append((so, pi))
+    return pairs
+
+
+def _course_criteria(component_name):
+    """Generate rubrik 5 level per komponen dari template (data tidak tersimpan)."""
+    result = []
+    for lvl, label, smin, smax in _COURSE_CRITERIA_TEMPLATE:
+        label_lower = label.lower()
+        result.append({
+            'level'    : lvl,
+            'label'    : label,
+            'score_min': smin,
+            'score_max': smax,
+            'subjects' : [
+                _COURSE_CRITERIA_SUBJECTS[lvl].format(name=component_name),
+                f'Secara keseluruhan dinilai {label_lower}.',
+            ],
+        })
+    return result
+
+
+def _build_course_json(rps):
+    """Bangun dict course JSON mengikuti format static/data/course_dummy.json."""
+    mk = rps.matakuliah
+    ta = rps.tahun_ajaran
+
+    tp_data = rps.tp_data or []
+    kriteria = rps.kriteria_penilaian or []
+
+    # CPL list (dari Tujuan Pembelajaran / CLO)
+    cpls = []
+    for tp in tp_data:
+        so_codes = [so for so, _ in _parse_sopi_pairs(tp.get('sopi'))]
+        cpls.append({
+            'code'            : f"CPL{tp.get('no')}",
+            'description'     : tp.get('teks', ''),
+            'proficiency_level': tp.get('level', 1),
+            'so_codes'        : sorted(set(so_codes)),
+        })
+
+    # Kelompokkan sub-komponen per komponen (urut kemunculan pertama)
+    kategori_order = []
+    komponen_groups = {}
+    for k in kriteria:
+        komponen = (k.get('komponen') or '').strip()
+        if not komponen:
+            continue
+        if komponen not in komponen_groups:
+            komponen_groups[komponen] = []
+            kategori_order.append(komponen)
+        komponen_groups[komponen].append(k)
+
+    key_map = {
+        'Partisipatif': 'partisipatif',
+        'Tugas'       : 'tugas',
+        'Kuis'        : 'kuis',
+        'ATS'         : 'ats',
+        'AAS'         : 'aas',
+        'Proyek'      : 'proyek',
+    }
+
+    categories = []
+    for komponen in kategori_order:
+        category_key = key_map.get(komponen, komponen.lower())
+        components = []
+        for sub in komponen_groups[komponen]:
+            name = (sub.get('sub_komponen') or '').strip()
+            if not name:
+                continue
+            try:
+                weight = int(float(sub.get('persentase', 0) or 0))
+            except (ValueError, TypeError):
+                weight = 0
+            components.append({
+                'name'   : name,
+                'weight' : weight,
+                'cpl_pis': [],
+                'criteria': _course_criteria(name),
+            })
+        categories.append({
+            'key'       : category_key,
+            'label'     : komponen,
+            'components': components,
+        })
+
+    return {
+        'course_code'     : mk.kode if mk else '',
+        'course_name'     : mk.nama if mk else '',
+        'sks'             : rps.sks,
+        'semester'        : f"{ta.tahun} {ta.semester}" if ta else '',
+        'study_program'   : _COURSE_DEFAULT_STUDY_PROGRAM,
+        'is_pbl'          : False,
+        'target_attainment': _COURSE_DEFAULT_TARGET,
+        'categories'      : categories,
+        'cpls'            : cpls,
+    }
+
+
 # ── Helper: Build data untuk PDF ──────────────────────────────────────────────
 def _build_rps_data(rps, dosen):
     mk     = rps.matakuliah
@@ -980,6 +1122,29 @@ def preview(id):
     dosen    = User.query.get(rps.user_id)
     rps_data = _build_rps_data(rps, dosen)
     return render_template('rps_template.html', data=rps_data)
+
+
+# ── Route: Export RPS Approved ke JSON (format course_dummy.json) ────────────
+@bp.route('/<int:id>/export-json')
+@login_required
+def export_json(id):
+    if current_user.is_kaprodi:
+        rps = RPS.query.get_or_404(id)
+    else:
+        rps = RPS.query.filter_by(id=id, user_id=current_user.id).first_or_404()
+
+    if rps.rps_status != 'approved':
+        flash('Export JSON hanya tersedia untuk RPS yang sudah di-approve.', 'warning')
+        return redirect(url_for('rps.list'))
+
+    from flask import jsonify
+    data = _build_course_json(rps)
+
+    mk = rps.matakuliah
+    filename = secure_filename(f"{mk.kode if mk else rps.id}_{rps.id}.json")
+    response = jsonify(data)
+    response.headers['Content-Disposition'] = f'attachment; filename={filename}'
+    return response
 
 
 # ── Route: View QR Koordinator ────────────────────────────────────────────────

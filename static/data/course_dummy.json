@@ -1,0 +1,247 @@
+{
+  "course_code": "RKS101",
+  "course_name": "Rubric Assesment 101",
+  "sks": 3,
+  "semester": "2026/2027 Ganjil",
+  "study_program": "RKS",
+  "is_pbl": false,
+  "target_attainment": 60,
+  "categories": [
+    {
+      "key": "partisipatif",
+      "label": "Partisipatif",
+      "components": [
+        {
+          "name": "Keaktifan Diskusi Kelas",
+          "weight": 10,
+          "cpl_pis": [
+            { "cpl": "CPL1", "so": "SO1", "pi": "1a" }
+          ],
+          "criteria": [
+            { "level": 1, "label": "Sangat Kurang", "score_min": 0, "score_max": 30, "subjects": ["Tidak pernah mengajukan pertanyaan atau menjawab pertanyaan dalam diskusi kelas.", "Secara keseluruhan dinilai sangat kurang."] },
+            { "level": 2, "label": "Kurang", "score_min": 31, "score_max": 55, "subjects": ["Jarang berpartisipasi dalam diskusi kelas, hanya berbicara bila ditunjuk.", "Secara keseluruhan dinilai kurang."] },
+            { "level": 3, "label": "Cukup", "score_min": 56, "score_max": 70, "subjects": ["Cukup aktif berpartisipasi, mengajukan pertanyaan atau menjawab diskusi sesekali.", "Secara keseluruhan dinilai cukup."] },
+            { "level": 4, "label": "Baik", "score_min": 71, "score_max": 89, "subjects": ["Aktif berpartisipasi dalam diskusi kelas dengan argumen yang relevan.", "Secara keseluruhan dinilai baik."] },
+            { "level": 5, "label": "Sangat Baik", "score_min": 90, "score_max": 100, "subjects": ["Sangat aktif memimpin diskusi, memberikan ide orisinal dan solutif secara konsisten.", "Secara keseluruhan dinilai sangat baik."] }
+          ]
+        },
+        {
+          "name": "Kehadiran & Profesionalitas",
+          "weight": 10,
+          "cpl_pis": [
+            { "cpl": "CPL1", "so": "SO1", "pi": "1b" }
+          ],
+          "criteria": [
+            { "level": 1, "label": "Sangat Kurang", "score_min": 0, "score_max": 30, "subjects": ["Sering terlambat masuk kelas dan tidak disiplin mengumpulkan tugas.", "Secara keseluruhan dinilai sangat kurang."] },
+            { "level": 2, "label": "Kurang", "score_min": 31, "score_max": 55, "subjects": ["Kurang disiplin dengan kehadiran dan sering terlambat mengumpulkan tugas.", "Secara keseluruhan dinilai kurang."] },
+            { "level": 3, "label": "Cukup", "score_min": 56, "score_max": 70, "subjects": ["Hadir tepat waktu dan mengumpulkan tugas sesuai tenggat waktu dengan baik.", "Secara keseluruhan dinilai cukup."] },
+            { "level": 4, "label": "Baik", "score_min": 71, "score_max": 89, "subjects": ["Menunjukkan kedisiplinan tinggi dan etika profesional dalam pembelajaran.", "Secara keseluruhan dinilai baik."] },
+            { "level": 5, "label": "Sangat Baik", "score_min": 90, "score_max": 100, "subjects": ["Menunjukkan integritas akademik dan profesionalisme yang luar biasa dan konsisten.", "Secara keseluruhan dinilai sangat baik."] }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "tugas",
+      "label": "Tugas",
+      "components": [
+        {
+          "name": "Tugas Mandiri 1",
+          "weight": 10,
+          "cpl_pis": [
+            { "cpl": "CPL2", "so": "SO2", "pi": "2a" }
+          ],
+          "criteria": [
+            { "level": 1, "label": "Sangat Kurang", "score_min": 0, "score_max": 30, "subjects": ["Hasil tugas sangat minim, tidak sesuai dengan instruksi yang diberikan.", "Secara keseluruhan dinilai sangat kurang."] },
+            { "level": 2, "label": "Kurang", "score_min": 31, "score_max": 55, "subjects": ["Hasil tugas kurang lengkap, terdapat banyak kesalahan pada konsep utama.", "Secara keseluruhan dinilai kurang."] },
+            { "level": 3, "label": "Cukup", "score_min": 56, "score_max": 70, "subjects": ["Tugas diselesaikan dengan cukup baik, konsep dasar dipahami dengan benar.", "Secara keseluruhan dinilai cukup."] },
+            { "level": 4, "label": "Baik", "score_min": 71, "score_max": 89, "subjects": ["Tugas lengkap dan dikerjakan dengan baik, analisis benar dan terstruktur.", "Secara keseluruhan dinilai baik."] },
+            { "level": 5, "label": "Sangat Baik", "score_min": 90, "score_max": 100, "subjects": ["Tugas dikerjakan dengan sangat sempurna, analisis mendalam, kritis, dan kreatif.", "Secara keseluruhan dinilai sangat baik."] }
+          ]
+        },
+        {
+          "name": "Tugas Mandiri 2",
+          "weight": 10,
+          "cpl_pis": [
+            { "cpl": "CPL2", "so": "SO2", "pi": "2b" }
+          ],
+          "criteria": [
+            { "level": 1, "label": "Sangat Kurang", "score_min": 0, "score_max": 30, "subjects": ["Hasil tugas sangat minim, tidak sesuai dengan instruksi yang diberikan.", "Secara keseluruhan dinilai sangat kurang."] },
+            { "level": 2, "label": "Kurang", "score_min": 31, "score_max": 55, "subjects": ["Hasil tugas kurang lengkap, terdapat banyak kesalahan pada konsep utama.", "Secara keseluruhan dinilai kurang."] },
+            { "level": 3, "label": "Cukup", "score_min": 56, "score_max": 70, "subjects": ["Tugas diselesaikan dengan cukup baik, konsep dasar dipahami dengan benar.", "Secara keseluruhan dinilai cukup."] },
+            { "level": 4, "label": "Baik", "score_min": 71, "score_max": 89, "subjects": ["Tugas lengkap dan dikerjakan dengan baik, analisis benar dan terstruktur.", "Secara keseluruhan dinilai baik."] },
+            { "level": 5, "label": "Sangat Baik", "score_min": 90, "score_max": 100, "subjects": ["Tugas dikerjakan dengan sangat sempurna, analisis mendalam, kritis, dan kreatif.", "Secara keseluruhan dinilai sangat baik."] }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "kuis",
+      "label": "Kuis",
+      "components": [
+        {
+          "name": "Kuis 1",
+          "weight": 5,
+          "cpl_pis": [
+            { "cpl": "CPL3", "so": "SO3", "pi": "3a" }
+          ],
+          "criteria": [
+            { "level": 1, "label": "Sangat Kurang", "score_min": 0, "score_max": 30, "subjects": ["Jawaban kuis salah semua atau tidak menjawab pertanyaan sama sekali.", "Secara keseluruhan dinilai sangat kurang."] },
+            { "level": 2, "label": "Kurang", "score_min": 31, "score_max": 55, "subjects": ["Jawaban kuis sebagian besar salah, pemahaman konsep dasar masih sangat kurang.", "Secara keseluruhan dinilai kurang."] },
+            { "level": 3, "label": "Cukup", "score_min": 56, "score_max": 70, "subjects": ["Jawaban kuis cukup benar, konsep dasar dipahami dengan cukup baik.", "Secara keseluruhan dinilai cukup."] },
+            { "level": 4, "label": "Baik", "score_min": 71, "score_max": 89, "subjects": ["Jawaban kuis sebagian besar benar dan terstruktur dengan argumen yang baik.", "Secara keseluruhan dinilai baik."] },
+            { "level": 5, "label": "Sangat Baik", "score_min": 90, "score_max": 100, "subjects": ["Jawaban kuis semuanya benar, tepat, dan menunjukkan penguasaan materi yang utuh.", "Secara keseluruhan dinilai sangat baik."] }
+          ]
+        },
+        {
+          "name": "Kuis 2",
+          "weight": 5,
+          "cpl_pis": [
+            { "cpl": "CPL3", "so": "SO3", "pi": "3b" }
+          ],
+          "criteria": [
+            { "level": 1, "label": "Sangat Kurang", "score_min": 0, "score_max": 30, "subjects": ["Jawaban kuis salah semua atau tidak menjawab pertanyaan sama sekali.", "Secara keseluruhan dinilai sangat kurang."] },
+            { "level": 2, "label": "Kurang", "score_min": 31, "score_max": 55, "subjects": ["Jawaban kuis sebagian besar salah, pemahaman konsep dasar masih sangat kurang.", "Secara keseluruhan dinilai kurang."] },
+            { "level": 3, "label": "Cukup", "score_min": 56, "score_max": 70, "subjects": ["Jawaban kuis cukup benar, konsep dasar dipahami dengan cukup baik.", "Secara keseluruhan dinilai cukup."] },
+            { "level": 4, "label": "Baik", "score_min": 71, "score_max": 89, "subjects": ["Jawaban kuis sebagian besar benar and terstruktur dengan argumen yang baik.", "Secara keseluruhan dinilai baik."] },
+            { "level": 5, "label": "Sangat Baik", "score_min": 90, "score_max": 100, "subjects": ["Jawaban kuis semuanya benar, tepat, dan menunjukkan penguasaan materi yang utuh.", "Secara keseluruhan dinilai sangat baik."] }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "ats",
+      "label": "ATS",
+      "components": [
+        {
+          "name": "Ujian Teori ATS",
+          "weight": 10,
+          "cpl_pis": [
+            { "cpl": "CPL4", "so": "SO5", "pi": "5a" }
+          ],
+          "criteria": [
+            { "level": 1, "label": "Sangat Kurang", "score_min": 0, "score_max": 30, "subjects": ["Gagal menjelaskan konsep-konsep utama materi ujian teori.", "Secara keseluruhan dinilai sangat kurang."] },
+            { "level": 2, "label": "Kurang", "score_min": 31, "score_max": 55, "subjects": ["Penjelasan konsep bersifat hafalan tanpa pemahaman mendalam.", "Secara keseluruhan dinilai kurang."] },
+            { "level": 3, "label": "Cukup", "score_min": 56, "score_max": 70, "subjects": ["Memahami definisi dan konsep utama materi teori dengan cukup benar.", "Secara keseluruhan dinilai cukup."] },
+            { "level": 4, "label": "Baik", "score_min": 71, "score_max": 89, "subjects": ["Memahami konsep teori secara komprehensif, runtut, dan argumen berbasis logika.", "Secara keseluruhan dinilai baik."] },
+            { "level": 5, "label": "Sangat Baik", "score_min": 90, "score_max": 100, "subjects": ["Penguasaan konsep teori sangat mendalam, kritis, dan mampu menganalisis masalah kompleks.", "Secara keseluruhan dinilai sangat baik."] }
+          ]
+        },
+        {
+          "name": "Ujian Praktik ATS",
+          "weight": 10,
+          "cpl_pis": [
+            { "cpl": "CPL4", "so": "SO5", "pi": "5b" }
+          ],
+          "criteria": [
+            { "level": 1, "label": "Sangat Kurang", "score_min": 0, "score_max": 30, "subjects": ["Tidak mampu menjalankan prosedur praktikum dasar atau terjadi kesalahan fatal.", "Secara keseluruhan dinilai sangat kurang."] },
+            { "level": 2, "label": "Kurang", "score_min": 31, "score_max": 55, "subjects": ["Langkah praktikum kurang lengkap dan hasil akhir program tidak berfungsi.", "Secara keseluruhan dinilai kurang."] },
+            { "level": 3, "label": "Cukup", "score_min": 56, "score_max": 70, "subjects": ["Prosedur praktikum diselesaikan secara mandiri dan program berjalan cukup baik.", "Secara keseluruhan dinilai cukup."] },
+            { "level": 4, "label": "Baik", "score_min": 71, "score_max": 89, "subjects": ["Praktikum diselesaikan dengan terstruktur dan program bebas dari kesalahan utama.", "Secara keseluruhan dinilai baik."] },
+            { "level": 5, "label": "Sangat Baik", "score_min": 90, "score_max": 100, "subjects": ["Penguasaan keterampilan praktik sangat mahir, presisi, dan program dioptimalkan dengan baik.", "Secara keseluruhan dinilai sangat baik."] }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "aas",
+      "label": "AAS",
+      "components": [
+        {
+          "name": "Ujian Teori AAS",
+          "weight": 10,
+          "cpl_pis": [
+            { "cpl": "CPL4", "so": "SO5", "pi": "5a" }
+          ],
+          "criteria": [
+            { "level": 1, "label": "Sangat Kurang", "score_min": 0, "score_max": 30, "subjects": ["Gagal menjelaskan konsep-konsep utama materi ujian teori.", "Secara keseluruhan dinilai sangat kurang."] },
+            { "level": 2, "label": "Kurang", "score_min": 31, "score_max": 55, "subjects": ["Penjelasan konsep bersifat hafalan tanpa pemahaman mendalam.", "Secara keseluruhan dinilai kurang."] },
+            { "level": 3, "label": "Cukup", "score_min": 56, "score_max": 70, "subjects": ["Memahami definisi dan konsep utama materi teori dengan cukup benar.", "Secara keseluruhan dinilai cukup."] },
+            { "level": 4, "label": "Baik", "score_min": 71, "score_max": 89, "subjects": ["Memahami konsep teori secara komprehensif, runtut, dan argumen berbasis logika.", "Secara keseluruhan dinilai baik."] },
+            { "level": 5, "label": "Sangat Baik", "score_min": 90, "score_max": 100, "subjects": ["Penguasaan konsep teori sangat mendalam, kritis, dan mampu menganalisis masalah kompleks.", "Secara keseluruhan dinilai sangat baik."] }
+          ]
+        },
+        {
+          "name": "Ujian Praktik AAS",
+          "weight": 10,
+          "cpl_pis": [
+            { "cpl": "CPL4", "so": "SO5", "pi": "5b" }
+          ],
+          "criteria": [
+            { "level": 1, "label": "Sangat Kurang", "score_min": 0, "score_max": 30, "subjects": ["Tidak mampu menjalankan prosedur praktikum dasar atau terjadi kesalahan fatal.", "Secara keseluruhan dinilai sangat kurang."] },
+            { "level": 2, "label": "Kurang", "score_min": 31, "score_max": 55, "subjects": ["Langkah praktikum kurang lengkap dan hasil akhir program tidak berfungsi.", "Secara keseluruhan dinilai kurang."] },
+            { "level": 3, "label": "Cukup", "score_min": 56, "score_max": 70, "subjects": ["Prosedur praktikum diselesaikan secara mandiri and program berjalan cukup baik.", "Secara keseluruhan dinilai cukup."] },
+            { "level": 4, "label": "Baik", "score_min": 71, "score_max": 89, "subjects": ["Praktikum diselesaikan dengan terstruktur dan program bebas dari kesalahan utama.", "Secara keseluruhan dinilai baik."] },
+            { "level": 5, "label": "Sangat Baik", "score_min": 90, "score_max": 100, "subjects": ["Penguasaan keterampilan praktik sangat mahir, presisi, dan program dioptimalkan dengan baik.", "Secara keseluruhan dinilai sangat baik."] }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "proyek",
+      "label": "Proyek",
+      "components": [
+        {
+          "name": "Laporan Akhir Proyek",
+          "weight": 5,
+          "cpl_pis": [
+            { "cpl": "CPL5", "so": "SO8", "pi": "8a" }
+          ],
+          "criteria": [
+            { "level": 1, "label": "Sangat Kurang", "score_min": 0, "score_max": 30, "subjects": ["Proyek tidak selesai atau hasil pengerjaan sangat minim.", "Secara keseluruhan dinilai sangat kurang."] },
+            { "level": 2, "label": "Kurang", "score_min": 31, "score_max": 55, "subjects": ["Hasil proyek kurang lengkap, desain sistem tidak konsisten dan tidak teratur.", "Secara keseluruhan dinilai kurang."] },
+            { "level": 3, "label": "Cukup", "score_min": 56, "score_max": 70, "subjects": ["Hasil proyek diselesaikan sesuai fungsionalitas dasar yang diminta.", "Secara keseluruhan dinilai cukup."] },
+            { "level": 4, "label": "Baik", "score_min": 71, "score_max": 89, "subjects": ["Hasil proyek selesai dengan baik, dokumentasi lengkap, dan fungsionalitas lancar.", "Secara keseluruhan dinilai baik."] },
+            { "level": 5, "label": "Sangat Baik", "score_min": 90, "score_max": 100, "subjects": ["Proyek selesai dengan kualitas luar biasa, sistem inovatif, terdokumentasi sangat rapi.", "Secara keseluruhan dinilai sangat baik."] }
+          ]
+        },
+        {
+          "name": "Demo Alat/Aplikasi Proyek",
+          "weight": 5,
+          "cpl_pis": [
+            { "cpl": "CPL5", "so": "SO8", "pi": "8b" }
+          ],
+          "criteria": [
+            { "level": 1, "label": "Sangat Kurang", "score_min": 0, "score_max": 30, "subjects": ["Proyek tidak selesai atau hasil pengerjaan sangat minim.", "Secara keseluruhan dinilai sangat kurang."] },
+            { "level": 2, "label": "Kurang", "score_min": 31, "score_max": 55, "subjects": ["Hasil proyek kurang lengkap, desain sistem tidak konsisten dan tidak teratur.", "Secara keseluruhan dinilai kurang."] },
+            { "level": 3, "label": "Cukup", "score_min": 56, "score_max": 70, "subjects": ["Hasil proyek diselesaikan sesuai fungsionalitas dasar yang diminta.", "Secara keseluruhan dinilai cukup."] },
+            { "level": 4, "label": "Baik", "score_min": 71, "score_max": 89, "subjects": ["Hasil proyek selesai dengan baik, dokumentasi lengkap, dan fungsionalitas lancar.", "Secara keseluruhan dinilai baik."] },
+            { "level": 5, "label": "Sangat Baik", "score_min": 90, "score_max": 100, "subjects": ["Proyek selesai dengan kualitas luar biasa, sistem inovatif, terdokumentasi sangat rapi.", "Secara keseluruhan dinilai sangat baik."] }
+          ]
+        }
+      ]
+    }
+  ],
+  "cpls": [
+    {
+      "code": "CPL1",
+      "description": "Mampu menganalisis dan merancang solusi keamanan.",
+      "proficiency_level": 4,
+      "so_codes": ["SO1"]
+    },
+    {
+      "code": "CPL2",
+      "description": "Mampu menerapkan pemrograman aman untuk pengembangan web.",
+      "proficiency_level": 4,
+      "so_codes": ["SO2"]
+    },
+    {
+      "code": "CPL3",
+      "description": "Mampu merancang arsitektur sistem informasi aman.",
+      "proficiency_level": 4,
+      "so_codes": ["SO3"]
+    },
+    {
+      "code": "CPL4",
+      "description": "Mampu merumuskan kebijakan keamanan siber.",
+      "proficiency_level": 4,
+      "so_codes": ["SO5"]
+    },
+    {
+      "code": "CPL5",
+      "description": "Mampu melakukan audit sistem keamanan jaringan komputer.",
+      "proficiency_level": 4,
+      "so_codes": ["SO8"]
+    }
+  ]
+}
