@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import or_
 from extensions import db
 from models import User, RPS
 from utils.decorators import kaprodi_required
@@ -11,13 +12,29 @@ from utils.decorators import kaprodi_required
 bp = Blueprint('user', __name__, url_prefix='/users')
 ph = PasswordHasher()
 
+PER_PAGE = 10
+
 
 @bp.route('/')
 @login_required
 @kaprodi_required
 def list():
-    users = User.query.order_by(User.role.asc(), User.nama.asc()).all()
-    return render_template('users.html', users=users)
+    q = request.args.get('q', '').strip()
+    page = request.args.get('page', 1, type=int)
+
+    query = User.query
+    if q:
+        query = query.filter(
+            or_(
+                User.nama.ilike(f'%{q}%'),
+                User.email.ilike(f'%{q}%'),
+            )
+        )
+
+    pagination = query.order_by(User.role.asc(), User.nama.asc()).paginate(
+        page=page, per_page=PER_PAGE, error_out=False
+    )
+    return render_template('users.html', users=pagination.items, pagination=pagination, q=q)
 
 
 @bp.route('/add', methods=['POST'])

@@ -37,8 +37,19 @@ def download_file(filename):
 @bp.route('/')
 @login_required
 def list():
-    semua_panduan = Panduan.query.order_by(Panduan.updated_at.desc()).all()
-    return render_template('panduan/list.html', semua_panduan=semua_panduan)
+    q = request.args.get('q', '').strip()
+    page = request.args.get('page', 1, type=int)
+
+    query = Panduan.query
+    if q:
+        query = query.filter(Panduan.nama.ilike(f'%{q}%'))
+    if not current_user.is_kaprodi:
+        query = query.filter(Panduan.is_aktif == True)
+
+    pagination = query.order_by(Panduan.updated_at.desc()).paginate(
+        page=page, per_page=10, error_out=False
+    )
+    return render_template('panduan/list.html', semua_panduan=pagination.items, pagination=pagination, q=q)
 
 @bp.route('/add', methods=['POST'])
 @login_required

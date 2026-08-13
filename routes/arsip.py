@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
+from math import ceil
 from extensions import db
 from models import ArsipDokumen, User
 from utils.decorators import kaprodi_required
@@ -7,10 +8,37 @@ from utils.decorators import kaprodi_required
 bp = Blueprint('arsip', __name__, url_prefix='/arsip')
 
 
+class Page:
+    def __init__(self, items, page, per_page, total):
+        self.items = items
+        self.page = page
+        self.per_page = per_page
+        self.total = total
+        self.pages = max(1, ceil(total / per_page)) if per_page else 1
+        self.has_prev = self.page > 1
+        self.has_next = self.page < self.pages
+        self.prev_num = self.page - 1 if self.has_prev else None
+        self.next_num = self.page + 1 if self.has_next else None
+
+    def iter_pages(self, left_edge=1, left_current=2, right_current=2, right_edge=1):
+        last = 0
+        for num in range(1, self.pages + 1):
+            if (
+                num <= left_edge
+                or (self.page - left_current - 1 < num < self.page + right_current)
+                or num > self.pages - right_edge
+            ):
+                if last + 1 != num:
+                    yield None
+                yield num
+                last = num
+
+
 @bp.route('/')
 @login_required
 def list():
     q = request.args.get('q', '').strip()
+    page = request.args.get('page', 1, type=int)
 
     query = ArsipDokumen.query
 
@@ -31,11 +59,16 @@ def list():
                 if current_user in item.allowed_users:
                     semua_arsip.append(item)
 
+    per_page = 10
+    pagination = Page(semua_arsip, page, per_page, len(semua_arsip))
+    page_items = pagination.items[(page - 1) * per_page: page * per_page]
+
     all_users = User.query.order_by(User.nama.asc()).all()
 
     return render_template(
         'arsip/list.html',
-        semua_arsip=semua_arsip,
+        semua_arsip=page_items,
+        pagination=pagination,
         all_users=all_users,
         q=q
     )
