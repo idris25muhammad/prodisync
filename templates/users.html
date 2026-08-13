@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 {% block content %}
 <div class="space-y-8">
     <div class="flex justify-between items-center">
@@ -59,25 +59,25 @@
                             <div class="flex gap-2 justify-center flex-wrap">
                                 <button type="button" onclick='openEditModal({
                                         id: {{ u.id }},
-                                        nama: {{ u.nama|tojson }},
-                                        username: {{ u.username|tojson }},
-                                        email: {{ (u.email or "")|tojson }},
-                                        role: {{ u.role|tojson }},
-                                        nidn: {{ (u.nidn or "")|tojson }},
-                                        nip: {{ (u.nip or "")|tojson }},
-                                        sinta_id: {{ (u.sinta_id or "")|tojson }},
-                                        google_scholar_id: {{ (u.google_scholar_id or "")|tojson }},
-                                        google_scholar_url: {{ (u.google_scholar_url or "")|tojson }},
-                                        orcid_id: {{ (u.orcid_id or "")|tojson }},
-                                        scopus_id: {{ (u.scopus_id or "")|tojson }},
-                                        researcher_id: {{ (u.researcher_id or "")|tojson }},
-                                        garuda_id: {{ (u.garuda_id or "")|tojson }},
-                                        afiliasi: {{ (u.afiliasi or "")|tojson }},
-                                        prodi: {{ (u.prodi or "")|tojson }},
-                                        jabatan_fungsional: {{ (u.jabatan_fungsional or "")|tojson }},
-                                        bidang_keahlian: {{ (u.bidang_keahlian or "")|tojson }},
-                                        homepage_url: {{ (u.homepage_url or "")|tojson }},
-                                        foto_url: {{ (u.foto_url or "")|tojson }}
+                                        nama: {{ u.nama|tojson|forceescape }},
+                                        username: {{ u.username|tojson|forceescape }},
+                                        email: {{ (u.email or "")|tojson|forceescape }},
+                                        role: {{ u.role|tojson|forceescape }},
+                                        nidn: {{ (u.nidn or "")|tojson|forceescape }},
+                                        nip: {{ (u.nip or "")|tojson|forceescape }},
+                                        sinta_id: {{ (u.sinta_id or "")|tojson|forceescape }},
+                                        google_scholar_id: {{ (u.google_scholar_id or "")|tojson|forceescape }},
+                                        google_scholar_url: {{ (u.google_scholar_url or "")|tojson|forceescape }},
+                                        orcid_id: {{ (u.orcid_id or "")|tojson|forceescape }},
+                                        scopus_id: {{ (u.scopus_id or "")|tojson|forceescape }},
+                                        researcher_id: {{ (u.researcher_id or "")|tojson|forceescape }},
+                                        garuda_id: {{ (u.garuda_id or "")|tojson|forceescape }},
+                                        afiliasi: {{ (u.afiliasi or "")|tojson|forceescape }},
+                                        prodi: {{ (u.prodi or "")|tojson|forceescape }},
+                                        jabatan_fungsional: {{ (u.jabatan_fungsional or "")|tojson|forceescape }},
+                                        bidang_keahlian: {{ (u.bidang_keahlian or "")|tojson|forceescape }},
+                                        homepage_url: {{ (u.homepage_url or "")|tojson|forceescape }},
+                                        foto_url: {{ (u.foto_url or "")|tojson|forceescape }}
                                     })'
                                     class="text-xs font-bold px-3 py-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-all">
                                     Edit
@@ -85,7 +85,7 @@
 
 
                                 {% if u.id != current_user.id %}
-                                <button type="button" onclick="openDeleteModal({{ u.id }}, {{ u.nama|tojson }})"
+                                <button type="button" onclick="openDeleteModal({{ u.id }}, {{ u.nama|tojson|forceescape }})"
                                     class="text-xs font-bold px-3 py-1.5 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-all">
                                     Hapus
                                 </button>
