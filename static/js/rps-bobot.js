@@ -176,7 +176,7 @@ document.addEventListener('change', function (e) {
 document.addEventListener('DOMContentLoaded', function () {
     updateKriteriaTotal();
 
-    const form = document.querySelector('form');
+    const form = document.getElementById('rps-editor-form');
     if (!form) return;
 
     form.addEventListener('submit', function (e) {

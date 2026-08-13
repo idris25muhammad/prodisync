@@ -304,6 +304,8 @@
         rejected:  '<span class="inline-block px-2.5 py-1 text-xs rounded-md bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 font-bold uppercase tracking-wide">Rejected</span>',
     };
 
+    const csrfToken = (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
+
     function openDetail(kode, nama, sks, semester, ta, dosen, status, progress, prasyarat, id, isKaprodi, mkKode) {
         document.getElementById('dp-kode').textContent        = kode;
         document.getElementById('dp-nama').textContent        = nama;
@@ -344,6 +346,25 @@
                 </svg>
                 Export JSON
             </a>
+            ` : ''}
+            ${(isKaprodi && status === 'submitted') ? `
+            <form method="POST" action="{{ request.script_root }}/rps/${id}/approve" class="flex flex-col gap-2">
+                <input type="hidden" name="csrf_token" value="${csrfToken}">
+                <button type="submit"
+                    class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-bold transition-colors shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    Approve
+                </button>
+            </form>
+            <button type="button" onclick="openRejectModal(${id})"
+                class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition-colors shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+                Reject
+            </button>
             ` : ''}
         `;
 
@@ -580,6 +601,34 @@
             <a id="hapus-link" href="#"
                 class="flex-1 py-2.5 rounded-lg font-bold bg-red-600 hover:bg-red-700 text-white transition-all text-sm text-center">Hapus</a>
         </div>
+    </div>
+</div>
+
+{# ── Modal Reject ── #}
+<div id="rejectModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onclick="closeRejectModal()"></div>
+    <div
+        class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 dark:border-slate-700 z-10">
+        <div class="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-700">
+            <div>
+                <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">Reject RPS</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400">Masukkan alasan penolakan.</p>
+            </div>
+            <button type="button" onclick="closeRejectModal()"
+                class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 rounded-lg text-xl leading-none">&times;</button>
+        </div>
+        <form method="POST" action="{{ request.script_root }}/rps/0/reject" id="reject-form" class="px-5 py-4 space-y-4">
+            <textarea name="reason" rows="5" required
+                class="w-full rounded-lg border border-slate-300 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-100"
+                placeholder="Contoh: CPL belum sinkron dengan CPMK, daftar pustaka perlu diperbarui."></textarea>
+            <div class="flex justify-end gap-2 pt-2">
+                <button type="button" onclick="closeRejectModal()"
+                    class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-bold">Batal</button>
+                <button type="submit"
+                    class="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition-colors shadow-md">Submit Reject</button>
+            </div>
+        </form>
     </div>
 </div>
 {% endif %}
@@ -865,6 +914,19 @@
         document.getElementById('hapus-link').href = url;
         document.getElementById('hapus-nama').textContent = '"' + nama + '" akan dihapus permanen.';
         document.getElementById('modal-hapus').classList.remove('hidden');
+    }
+
+    // ── Modal Reject ──────────────────────────────────────────────────────────
+    function openRejectModal(id) {
+        document.getElementById('reject-form').action = `{{ request.script_root }}/rps/${id}/reject`;
+        document.getElementById('rejectModal').classList.remove('hidden');
+        document.getElementById('rejectModal').classList.add('flex');
+    }
+    function closeRejectModal() {
+        const modal = document.getElementById('rejectModal');
+        if (!modal) return;
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
     }
 
     // ── ESC key ───────────────────────────────────────────────────────────────

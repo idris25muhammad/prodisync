@@ -86,7 +86,8 @@ window.saveDraftAndNext = async function(tabId, btnElement) {
         // Sync first just to be sure
         if (typeof syncTPSelections === 'function') syncTPSelections();
 
-        const form = document.querySelector('form');
+        const form = document.getElementById('rps-editor-form');
+        if (!form) return;
         const formData = new FormData(form);
 
         await fetch(window.location.href, {
