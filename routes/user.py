@@ -2,8 +2,9 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
+from sqlalchemy.exc import IntegrityError
 from extensions import db
-from models import User
+from models import User, RPS
 from utils.decorators import kaprodi_required
 
 
@@ -196,9 +197,28 @@ def delete(id):
         flash('Anda tidak bisa menghapus akun sendiri.', 'danger')
         return redirect(url_for('user.list'))
 
-    db.session.delete(user)
-    db.session.commit()
-    flash(f'Akun {user.nama} berhasil dihapus.', 'success')
+    # User yang menjadi Dosen Koordinator RPS tidak bisa dihapus
+    rps_koor = RPS.query.filter(RPS.user_id == user.id).first()
+    if rps_koor:
+        nama_mk = rps_koor.matakuliah.nama if rps_koor.matakuliah else '(mata kuliah tidak diketahui)'
+        flash(
+            f'{user.nama} masih menjadi Dosen Koordinator untuk RPS "{nama_mk}". '
+            'Hapus RPS tersebut atau ganti dosen koordinatornya terlebih dahulu.',
+            'danger',
+        )
+        return redirect(url_for('user.list'))
+
+    try:
+        db.session.delete(user)
+        db.session.commit()
+        flash(f'Akun {user.nama} berhasil dihapus.', 'success')
+    except IntegrityError:
+        db.session.rollback()
+        flash(
+            'Akun tidak bisa dihapus karena masih terkait dengan data lain '
+            '(pengumuman, agenda, arsip, dsb).',
+            'danger',
+        )
     return redirect(url_for('user.list'))
 
 
