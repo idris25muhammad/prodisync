@@ -1,7 +1,8 @@
 from datetime import date
 from flask import Blueprint, render_template
 from flask_login import login_required, current_user
-from models import RPS, MataKuliah, User, TahunAjaran, Panduan, Agenda
+from models import RPS, MataKuliah, User, TahunAjaran, Panduan, Agenda, ArsipDokumen
+from sqlalchemy import or_
 
 bp = Blueprint('dashboard', __name__)
 
@@ -164,7 +165,6 @@ def index():
     rps_draft      = 0
     rps_belum      = 0
     progress_items = []
-    daftar_panduan = Panduan.query.filter_by(is_aktif=True).order_by(Panduan.updated_at.desc()).all()
 
     for rps in rps_list:
         nama = rps.matakuliah.nama if rps.matakuliah else '—'
@@ -183,11 +183,20 @@ def index():
 
     progress_items = sorted(progress_items, key=lambda x: x['progress'])[:5]
 
+    # Arsip dokumen yang dapat diakses dosen: tipe 'semua' atau di-tag ke user ini.
+    arsip_docs = ArsipDokumen.query.filter(
+        ArsipDokumen.is_aktif == True,
+        or_(
+            ArsipDokumen.akses_tipe == 'semua',
+            ArsipDokumen.allowed_users.any(id=current_user.id)
+        )
+    ).order_by(ArsipDokumen.updated_at.desc()).limit(5).all()
+
     return render_template(
         'dashboard/dosen.html',
         semua_ta=semua_ta,
         agenda_terdekat=agenda_terdekat,
-        semua_panduan=daftar_panduan,
+        arsip_docs=arsip_docs,
         total_mk=len(rps_list),
         rps_selesai=rps_selesai,
         rps_draft=rps_draft,

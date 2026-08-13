@@ -5,6 +5,8 @@
 {% block content %}
 
 <script>
+    window.__RPS_LIST_URL = '{{ url_for('rps.list') }}';
+    window.__KAPRODI_NAMA = '{{ config.get('KAPRODI_NAMA', 'Maidel Fani') | e }}';
     const savedRpsDetail = {
         rencana_mingguan: {{ matkul.rencana_mingguan | tojson | safe if matkul.rencana_mingguan else[] }},
     rencana_evaluasi: {{ matkul.rencana_evaluasi | tojson | safe if matkul.rencana_evaluasi else[] }}
@@ -13,58 +15,29 @@
     const cplDefined = {{ 'true' if cpl_defined else 'false' }};
     const cloList = {{ matkul.tp_data | tojson | safe if matkul.tp_data else[] }};
     const isApproved = {{ 'true' if is_approved else 'false' }};
+    const rpsStatus = '{{ matkul.rps_status }}';
 </script>
 
 <div class="space-y-6">
     <div class="flex justify-between items-start flex-wrap gap-4">
         <div>
-            <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white">RPS Editor</h1>
-            <p class="text-slate-500 dark:text-slate-400 mt-1">
-                <span class="text-xs text-slate-400">Login sebagai:</span>
-                <span class="font-semibold text-slate-700 dark:text-slate-200">{{ current_user.nama }}</span>
-                <span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ml-1.5 {% if current_user.is_kaprodi %}bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-200 dark:border-blue-800{% else %}bg-orange-50 text-orange-700 dark:bg-orange-950/60 dark:text-orange-400 border border-orange-200 dark:border-orange-800{% endif %}">{{ 'TimKur' if current_user.is_kaprodi else 'Dosen' }}</span>
-            </p>
+            <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white">RPS Editor
+                <span id="editor-status-badge" class="align-middle ml-2 inline-block px-2.5 py-px rounded-full text-[10px] font-bold uppercase tracking-wide {% if matkul.rps_status == 'assigned' %}bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300{% elif matkul.rps_status == 'submitted' %}bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400{% elif matkul.rps_status == 'approved' %}bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400{% else %}bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400{% endif %}">
+                    {{ 'Assigned/Draft' if matkul.rps_status == 'assigned' else matkul.rps_status | capitalize }}
+                </span>
+            </h1>
         </div>
-        {% if current_user.is_kaprodi and matkul.rps_status == 'submitted' %}
-        <div class="flex gap-2 shrink-0">
-            <form method="POST" action="{{ url_for('rps.approve', id=matkul.id) }}">
-                <button type="submit"
-                    class="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-bold transition-colors shadow-md shadow-green-500/30">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                    Approve
-                </button>
-            </form>
-            <button type="button" onclick="openRejectModal()"
-                class="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition-colors shadow-md shadow-red-500/30">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                Reject
-            </button>
-        </div>
-        {% endif %}
     </div>
 
     <div class="flex flex-col md:flex-row">
 
-        {# ── Sidebar Quick Nav ── #}
+        {# ── Sidebar Quick Nav (sticky kiri) ── #}
         <aside
-            class="w-full md:w-64 shrink-0 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-4 md:min-h-screen flex flex-col gap-4">
+            class="w-full md:w-64 shrink-0 bg-gradient-to-b from-orange-50/60 via-white to-slate-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 border-r border-slate-200 dark:border-slate-800 p-4 md:sticky md:top-0 md:self-start flex flex-col gap-4">
 
             {% set progress = hitung_progress_rps(matkul) %}
-            <div class="px-2 pt-2 mb-2">
-                <div class="flex justify-between items-center mb-1">
-                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wide">Progress Pengisian</span>
-                    <span id="progress-label"
-                        class="text-xs font-black {% if progress == 100 %}text-green-600 dark:text-green-400{% else %}text-blue-600 dark:text-blue-400{% endif %}">{{
-                        progress }}%</span>
-                </div>
-                <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden mb-3">
-                    <div id="progress-bar"
-                        class="h-2 rounded-full transition-all duration-500 ease-out {% if progress == 100 %}bg-green-500{% else %}bg-blue-600 dark:bg-blue-500{% endif %}"
-                        style="width: {{ progress }}%">
-                    </div>
-                </div>
-
-                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wide mt-4">Navigasi Cepat</h3>
+            <div class="px-2 pt-2 mb-2 border-b border-slate-200 dark:border-slate-700 pb-3">
+                <h3 class="text-xs font-black text-blue-700 dark:text-blue-400 uppercase tracking-wide mt-2">Navigasi Cepat</h3>
                 <p class="text-[10px] text-slate-400 mt-1">Lompat langsung ke bagian yang ingin diisi.</p>
             </div>
 
@@ -95,18 +68,20 @@
 
             <nav class="flex flex-col gap-1 px-2 pb-4 overflow-y-auto">
                 {% set quicknav = [
-                ('IDENTITAS MATA KULIAH', 'tab-1', 'head-1'),
+                ('COURSE IDENTITY', 'tab-1', 'head-1'),
                 ('COURSE LEARNING OUTCOMES', 'tab-2', 'head-3'),
                 ('WEEKLY COURSE PLAN', 'tab-3', 'head-5'),
-                ('SARANA & PRASARANA', 'tab-4', 'head-6'),
+                ('FACILITIES & INFRASTRUCTURE', 'tab-4', 'head-6'),
                 ('SO ASSESSMENT PLAN', 'tab-4', 'head-7'),
                 ('STUDENT OUTCOMES ASSESSMENT PLAN', 'tab-5', 'head-9'),
-('COURSE POLICIES', 'tab-5', 'head-10'),
-('TEXTBOOKS & MATERIALS', 'tab-5', 'head-11')
+('COURSE POLICIES', 'tab-6', 'head-10'),
+('TEXTBOOKS & MATERIALS', 'tab-6', 'head-11'),
+('APPROVAL & SIGNATURE', 'tab-7', 'head-12')
                 ] %}
                 {% for label, tid, headId in quicknav %}
                 <button type="button" onclick="jumpToSection('{{ tid }}', '{{ headId }}')"
-                    class="quicknav-btn text-left flex items-start px-3 py-2 rounded-lg transition-all text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-600">
+                    class="quicknav-btn text-left flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all text-slate-600 dark:text-slate-400 hover:bg-white/80 dark:hover:bg-slate-800 hover:text-blue-600">
+                    <span class="w-1.5 h-1.5 rounded-full bg-orange-400 shrink-0"></span>
                     <span class="text-xs font-medium">{{ label }}</span>
                 </button>
                 {% endfor %}
@@ -115,17 +90,41 @@
 
         {# ── Main Form ── #}
         <div class="flex-1 p-8">
+            {# ── Progress Pengisian (paling atas) ── #}
+            <div
+                class="mb-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-5">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Progress
+                        Pengisian</span>
+                    <span id="progress-label"
+                        class="text-xs font-black text-slate-900 dark:text-slate-100">{{
+                        progress }}%</span>
+                </div>
+                <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-4 overflow-hidden">
+                    <div id="progress-bar"
+                        class="h-4 rounded-full transition-all duration-700 ease-out {% if progress >= 100 %}bg-emerald-500{% elif progress >= 80 %}bg-cyan-500{% elif progress >= 50 %}bg-orange-500{% else %}bg-red-500{% endif %}"
+                        style="width: {{ progress }}%">
+                    </div>
+                </div>
+                <p id="progress-fun" class="text-xs font-bold mt-2.5 text-slate-900 dark:text-slate-100">
+                    {%- if progress >= 100 -%}
+                    TOO EASY DEK!
+                    {%- elif progress >= 80 -%}
+                    SAYA AKAN LAWAN!
+                    {%- elif progress >= 60 -%}
+                    semangat.. yok bisa yok..
+                    {%- elif progress >= 40 -%}
+                    Ayo cepat isi.. nanti {{ config.get('KAPRODI_NAMA', 'Maidel Fani') }} marah lo..
+                    {%- else -%}
+                    Baru mulai.. ayo isi!
+                    {%- endif -%}
+                </p>
+            </div>
+
             <div
                 class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-8">
                 <form id="rps-editor-form" method="POST" enctype="multipart/form-data">
-                    {% if current_user.is_kaprodi %}
-                    <div
-                        class="mb-6 p-4 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20">
-                        <p class="text-sm font-bold text-blue-800 dark:text-blue-300">Akses Tim Kurikulum</p>
-                        <p class="text-xs text-blue-700 dark:text-blue-400 mt-1">Anda dapat mengisi dan memperbarui
-                            seluruh bagian RPS.</p>
-                    </div>
-                    {% else %}
+                    {% if not current_user.is_kaprodi %}
                     <div id="cpl-warning-banner"
                         class="mb-6 p-4 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 {% if cpl_defined %}hidden{% endif %}">
                         <p class="text-sm font-bold text-amber-800 dark:text-amber-300">CPL belum didefinisikan</p>
@@ -139,6 +138,10 @@
                     {% include 'rps/tab3_mingguan.html' %}
                     {% include 'rps/tab4_evaluasi.html' %}
                     {% include 'rps/tab5_penilaian.html' %}
+                    {% include 'rps/tab6_policies.html' %}
+                    {% include 'rps/tab7_submission.html' %}
+                    <input type="hidden" name="is_submission" id="is_submission" value="0">
+                    <button type="submit" id="btn-submit-rps" class="hidden"></button>
                 </form>
             </div>
         </div>
@@ -146,44 +149,108 @@
     </div>
 </div>
 
-{% endblock %}
+{# ── Floating Navigasi (bawah, centered) ── #}
+<div id="floating-nav"
+    class="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-stretch gap-1 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl px-2 py-1.5">
+    <button type="button" onclick="goBack()" title="Kembali"
+        class="flex items-center justify-center px-3 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+    </button>
+    <div class="w-px bg-slate-200 dark:bg-slate-700 mx-0.5"></div>
+    <button type="button" onclick="saveDraft(false)" title="Simpan Draft"
+        class="flex flex-col items-center justify-center px-4 py-0.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+        <svg class="w-5 h-5 text-slate-600 dark:text-slate-300" fill="currentColor" viewBox="0 0 24 24"><path d="M18 2H6C4.34 2 3 3.34 3 5V19C3 20.66 4.34 22 6 22H18C19.66 22 21 20.66 21 19V5C21 3.34 19.66 2 18 2ZM11 4H13V8H11V4ZM17 20H7V13H17V20Z"/></svg>
+        <span class="text-[10px] font-bold text-slate-600 dark:text-slate-300 mt-0.5">draft</span>
+    </button>
+    <button type="button" id="floating-primary" onclick="floatingPrimaryAction()" title="Simpan &amp; Lanjut"
+        class="flex items-center justify-center px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/30 transition-all">
+        <svg id="floating-primary-icon" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+    </button>
+</div>
 
-{% block scripts %}
+{# ── Toast Notifikasi Save ── #}
+<div id="save-toast"
+    class="fixed top-4 left-1/2 -translate-x-1/2 z-[60] hidden items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white shadow-xl transition-all duration-300">
+</div>
 
-{# ── Modal Reject ── #}
-<div id="rejectModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 px-4 backdrop-blur-sm">
-    <div class="w-full max-w-lg rounded-2xl bg-white shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
-        <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4 dark:border-slate-700">
-            <div>
-                <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">Reject RPS</h3>
-                <p class="text-sm text-slate-500 dark:text-slate-400">Masukkan alasan penolakan.</p>
-            </div>
-            <button type="button" onclick="closeRejectModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 rounded-lg text-xl leading-none">&times;</button>
+{# ── Modal Konfirmasi Edit RPS Submitted ── #}
+<div id="edit-submitted-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="cancelEditSubmitted()"></div>
+    <div
+        class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 dark:border-slate-700 z-10 p-6">
+        <div class="flex items-center gap-3 mb-3">
+            <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 shrink-0">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </span>
+            <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">Edit RPS (Submitted)</h3>
         </div>
-        <form method="POST" action="{{ url_for('rps.reject', id=matkul.id) }}" class="px-5 py-4 space-y-4">
-            <textarea name="reason" rows="5" required
-                class="w-full rounded-lg border border-slate-300 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-100"
-                placeholder="Contoh: CPL belum sinkron dengan CPMK, daftar pustaka perlu diperbarui."></textarea>
-            <div class="flex justify-end gap-2 pt-2">
-                <button type="button" onclick="closeRejectModal()"
-                    class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-bold">Batal</button>
-                <button type="submit"
-                    class="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition-colors shadow-md">Submit Reject</button>
-            </div>
-        </form>
+        <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+            Status RPS sedang <strong class="text-blue-700 dark:text-blue-400">Submitted</strong>. Jika Anda melanjutkan
+            edit, status akan langsung kembali menjadi <strong class="text-slate-800 dark:text-slate-100">draft (Assigned/Draft)</strong>
+            dan Anda harus <strong class="text-red-600 dark:text-red-400">submit ulang</strong>.
+        </p>
+        <p class="text-xs text-emerald-600 dark:text-emerald-400 mt-2 flex items-center gap-1.5">
+            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            Data Anda tetap aman (tidak direset) saat melanjutkan edit.
+        </p>
+        <div class="flex justify-end gap-3 mt-6">
+            <button type="button" onclick="cancelEditSubmitted()"
+                class="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-bold">Batal</button>
+            <button type="button" onclick="continueEditSubmitted()"
+                class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold transition-colors shadow-md">Lanjutkan</button>
+        </div>
     </div>
 </div>
 
 <script>
-function openRejectModal() {
-    document.getElementById('rejectModal').classList.remove('hidden');
-    document.getElementById('rejectModal').classList.add('flex');
-}
-function closeRejectModal() {
-    document.getElementById('rejectModal').classList.add('hidden');
-    document.getElementById('rejectModal').classList.remove('flex');
-}
+(function () {
+    function maybeShowModal() {
+        if (typeof rpsStatus !== 'undefined' && rpsStatus === 'submitted') {
+            const modal = document.getElementById('edit-submitted-modal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        }
+    }
+    window.continueEditSubmitted = function () {
+        const modal = document.getElementById('edit-submitted-modal');
+        fetch('{{ url_for('rps.back_to_draft', id=matkul.id) }}', { method: 'POST' })
+            .then(function (res) { return res.json().catch(function () { return {}; }); })
+            .then(function (data) {
+                if (data.status === 'success') {
+                    const badge = document.getElementById('editor-status-badge');
+                    if (badge) {
+                        badge.textContent = 'Assigned/Draft';
+                        badge.className = 'align-middle ml-2 inline-block px-2.5 py-px rounded-full text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300';
+                    }
+                }
+                if (modal) {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                }
+            })
+            .catch(function () {
+                if (modal) {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                }
+            });
+    };
+    window.cancelEditSubmitted = function () {
+        window.location.href = window.__RPS_LIST_URL || '/rps/';
+    };
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', maybeShowModal);
+    } else {
+        maybeShowModal();
+    }
+})();
 </script>
+
+{% endblock %}
+
+{% block scripts %}
 
 <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>

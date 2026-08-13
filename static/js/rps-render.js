@@ -141,7 +141,7 @@ function renderRencanaMingguan() {
         tableRows += '<td class="px-3 py-3 text-sm font-black text-slate-800 dark:text-slate-100 whitespace-nowrap">' + (isExam ? m : 'Minggu ' + m) + '</td>';
         tableRows += '<td class="px-3 py-3"><div id="tp-table-' + m + '" class="flex flex-wrap gap-0.5">' + tpBadges + '</div></td>';
         tableRows += '<td class="px-3 py-3 text-xs text-slate-700 dark:text-slate-300 leading-relaxed max-w-[260px]" id="card-desc-' + m + '">' + bahanPreview + '</td>';
-        tableRows += '<td class="px-3 py-3 text-xs text-slate-600 dark:text-slate-400 leading-relaxed max-w-[180px]">' + modalitasPreview + '</td>';
+        tableRows += '<td class="px-3 py-3 text-xs text-slate-600 dark:text-slate-400 leading-relaxed max-w-[180px]" id="card-modalitas-' + m + '">' + modalitasPreview + '</td>';
         tableRows += '<td class="px-3 py-3 whitespace-nowrap"><div id="status-badge-' + m + '"></div></td>';
         tableRows += '</tr>';
 
@@ -166,7 +166,7 @@ function renderRencanaMingguan() {
         modalsHtml += '<div><label class="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Sub Pokok Bahasan</label>';
         modalsHtml += '<textarea name="sub_bahan[]" id="sub_bahan-' + m + '" rows="4" onfocus="initNumbered(this)" onkeydown="handleNumbered(event,this)" class="w-full p-3 border border-blue-200 dark:border-blue-800/50 rounded-xl text-sm focus:ring-2 focus:ring-blue-400 outline-none dark:bg-slate-800 bg-blue-50/30 dark:bg-blue-900/10 dark:text-slate-200 transition-shadow">' + subBahanVal + '</textarea></div>';
         modalsHtml += '<div><label class="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Learning Method</label>';
-        modalsHtml += '<textarea name="modalitas[]" id="modalitas-' + m + '" rows="2" class="w-full p-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-400 outline-none dark:bg-slate-800 dark:border-slate-700 bg-slate-50 dark:text-slate-200 transition-shadow">' + modalitasVal + '</textarea></div>';
+        modalsHtml += '<textarea name="modalitas[]" id="modalitas-' + m + '" rows="2" oninput="updateCardModalitas(\'' + m + '\', this.value)" class="w-full p-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-400 outline-none dark:bg-slate-800 dark:border-slate-700 bg-slate-50 dark:text-slate-200 transition-shadow">' + modalitasVal + '</textarea></div>';
         modalsHtml += '<div><label class="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Time</label>';
         modalsHtml += '<textarea name="waktu[]" id="waktu-' + m + '" rows="2" class="w-full p-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-400 outline-none dark:bg-slate-800 dark:border-slate-700 bg-slate-50 dark:text-slate-200 transition-shadow">' + waktuVal + '</textarea></div>';
         modalsHtml += '</div></div>';

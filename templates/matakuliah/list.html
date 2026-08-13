@@ -62,7 +62,6 @@
                 <th class="px-5 py-4">Nama Mata Kuliah</th>
                 <th class="px-5 py-4">Tipe</th>
                 <th class="px-5 py-4">Kurikulum</th>
-                <th class="px-5 py-4">Deskripsi</th>
                 {% if current_user.is_kaprodi %}
                 <th class="px-5 py-4 text-center">Aksi</th>
                 {% endif %}
@@ -85,9 +84,6 @@
                     {% if mk.kurikulum %}
                         <span class="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-md text-xs font-semibold">{{ mk.kurikulum }}</span>
                     {% else %}—{% endif %}
-                </td>
-                <td class="px-5 py-4 text-sm text-slate-500 dark:text-slate-400 max-w-xs truncate">
-                    {{ mk.deskripsi or '—' }}
                 </td>
                 {% if current_user.is_kaprodi %}
                 <td class="px-5 py-4">
@@ -215,7 +211,7 @@
                 <div class="col-span-3">
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Deskripsi</label>
                     <textarea name="deskripsi" rows="2" placeholder="Deskripsi singkat mata kuliah (opsional)..."
-                        class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800 resize-none"></textarea>
+                        class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800 resize-y"></textarea>
                 </div>
             </div>
             <div class="flex justify-end gap-3 pt-2">
@@ -279,7 +275,7 @@
                 <div class="col-span-3">
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Deskripsi</label>
                     <textarea id="edit-deskripsi" name="deskripsi" rows="2"
-                        class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800 resize-none"></textarea>
+                        class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800 resize-y"></textarea>
                 </div>
             </div>
             <div class="flex justify-end gap-3 pt-2">

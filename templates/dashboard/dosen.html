@@ -156,57 +156,41 @@
 
     {# ── Dokumen Panduan & Daftar Mata Kuliah Grid ── #}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {# Dokumen Panduan & Pedoman #}
+        {# Dokumen Arsip #}
         <div
             class="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
             <div>
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="font-bold text-lg text-slate-800 dark:text-white">Dokumen Panduan & Pedoman</h2>
+                    <h2 class="font-bold text-lg text-slate-800 dark:text-white">Arsip Dokumen</h2>
                     <span
                         class="text-xs font-semibold px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-md">
-                        {{ semua_panduan | length }} File
+                        {{ arsip_docs | length }} File
                     </span>
                 </div>
 
                 <ul class="space-y-3.5 max-h-[280px] overflow-y-auto pr-1">
-                    {% for p in semua_panduan %}
+                    {% for p in arsip_docs %}
                     <li
                         class="group flex items-center justify-between border-b border-slate-50 dark:border-slate-800/50 pb-2 last:border-none last:pb-0">
                         <div class="flex items-center gap-2.5 truncate flex-1">
-                            {% if p.tipe == 'file' %}
-                            <span class="text-base text-emerald-600 dark:text-emerald-400">📄</span>
-                            <a href="{{ url_for('panduan.download_file', filename=p.file_path) }}" target="_blank"
+                            <span class="text-base text-blue-600 dark:text-blue-400">📁</span>
+                            <a href="{{ p.link_url }}" target="_blank"
                                 class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline truncate"
                                 title="{{ p.nama }}">
                                 {{ p.nama }}
                             </a>
-                            {% else %}
-                            <span class="text-base text-purple-600 dark:text-purple-400">🔗</span>
-                            <a href="{{ p.link_url }}" target="_blank"
-                                class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline truncate"
-                                title="{{ p.nama }}">
-                                {{ p.nama }} <span class="text-[10px] text-slate-400 font-normal">(Cloud)</span>
-                            </a>
-                            {% endif %}
                         </div>
-
-                        {% if current_user.is_kaprodi and not p.is_aktif %}
-                        <span
-                            class="text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400 shrink-0 ml-2">
-                            HIDDEN
-                        </span>
-                        {% endif %}
                     </li>
                     {% else %}
                     <li class="py-6 text-center text-sm text-slate-400 dark:text-slate-500 italic">
-                        Belum ada berkas panduan yang diterbitkan.
+                        Belum ada arsip dokumen.
                     </li>
                     {% endfor %}
                 </ul>
             </div>
 
             <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800/60">
-                <a href="{{ url_for('panduan.list') }}"
+                <a href="{{ url_for('arsip.list') }}"
                     class="text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 transition-colors">
                     <span>Lihat Selengkapnya</span>
                     <span class="text-sm transition-transform group-hover:translate-x-1">→</span>

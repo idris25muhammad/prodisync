@@ -1,11 +1,10 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 {% block content %}
 
 <div class="flex justify-between items-center mb-8">
     <div>
         <h1 class="text-3xl font-extrabold">Semester Lesson Plan</h1>
-        <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Kelola dan pantau status RPS per mata kuliah dan
-            tahun ajaran.</p>
+        <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Kelola dan pantau status Semester Lesson Plan (SLP) per mata kuliah dan tahun ajaran.</p>
     </div>
     {% if current_user.is_kaprodi %}
     <button onclick="document.getElementById('modal-tambah').classList.remove('hidden')"
@@ -43,7 +42,7 @@
             <select name="status"
                 class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800">
                 <option value="">Semua Status</option>
-                <option value="assigned" {% if rps_status=='assigned' %}selected{% endif %}>Assigned</option>
+                <option value="assigned" {% if rps_status=='assigned' %}selected{% endif %}>Assigned/Draft</option>
                 <option value="submitted" {% if rps_status=='submitted' %}selected{% endif %}>Submitted</option>
                 <option value="approved" {% if rps_status=='approved' %}selected{% endif %}>Approved</option>
                 <option value="rejected" {% if rps_status=='rejected' %}selected{% endif %}>Rejected</option>
@@ -52,18 +51,33 @@
     </div>
 
     <div class="flex flex-wrap items-end justify-between gap-4">
-        <div>
-            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Filter Semester</label>
-            <div id="filter-semester-container" class="flex flex-wrap gap-2 items-center">
-                <!-- Radio semester dinamis (Radio Button UI) -->
+        <div class="flex flex-wrap items-end gap-4">
+            <div class="w-44">
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Semester</label>
+                <select name="semester" id="filter-semester"
+                    class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800">
+                    <option value="">Semua Semester</option>
+                </select>
             </div>
+            {% if current_user.is_kaprodi %}
+            <div class="w-56">
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Tim Kurikulum</label>
+                <select name="data"
+                    class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800">
+                    <option value="all" {% if data == 'all' %}selected{% endif %}>Semua</option>
+                    {% for user in users if user.is_kaprodi %}
+                    <option value="{{ user.id }}" {% if data == user.id|string %}selected{% endif %}>{{ user.nama }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
         </div>
 
-        <div class="flex gap-3">
+        <div class="flex items-end gap-2">
             <a href="{{ url_for('rps.list') }}"
-                class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition-all self-end">Reset</a>
+                class="h-10 inline-flex items-center px-4 rounded-xl text-sm font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition-all">Reset</a>
             <button type="submit"
-                class="px-5 py-2.5 rounded-xl text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 transition-all self-end">Terapkan
+                class="h-10 inline-flex items-center px-5 rounded-xl text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 transition-all">Terapkan
                 Filter</button>
         </div>
     </div>
@@ -108,6 +122,10 @@
             <p id="dp-dosen" class="font-semibold text-slate-700 dark:text-slate-200 text-sm"></p>
         </div>
         <div>
+            <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Dibuat Oleh</p>
+            <p id="dp-creator" class="font-semibold text-slate-700 dark:text-slate-200 text-sm"></p>
+        </div>
+        <div>
             <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Status</p>
             <div id="dp-status"></div>
         </div>
@@ -141,13 +159,11 @@
                     <th class="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-500 w-8">#</th>
                     <th class="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-500">Kode</th>
                     <th class="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-500">Mata Kuliah</th>
-                    <th class="text-center px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-500">SKS</th>
                     {% if current_user.is_kaprodi %}
-                    <th class="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-500">Dosen</th>
+                    <th class="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-500">Tim Kurikulum</th>
+                    <th class="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-500">Dosen Koor</th>
                     {% endif %}
-                    <th class="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-500">Tahun Ajaran</th>
                     <th class="text-center px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-500">Status</th>
-                    <th class="text-center px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-500">Progress</th>
                     <th class="text-center px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-500">Aksi</th>
                 </tr>
             </thead>
@@ -158,28 +174,43 @@
                     <td class="px-4 py-3 text-slate-400 text-xs font-medium">{{ loop.index }}</td>
                     <td class="px-4 py-3">
                         <span class="font-mono font-bold text-blue-600 dark:text-blue-400 text-xs">{{ mk.kode }}</span>
+                        {% if rps_obj.rps_status == 'approved' and progress == 100 %}
+                        <div class="mt-1">
+                            <a href="{{ url_for('rps.export_json', id=rps_obj.id) }}" title="Export JSON"
+                                class="inline-flex items-center gap-1 text-[10px] font-bold text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                </svg>
+                                Export JSON
+                            </a>
+                        </div>
+                        {% endif %}
                     </td>
                     <td class="px-4 py-3 max-w-xs">
                         <p class="font-semibold text-slate-800 dark:text-slate-100 text-[13px] leading-snug line-clamp-2" title="{{ mk.nama }}">{{ mk.nama }}</p>
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                        <span class="text-xs font-bold text-slate-600 dark:text-slate-300">{{ rps_obj.sks }}</span>
+                        <div class="flex items-center gap-2 mt-1.5 min-w-[80px]">
+                            <div class="flex-1 bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                                <div class="h-1.5 rounded-full {% if progress == 100 %}bg-green-500{% else %}bg-blue-500{% endif %} transition-all"
+                                    style="width: {{ progress }}%"></div>
+                            </div>
+                            <span class="text-[11px] font-bold {% if progress == 100 %}text-green-600 dark:text-green-400{% else %}text-blue-600 dark:text-blue-400{% endif %} w-7 text-right shrink-0">{{ progress }}%</span>
+                        </div>
                     </td>
                     {% if current_user.is_kaprodi %}
+                    <td class="px-4 py-3 max-w-[160px]">
+                        <p class="text-xs text-slate-600 dark:text-slate-300 truncate font-medium" title="{{ rps_obj.creator.nama if rps_obj.creator else '—' }}">
+                            {{ rps_obj.creator.nama if rps_obj.creator else '—' }}
+                        </p>
+                    </td>
                     <td class="px-4 py-3 max-w-[160px]">
                         <p class="text-xs text-slate-600 dark:text-slate-300 truncate font-medium" title="{{ dosen_obj.nama if dosen_obj else '—' }}">
                             {{ dosen_obj.nama if dosen_obj else '—' }}
                         </p>
                     </td>
                     {% endif %}
-                    <td class="px-4 py-3">
-                        <span class="text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">
-                            {{ rps_obj.tahun_ajaran.tahun ~ ' ' ~ rps_obj.tahun_ajaran.semester if rps_obj.tahun_ajaran else '—' }}
-                        </span>
-                    </td>
                     <td class="px-4 py-3 text-center">
                         {% if rps_obj.rps_status == 'assigned' %}
-                        <span class="inline-block px-2 py-0.5 text-[10px] rounded-md bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 font-bold uppercase tracking-wide">Assigned</span>
+                        <span class="inline-block px-2 py-0.5 text-[10px] rounded-md bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 font-bold uppercase tracking-wide">Assigned/Draft</span>
                         {% elif rps_obj.rps_status == 'submitted' %}
                         <span class="inline-block px-2 py-0.5 text-[10px] rounded-md bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 font-bold uppercase tracking-wide">Submitted</span>
                         {% elif rps_obj.rps_status == 'approved' %}
@@ -189,25 +220,17 @@
                         {% endif %}
                     </td>
                     <td class="px-4 py-3">
-                        <div class="flex items-center gap-2 min-w-[80px]">
-                            <div class="flex-1 bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
-                                <div class="h-1.5 rounded-full {% if progress == 100 %}bg-green-500{% else %}bg-blue-500{% endif %} transition-all"
-                                    style="width: {{ progress }}%"></div>
-                            </div>
-                            <span class="text-[11px] font-bold {% if progress == 100 %}text-green-600 dark:text-green-400{% else %}text-blue-600 dark:text-blue-400{% endif %} w-7 text-right shrink-0">{{ progress }}%</span>
-                        </div>
-                    </td>
-                    <td class="px-4 py-3">
                         <div class="flex items-center justify-center gap-1.5">
                             {# Tombol Detail (Eye) #}
                             <button type="button"
                                 onclick="openDetail(
                                     '{{ mk.kode }}',
                                     '{{ mk.nama | replace("'", "\\'") }}',
-                                    '{{ rps_obj.sks }}',
+                                    '{{ mk.sks or 0 }}',
                                     '{{ rps_obj.semester or "—" }}',
                                     '{{ (rps_obj.tahun_ajaran.tahun ~ " " ~ rps_obj.tahun_ajaran.semester) if rps_obj.tahun_ajaran else "—" }}',
                                     '{{ dosen_obj.nama | replace("'", "\\'") if dosen_obj else "—" }}',
+                                    '{{ rps_obj.creator.nama | replace("'", "\\'") if rps_obj.creator else "—" }}',
                                     '{{ rps_obj.rps_status }}',
                                     {{ progress }},
                                     '{{ rps_obj.prasyarat or "—" }}',
@@ -241,20 +264,12 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
                                 </svg>
                             </a>
-
-                            {# Tombol Export JSON - hanya jika approved #}
-                            <a href="{{ url_for('rps.export_json', id=rps_obj.id) }}" title="Export JSON"
-                                class="p-1.5 rounded-lg bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/60 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                                </svg>
-                            </a>
                             {% endif %}
 
                             {% if current_user.is_kaprodi %}
                             {# Tombol Edit Meta #}
                             <button type="button"
-                                onclick="openEditMetaModal({{ rps_obj.id }}, {{ rps_obj.sks }}, {{ rps_obj.semester or '' }}, '{{ rps_obj.tahun_ajaran_id }}', '{{ dosen_obj.id if dosen_obj else '' }}', '{{ dosen_obj.nama | replace("'", "\\'") if dosen_obj else '' }}', '{{ rps_obj.prasyarat or '' }}', '{{ rps_obj.tgl_pengesahan_kaprodi or '' }}', '{{ rps_obj.qr_kaprodi or '' }}')"
+                                onclick="openEditMetaModal({{ rps_obj.id }}, {{ mk.sks or 0 }}, {{ rps_obj.semester or '' }}, '{{ rps_obj.tahun_ajaran_id }}', '{{ dosen_obj.id if dosen_obj else '' }}', '{{ dosen_obj.nama | replace("'", "\\'") if dosen_obj else '' }}', '{{ rps_obj.prasyarat or '' }}', '{{ rps_obj.tgl_pengesahan_kaprodi or '' }}', '{{ rps_obj.qr_kaprodi or '' }}', '{{ rps_obj.created_by or '' }}')"
                                 title="Edit Metadata"
                                 class="p-1.5 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -298,7 +313,7 @@
 <script>
     // ── Detail Panel ─────────────────────────────────────────────────────────────
     const statusBadge = {
-        assigned:  '<span class="inline-block px-2.5 py-1 text-xs rounded-md bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 font-bold uppercase tracking-wide">Assigned</span>',
+        assigned:  '<span class="inline-block px-2.5 py-1 text-xs rounded-md bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 font-bold uppercase tracking-wide">Assigned/Draft</span>',
         submitted: '<span class="inline-block px-2.5 py-1 text-xs rounded-md bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 font-bold uppercase tracking-wide">Submitted</span>',
         approved:  '<span class="inline-block px-2.5 py-1 text-xs rounded-md bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 font-bold uppercase tracking-wide">Approved</span>',
         rejected:  '<span class="inline-block px-2.5 py-1 text-xs rounded-md bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 font-bold uppercase tracking-wide">Rejected</span>',
@@ -306,13 +321,14 @@
 
     const csrfToken = (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
 
-    function openDetail(kode, nama, sks, semester, ta, dosen, status, progress, prasyarat, id, isKaprodi, mkKode) {
+    function openDetail(kode, nama, sks, semester, ta, dosen, creator, status, progress, prasyarat, id, isKaprodi, mkKode) {
         document.getElementById('dp-kode').textContent        = kode;
         document.getElementById('dp-nama').textContent        = nama;
         document.getElementById('dp-sks').textContent         = sks + ' SKS';
         document.getElementById('dp-semester').textContent    = 'Semester ' + semester;
         document.getElementById('dp-ta').textContent          = ta;
         document.getElementById('dp-dosen').textContent       = dosen;
+        document.getElementById('dp-creator').textContent     = creator;
         document.getElementById('dp-status').innerHTML        = statusBadge[status] || status;
         document.getElementById('dp-prasyarat').textContent   = prasyarat;
         document.getElementById('dp-progress-val').textContent = progress + '%';
@@ -562,6 +578,18 @@
                     <input type="hidden" name="assigned_to" id="edit-assigned-to">
                 </div>
 
+                <div class="col-span-2">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Dibuat Oleh</label>
+                    <select name="created_by" id="edit-created-by"
+                        class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800">
+                        <option value="">— Pilih Pembuat —</option>
+                        {% for user in users if user.is_kaprodi %}
+                        <option value="{{ user.id }}">{{ user.nama }}</option>
+                        {% endfor %}
+                    </select>
+                    <p class="text-xs text-slate-400 mt-1">Kaprodi/tim kurikulum yang membuat RPS ini.</p>
+                </div>
+
                 {# Pengesahan Kaprodi Edit #}
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tgl Pengesahan Kaprodi</label>
@@ -767,58 +795,33 @@
         });
     }
 
-    // ── Filter Semester Radio UI ───────────────────────────────────────────────
-    function updateFilterSemesterRadioUI() {
+    // ── Filter Semester Dropdown UI ────────────────────────────────────────────
+    function updateFilterSemesterSelect() {
         const sel = document.getElementById('filter-tahun-ajaran');
-        const cont = document.getElementById('filter-semester-container');
-        if (!sel || !cont) return;
+        const semSel = document.getElementById('filter-semester');
+        if (!sel || !semSel) return;
 
         const opt = sel.options[sel.selectedIndex];
         const semTxt = opt ? (opt.dataset.semester || opt.text || '') : '';
         const currentSem = {{ semester or 'null' }};
 
-    cont.innerHTML = '';
+        let sems = [];
+        if (semTxt.toLowerCase().includes('ganjil')) {
+            sems = [1, 3, 5, 7];
+        } else if (semTxt.toLowerCase().includes('genap')) {
+            sems = [2, 4, 6, 8];
+        } else {
+            sems = [1, 2, 3, 4, 5, 6, 7, 8];
+        }
 
-    let sems = [];
-    if (semTxt.toLowerCase().includes('ganjil')) {
-        sems = [1, 3, 5, 7];
-    } else if (semTxt.toLowerCase().includes('genap')) {
-        sems = [2, 4, 6, 8];
-    } else {
-        sems = [1, 2, 3, 4, 5, 6, 7, 8];
-    }
-
-    const activeClass = 'flex items-center gap-2.5 px-3.5 py-2 rounded-xl border border-blue-600 dark:border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-bold shadow-sm transition-all cursor-pointer select-none text-xs';
-    const inactiveClass = 'flex items-center gap-2.5 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium hover:bg-slate-50 dark:hover:bg-slate-750 hover:border-slate-300 dark:hover:border-slate-600 transition-all cursor-pointer select-none text-xs';
-
-    const buildLabel = (val, text) => {
-        const isChecked = (currentSem === val) || (currentSem === null && val === '');
-        const wrap = document.createElement('label');
-        wrap.className = isChecked ? activeClass : inactiveClass;
-        wrap.innerHTML = `
-                <input type="radio" name="semester" value="${val}" ${isChecked ? 'checked' : ''} 
-                    class="w-4 h-4 accent-blue-600 dark:accent-blue-500 cursor-pointer flex-shrink-0">
-                <span>${text}</span>
-            `;
-
-        const input = wrap.querySelector('input');
-        input.addEventListener('change', () => {
-            const allLabels = cont.querySelectorAll('label');
-            allLabels.forEach(lbl => {
-                const inp = lbl.querySelector('input[type="radio"]');
-                if (inp && inp.checked) {
-                    lbl.className = activeClass;
-                } else {
-                    lbl.className = inactiveClass;
-                }
-            });
+        semSel.innerHTML = '<option value="">Semua Semester</option>';
+        sems.forEach(num => {
+            const o = document.createElement('option');
+            o.value = num;
+            o.textContent = 'Semester ' + num;
+            semSel.appendChild(o);
         });
-
-        return wrap;
-    };
-
-    cont.appendChild(buildLabel('', 'Semua Semester'));
-    sems.forEach(num => cont.appendChild(buildLabel(num, 'Semester ' + num)));
+        semSel.value = currentSem !== null ? String(currentSem) : '';
     }
 
     // ── Semester dinamis (Tambah & Edit Modal) ─────────────────────────────────
@@ -876,7 +879,7 @@
     }
 
     // ── Modal Edit Metadata ───────────────────────────────────────────────────
-    function openEditMetaModal(id, sks, semester, taId, dosenId, dosenNama, prasyarat, tglKaprodi, qrKaprodi) {
+    function openEditMetaModal(id, sks, semester, taId, dosenId, dosenNama, prasyarat, tglKaprodi, qrKaprodi, creatorId) {
         const form = document.getElementById('form-edit-meta');
         form.action = `{{ url_for('rps.list') }}edit/${id}`;
         document.getElementById('edit-sks').value = sks;
@@ -897,6 +900,9 @@
         const editHidden = document.getElementById('edit-assigned-to');
         if (editSearch) editSearch.value = dosenNama;
         if (editHidden) editHidden.value = dosenId;
+
+        const creatorSelect = document.getElementById('edit-created-by');
+        if (creatorSelect) creatorSelect.value = creatorId || '';
 
         const tglEl = document.getElementById('edit-tgl-kaprodi');
         if (tglEl) tglEl.value = tglKaprodi || '';
@@ -946,8 +952,8 @@
 
         const filterTA = document.getElementById('filter-tahun-ajaran');
         if (filterTA) {
-            filterTA.addEventListener('change', updateFilterSemesterRadioUI);
-            updateFilterSemesterRadioUI();
+            filterTA.addEventListener('change', updateFilterSemesterSelect);
+            updateFilterSemesterSelect();
         }
 
         const tambahTA = document.getElementById('tambah-tahun-ajaran');

@@ -1,0 +1,79 @@
+<div id="tab-6" class="tab-content hidden space-y-6">
+    <div class="grid grid-cols-1 gap-6">
+        <div>
+            <div class="flex justify-between items-end border-b border-slate-200 dark:border-slate-700 pb-2 mb-3">
+                <h2 id="head-10" class="text-lg font-bold">Course Policies</h2>
+                <div class="flex gap-3">
+                    <button type="button" onclick="useKesepakatanTemplate()"
+                        class="text-xs text-emerald-600 hover:underline">
+                        Pakai template
+                    </button>
+                    <button type="button" onclick="addList('kesepakatan-container','kesepakatan','Aturan kelas...')"
+                        class="text-xs text-blue-600 hover:underline">
+                        + Tambah
+                    </button>
+                </div>
+            </div>
+
+            <div id="kesepakatan-container" class="space-y-2">
+                {% if matkul.kesepakatan %}
+                {% for k in matkul.kesepakatan %}
+                <div class="flex gap-2 items-center">
+                    <span class="list-no w-6 shrink-0 text-center text-sm font-bold text-slate-500 dark:text-slate-400">{{ loop.index }}</span>
+                    <input type="text" name="kesepakatan[]" value="{{ k }}"
+                        class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
+                    <button type="button" onclick="this.parentElement.remove(); renumberList('kesepakatan-container')"
+                        class="text-red-400 hover:text-red-600 dark:hover:text-red-400 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-all"
+                        title="Hapus">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+                            <path
+                                d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                        </svg>
+                    </button>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="flex gap-2 items-center">
+                    <span class="list-no w-6 shrink-0 text-center text-sm font-bold text-slate-500 dark:text-slate-400">1</span>
+                    <input type="text" name="kesepakatan[]"
+                        value="Mahasiswa wajib mengikuti perkuliahan sesuai jadwal..."
+                        class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div>
+            <div class="flex justify-between items-end border-b border-slate-200 dark:border-slate-700 pb-2 mb-3">
+                <h2 id="head-11" class="text-lg font-bold">Textbooks &amp; Materials</h2>
+                <button type="button" onclick="addList('pustaka-container','pustaka','Judul buku...')"
+                    class="text-xs text-blue-600 hover:underline">+ Tambah</button>
+            </div>
+            <div id="pustaka-container" class="space-y-2">
+                {% if matkul.pustaka %}
+                {% for p in matkul.pustaka %}
+                <div class="flex gap-2 items-center">
+                    <span class="list-no w-6 shrink-0 text-center text-sm font-bold text-slate-500 dark:text-slate-400">{{ loop.index }}</span>
+                    <input type="text" name="pustaka[]" value="{{ p }}"
+                        class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
+                    <button type="button" onclick="this.parentElement.remove(); renumberList('pustaka-container')"
+                        class="text-red-400 hover:text-red-600 dark:hover:text-red-400 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-all"
+                        title="Hapus">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+                            <path
+                                d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                        </svg>
+                    </button>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="flex gap-2 items-center">
+                    <span class="list-no w-6 shrink-0 text-center text-sm font-bold text-slate-500 dark:text-slate-400">1</span>
+                    <input type="text" name="pustaka[]" value='Microsoft Learn, "Windows documentation"'
+                        class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>

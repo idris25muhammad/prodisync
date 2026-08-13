@@ -3,7 +3,7 @@
         <h2 id="head-6" class="text-xl font-bold">Facilities &amp; Infrastructure</h2>
         <button type="button" onclick="addSarana()"
             class="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 px-3 py-1.5 rounded-md font-bold text-sm hover:bg-blue-200 dark:hover:bg-blue-900/60">
-            + Perangkat
+            + Tambah
         </button>
     </div>
 
@@ -12,6 +12,7 @@
         {% if matkul.sarana_prasarana %}
         {% for s in matkul.sarana_prasarana %}
         <div class="flex gap-3 items-center">
+            <span class="list-no w-6 shrink-0 text-center text-sm font-bold text-slate-500 dark:text-slate-400">{{ loop.index }}</span>
             <div class="w-8/12">
                 <input type="text" name="sarana_nama[]" value="{{ s.nama }}"
                     class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
@@ -20,7 +21,7 @@
                 <input type="text" name="sarana_jumlah[]" value="{{ s.jumlah }}"
                     class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
             </div>
-            <button type="button" onclick="this.parentElement.remove()" class="text-red-400 hover:text-red-600 dark:hover:text-red-400 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-all" title="Hapus">
+            <button type="button" onclick="this.parentElement.remove(); renumberList('sarana-container')" class="text-red-400 hover:text-red-600 dark:hover:text-red-400 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-all" title="Hapus">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
                     <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
                 </svg>
@@ -28,7 +29,8 @@
         </div>
         {% endfor %}
         {% else %}
-        <div class="flex gap-3">
+        <div class="flex gap-3 items-center">
+            <span class="list-no w-6 shrink-0 text-center text-sm font-bold text-slate-500 dark:text-slate-400">1</span>
             <div class="w-8/12">
                 <input type="text" name="sarana_nama[]" value="Komputer"
                     class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
@@ -38,7 +40,8 @@
                     class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
             </div>
         </div>
-        <div class="flex gap-3">
+        <div class="flex gap-3 items-center">
+            <span class="list-no w-6 shrink-0 text-center text-sm font-bold text-slate-500 dark:text-slate-400">2</span>
             <div class="w-8/12">
                 <input type="text" name="sarana_nama[]" value="Internet"
                     class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
@@ -48,7 +51,8 @@
                     class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
             </div>
         </div>
-        <div class="flex gap-3">
+        <div class="flex gap-3 items-center">
+            <span class="list-no w-6 shrink-0 text-center text-sm font-bold text-slate-500 dark:text-slate-400">3</span>
             <div class="w-8/12">
                 <input type="text" name="sarana_nama[]" value="Ms. Word"
                     class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
@@ -65,17 +69,10 @@
         <h2 id="head-7" class="text-xl font-bold">Student Outcomes Assessment Plan</h2>
     </div>
 
-    <div>
-        {% set default_metode_evaluasi = '<ol><li data-list="ordered">Learning Method:</li><li data-list="bullet"><strong>Knowledge discovery:</strong> research project. </li><li data-list="bullet"><strong>Reinforcement of disciplinary knowledge:</strong> class lab / experiment, teaching in labs, self-directed learning, lecture/presentation in labs, interactive electronic class mode, distance learning mode.</li><li data-list="bullet"><strong>Product and system design and implementation:</strong> advanced design-implement project, simple design-implement project, extracurricular design project, test &amp; operate mode, tinkering mode, linked projects.</li><li data-list="bullet"><strong>Auxiliary uses:</strong> research design support, income generating mode, outreach mode.</li><li data-list="ordered">Assessment Method:</li><li data-list="bullet"><strong>Written and oral question</strong>: use concept questions to determine students’ deeper level of understanding of disciplinary content.</li><li data-list="bullet"><strong>Performance ratings: </strong>assessed by observing students in the performance of specific tasks, for example, oral communication and teamwork. In these situations, rating scales and rubrics facilitate the collection and analysis of assessment data.</li><li data-list="bullet"><strong>Product reviews: </strong>assessment can be conducted by judging the demonstration (performance), or reviewing the physical product – be it an artifact, report, or computer drawing.</li><li data-list="bullet"><strong>Journal and portofolios: </strong>Journals and portfolios provide records of students’ individual and collaborative efforts in design-implement projects, and experimental research. These documents provide evidence of student achievement in situations where there may be no final tangible product.</li><li data-list="bullet"><strong>Self-report instruments: </strong>self-report measures, such as inventories and questionnaires. Asking students to reflect on their learning experiences helps them to see more clearly the connections among the concepts they have learned, as well as the applications of these concepts to new situations.</li></ol>' %}
-        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Deskripsi Metode Evaluasi</label>
-        <div id="wysiwyg-metode-evaluasi"
-            class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg overflow-hidden text-sm text-slate-900 dark:text-slate-100">
-        </div>
-        <textarea name="metode_evaluasi" id="metode-evaluasi-hidden"
-            class="hidden">{% if matkul.metode_evaluasi and matkul.metode_evaluasi.strip() %}{{ matkul.metode_evaluasi | safe }}{% else %}{{ default_metode_evaluasi | safe }}{% endif %}</textarea>
-    </div>
-
     <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+        <p class="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-3">
+            Mapping the CLO toward the evaluation method per week
+        </p>
         <div
             class="flex gap-4 pb-3 border-b border-slate-300 dark:border-slate-600 font-bold text-[11px] text-slate-500 uppercase px-4">
             <div class="w-1/12 text-center">Minggu</div>
@@ -85,15 +82,14 @@
         <div id="reneval-container" class="space-y-3 mt-4"></div>
     </div>
 
-    <div class="flex justify-between pt-6">
-        <button type="button" onclick="showTab('tab-3')"
-            class="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-6 py-2.5 rounded-lg font-semibold">
-            &larr; Kembali
-        </button>
-        <button type="button" onclick="saveDraftAndNext('tab-5', this)"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-bold shadow-lg shadow-blue-500/30 transition-all">
-            Save Draft & Ke Penilaian & Pustaka &rarr;
-        </button>
+    <div class="mt-6">
+        {% set default_metode_evaluasi = '<ol><li data-list="ordered">Learning Method:</li><li data-list="bullet"><strong>Knowledge discovery:</strong> research project. </li><li data-list="bullet"><strong>Reinforcement of disciplinary knowledge:</strong> class lab / experiment, teaching in labs, self-directed learning, lecture/presentation in labs, interactive electronic class mode, distance learning mode.</li><li data-list="bullet"><strong>Product and system design and implementation:</strong> advanced design-implement project, simple design-implement project, extracurricular design project, test &amp; operate mode, tinkering mode, linked projects.</li><li data-list="bullet"><strong>Auxiliary uses:</strong> research design support, income generating mode, outreach mode.</li><li data-list="ordered">Assessment Method:</li><li data-list="bullet"><strong>Written and oral question</strong>: use concept questions to determine students’ deeper level of understanding of disciplinary content.</li><li data-list="bullet"><strong>Performance ratings: </strong>assessed by observing students in the performance of specific tasks, for example, oral communication and teamwork. In these situations, rating scales and rubrics facilitate the collection and analysis of assessment data.</li><li data-list="bullet"><strong>Product reviews: </strong>assessment can be conducted by judging the demonstration (performance), or reviewing the physical product – be it an artifact, report, or computer drawing.</li><li data-list="bullet"><strong>Journal and portofolios: </strong>Journals and portfolios provide records of students’ individual and collaborative efforts in design-implement projects, and experimental research. These documents provide evidence of student achievement in situations where there may be no final tangible product.</li><li data-list="bullet"><strong>Self-report instruments: </strong>self-report measures, such as inventories and questionnaires. Asking students to reflect on their learning experiences helps them to see more clearly the connections among the concepts they have learned, as well as the applications of these concepts to new situations.</li></ol>' %}
+        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Deskripsi Metode Evaluasi</label>
+        <div id="wysiwyg-metode-evaluasi"
+            class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg overflow-hidden text-sm text-slate-900 dark:text-slate-100">
+        </div>
+        <textarea name="metode_evaluasi" id="metode-evaluasi-hidden"
+            class="hidden">{% if matkul.metode_evaluasi and matkul.metode_evaluasi.strip() %}{{ matkul.metode_evaluasi | safe }}{% else %}{{ default_metode_evaluasi | safe }}{% endif %}</textarea>
     </div>
 </div>
 

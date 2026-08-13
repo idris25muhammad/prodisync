@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block title %}CPL Belum Diisi{% endblock %}
+
+{% block content %}
+<div class="min-h-[60vh] flex flex-col items-center justify-center text-center px-6">
+    <img src="{{ url_for('static', filename='images/rks_maskot_nocpl.png') }}" alt="CPL belum diisi"
+        class="w-[450px] h-auto mb-6">
+    <h1 class="text-2xl font-extrabold text-slate-800 dark:text-white">Tunggu ya..</h1>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-md leading-relaxed">
+        Course Learning Outcomes (CLO) untuk RPS ini belum diisi oleh Tim Kurikulum.
+    </p>
+    <a href="{{ url_for('rps.list') }}"
+        class="mt-6 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold transition-colors">
+        Kembali ke Daftar
+    </a>
+</div>
+{% endblock %}

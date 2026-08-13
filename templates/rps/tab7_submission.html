@@ -1,0 +1,76 @@
+<div id="tab-7" class="tab-content hidden space-y-6">
+    <!-- APPROVAL & SIGNATURE -->
+    <div>
+        <h2 id="head-12" class="text-lg font-bold mb-4">Approval &amp; Signature</h2>
+
+        <div class="mb-5 max-w-md">
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tanggal Pengesahan Koordinator</label>
+            <input type="date" name="tanggal_koor"
+                value="{{ matkul.tgl_pengesahan_koor or today }}"
+                class="w-full p-2.5 border rounded-lg text-sm dark:bg-slate-800 dark:border-slate-600 outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+
+        <p class="text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Upload QR Koordinator (buat dulu di TTE)</p>
+        <p class="text-xs text-slate-500 mb-4">Unggah file QR Code Koordinator (Format JPG/PNG) untuk ditampilkan pada
+            dokumen cetak RPS.</p>
+
+        <div class="flex items-center gap-4">
+            <input type="file" name="qr_koor" accept=".png, .jpg, .jpeg" class="block w-full text-sm text-slate-500
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-full file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-blue-50 file:text-blue-700
+                    hover:file:bg-blue-100
+                    dark:file:bg-blue-900/30 dark:file:text-blue-400
+                    dark:text-slate-400">
+
+            {% if matkul.qr_dosen_koor %}
+            <div
+                class="shrink-0 flex items-center gap-2 px-3 py-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-xs rounded border border-green-200 dark:border-green-800">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+                QR Tersimpan: <a href="{{ url_for('rps.view_qr', id=matkul.id) }}" target="_blank"
+                    class="underline font-semibold">{{ matkul.qr_dosen_koor }}</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div
+        class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-6 flex items-start gap-4">
+        <svg class="w-8 h-8 text-blue-500 dark:text-blue-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <div>
+            <p class="text-lg font-bold text-blue-800 dark:text-blue-300">Pastikan data sudah benar dan 100%</p>
+            <p class="text-sm text-blue-700 dark:text-blue-400 mt-2 leading-relaxed">
+                Semester Lesson Plan (SLP) ini akan dicek oleh tim kurikulum dan Anda menunggu validasi dari tim
+                kurikulum. Jika sudah <strong>approve</strong>, Anda bisa mencetak PDF SLP lalu meletakkannya di
+                e-learning.
+            </p>
+            <p class="text-sm text-blue-700 dark:text-blue-400 mt-3 leading-relaxed border-t border-blue-200 dark:border-blue-800 pt-3">
+                Setelah menekan tombol <strong>Simpan RPS</strong>, data akan dikirim untuk direview tim kurikulum.
+            </p>
+        </div>
+    </div>
+
+    {% if matkul.rps_status == 'approved' %}
+    <div class="flex justify-end pt-4">
+        <p class="text-sm font-bold text-emerald-600 dark:text-emerald-400">RPS sudah disetujui (Approved).</p>
+    </div>
+    {% else %}
+    <div class="flex flex-col items-end pt-4">
+        <button type="button" onclick="submitSlp()" id="btn-submit-slp"
+            class="btn-submit-rps flex items-center gap-2 px-10 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-base font-bold shadow-lg shadow-blue-500/30 transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+            Submit SLP
+        </button>
+        <p id="submit-slp-note" class="hidden text-xs font-bold text-red-600 dark:text-red-400 mt-3 max-w-md text-right uppercase">
+            Pastikan bobot sesuai aturan 100% dan PBL/non PBL
+        </p>
+    </div>
+    {% endif %}
+</div>

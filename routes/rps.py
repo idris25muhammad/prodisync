@@ -23,6 +23,7 @@ def list():
     q = request.args.get('q', '').strip()
     rps_status = request.args.get('status', '').strip()
     semester = request.args.get('semester', type=int)
+    data = request.args.get('data', str(current_user.id) if current_user.is_kaprodi else 'all')
 
     if 'tahun_ajaran_id' in request.args:
         ta_arg = request.args.get('tahun_ajaran_id', '').strip()
@@ -39,6 +40,10 @@ def list():
         ).join(
             User, RPS.user_id == User.id
         )
+        if data == 'mine':
+            query = query.filter(RPS.created_by == current_user.id)
+        elif data.isdigit():
+            query = query.filter(RPS.created_by == int(data))
     else:
         query = db.session.query(RPS, MataKuliah, User).join(
             MataKuliah, RPS.matakuliah_id == MataKuliah.id
@@ -76,6 +81,7 @@ def list():
         tahun_ajaran_id=tahun_ajaran_id,
         rps_status=rps_status,
         semester=semester,
+        data=data,
         ta_aktif=ta_aktif,
         tahun_ajaran_list=tahun_ajaran_list,
         hitung_progress_rps=hitung_progress_rps,
@@ -104,7 +110,6 @@ def add():
         return redirect(url_for('rps.list'))
 
     mk = MataKuliah.query.get(matakuliah_id)
-    sks = mk.sks if (mk and mk.sks) else (request.form.get('sks', type=int) or 3)
 
     # Cek duplikat (MK + TA yang sama)
     existing = RPS.query.filter_by(matakuliah_id=matakuliah_id, tahun_ajaran_id=tahun_ajaran_id).first()
@@ -140,7 +145,7 @@ def add():
         matakuliah_id=matakuliah_id,
         tahun_ajaran_id=tahun_ajaran_id,
         user_id=user_id,
-        sks=sks,
+        created_by=current_user.id,
         semester=semester,
         prasyarat=prasyarat or None,
         qr_kaprodi=filename_qr,
@@ -162,17 +167,16 @@ def edit_meta(id):
         flash('Anda tidak memiliki akses.', 'danger')
         return redirect(url_for('rps.list'))
 
-    if rps.matakuliah and rps.matakuliah.sks:
-        rps.sks = rps.matakuliah.sks
-    else:
-        rps.sks = request.form.get('sks', type=int) or rps.sks
-
     rps.semester  = request.form.get('semester',  type=int) or rps.semester
     rps.prasyarat = request.form.get('prasyarat', '').strip() or None
 
     if current_user.is_kaprodi:
         rps.user_id         = request.form.get('assigned_to',     type=int) or rps.user_id
         rps.tahun_ajaran_id = request.form.get('tahun_ajaran_id', type=int) or rps.tahun_ajaran_id
+
+        created_by = request.form.get('created_by', type=int)
+        if created_by:
+            rps.created_by = created_by
 
         tgl_kaprodi_str = request.form.get('tgl_pengesahan_kaprodi', '').strip()
         if tgl_kaprodi_str:
@@ -256,6 +260,24 @@ def revisi(id):
     db.session.commit()
     flash('RPS dikembalikan ke draft untuk direvisi.', 'success')
     return redirect(url_for('rps.editor', id=id))
+
+
+@bp.route('/<int:id>/back-to-draft', methods=['POST'])
+@login_required
+def back_to_draft(id):
+    """Kembalikan status ke draft (assigned) tanpa mengubah data isian.
+    Dipakai saat dosen memutuskan melanjutkan edit RPS yang berstatus submitted."""
+    from flask import jsonify
+    if current_user.is_kaprodi:
+        rps = RPS.query.get_or_404(id)
+    else:
+        rps = RPS.query.filter_by(id=id, user_id=current_user.id).first_or_404()
+    if rps.rps_status == 'approved':
+        return jsonify({'status': 'error', 'message': 'RPS sudah di-approve, tidak dapat diedit.'}), 403
+    rps.rps_status = 'assigned'
+    db.session.commit()
+    return jsonify({'status': 'success', 'message': 'Status dikembalikan ke draft.'})
+
 
 
 # ── Helper: Parse form ke model RPS ──────────────────────────────────────────
@@ -867,11 +889,12 @@ def _build_course_json(rps):
         components = []
         for sub in komponen_groups[komponen]:
             name = (sub.get('sub_komponen') or '').strip()
-            if not name:
-                continue
             try:
                 weight = int(float(sub.get('persentase', 0) or 0))
             except (ValueError, TypeError):
+                weight = 0
+            if not name:
+                name = '-'
                 weight = 0
             components.append({
                 'name'   : name,
@@ -888,7 +911,7 @@ def _build_course_json(rps):
     return {
         'course_code'     : mk.kode if mk else '',
         'course_name'     : mk.nama if mk else '',
-        'sks'             : rps.sks,
+        'sks'             : (mk.sks or 0) if mk else 0,
         'semester'        : f"{ta.tahun} {ta.semester}" if ta else '',
         'study_program'   : _COURSE_DEFAULT_STUDY_PROGRAM,
         'is_pbl'          : False,
@@ -947,13 +970,35 @@ def _build_rps_data(rps, dosen):
         while j < len(raw_kriteria) and raw_kriteria[j].get('komponen') == komponen:
             count += 1
             j += 1
-        
+
+        # Normalisasi: sub_komponen kosong -> deskripsi '-', persentase 0
+        sub = (item.get('sub_komponen') or '').strip()
+        if not sub:
+            item['sub_komponen'] = '-'
+            item['persentase'] = 0
+        else:
+            item['sub_komponen'] = sub
+            try:
+                item['persentase'] = int(float(item.get('persentase', 0) or 0))
+            except (ValueError, TypeError):
+                item['persentase'] = 0
+
         item['rowspan'] = count
         item['show_komponen'] = True
         kriteria_processed.append(item)
 
         for k in range(i + 1, j):
             sub_item = dict(raw_kriteria[k])
+            sub_sub = (sub_item.get('sub_komponen') or '').strip()
+            if not sub_sub:
+                sub_item['sub_komponen'] = '-'
+                sub_item['persentase'] = 0
+            else:
+                sub_item['sub_komponen'] = sub_sub
+                try:
+                    sub_item['persentase'] = int(float(sub_item.get('persentase', 0) or 0))
+                except (ValueError, TypeError):
+                    sub_item['persentase'] = 0
             sub_item['show_komponen'] = False
             sub_item['rowspan'] = 0
             kriteria_processed.append(sub_item)
@@ -974,7 +1019,7 @@ def _build_rps_data(rps, dosen):
         'identitas': {
             'matkul'       : mk.nama if mk else '',
             'kode'         : mk.kode if mk else '',
-            'sks'          : rps.sks,
+            'sks'          : (mk.sks or 0) if mk else 0,
             'semester'     : rps.semester,
             'status'       : (mk.tipe.capitalize() if (mk and mk.tipe) else 'Wajib'),
             'prasyarat'    : prasyarat_display,
@@ -1037,6 +1082,9 @@ def editor(id):
                 and any(tp.get('sopi', '').strip() for tp in rps.tp_data if isinstance(tp, dict))
             )
             if not cpl_defined:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    from flask import jsonify
+                    return jsonify({'status': 'error', 'message': 'CPL belum didefinisikan. Kontak tim kurikulum.'}), 400
                 flash('CPL belum didefinisikan. Kontak tim kurikulum.', 'danger')
                 return redirect(url_for('rps.list'))
 
@@ -1074,12 +1122,45 @@ def editor(id):
                 # Simpan ke kolom DB
                 rps.qr_dosen_koor = filename
 
-        rps.rps_status = 'submitted'
+        # Rule: save draft selalu mengembalikan status ke 'assigned'.
+        # Status 'submitted' hanya terjadi saat tombol Submit SLP ditekan.
+        is_submission = request.form.get('is_submission') == '1'
+        if is_submission:
+            # Validasi bobot penilaian di server (bukan hanya client):
+            # total harus tepat 100% dan (jika PBL) Partisipatif+Proyek >= 50%.
+            kriteria = rps.kriteria_penilaian or []
+            total = 0.0
+            pbl_total = 0.0
+            for k in kriteria:
+                try:
+                    p = float(k.get('persentase', 0) or 0)
+                except (ValueError, TypeError):
+                    p = 0.0
+                total += p
+                if (k.get('komponen') or '').strip() in ('Partisipatif', 'Proyek', 'Hasil Proyek'):
+                    pbl_total += p
+            is_pbl = request.form.get('is_pbl') == 'ya'
+            if total != 100 or (is_pbl and pbl_total < 50):
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    from flask import jsonify
+                    return jsonify({
+                        'status': 'error',
+                        'message': 'Total bobot penilaian harus tepat 100% dan syarat PBL terpenuhi.',
+                    }), 400
+                flash('Total bobot penilaian harus tepat 100% dan syarat PBL terpenuhi.', 'danger')
+                return redirect(url_for('rps.editor', id=id))
+            rps.rps_status = 'submitted'
+        else:
+            rps.rps_status = 'assigned'
         db.session.commit()
 
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             from flask import jsonify
-            return jsonify({'status': 'success', 'message': 'Draft tersimpan otomatis'})
+            return jsonify({
+                'status': 'success',
+                'message': 'Draft tersimpan otomatis',
+                'progress': hitung_progress_rps(rps),
+            })
 
         if current_user.is_kaprodi:
             flash('Data RPS berhasil disimpan!', 'success')
@@ -1092,6 +1173,11 @@ def editor(id):
         and any(tp.get('sopi', '').strip() for tp in rps.tp_data if isinstance(tp, dict))
     )
 
+    # Dosen: jika RPS masih assigned dan CLO belum diisi sama sekali,
+    # tampilkan halaman tunggal berisi maskot (bukan editor penuh).
+    if not current_user.is_kaprodi and rps.rps_status == 'assigned' and not cpl_defined:
+        return render_template('rps/nocpl.html', matkul=rps)
+
     return render_template(
         'rps_editor.html',
         matkul=rps,
@@ -1099,6 +1185,7 @@ def editor(id):
         hitung_progress_rps=hitung_progress_rps,
         cpl_defined=cpl_defined,
         is_approved=(rps.rps_status == 'approved'),
+        today=datetime.now().date(),
     )
 
 

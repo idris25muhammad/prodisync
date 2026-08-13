@@ -28,7 +28,13 @@ class RPS(db.Model):
         nullable=False
     )
 
-    sks      = db.Column(db.Integer, nullable=False, default=3)
+    # FK ke pembuat RPS (kaprodi/tim kurikulum yang membuat)
+    created_by = db.Column(
+        db.Integer,
+        db.ForeignKey('user.id'),
+        nullable=True
+    )
+
     semester = db.Column(db.Integer, nullable=True,  default=1)
     prasyarat = db.Column(db.String(100), nullable=True)
 
@@ -63,7 +69,8 @@ class RPS(db.Model):
 
     # Relasi
     tahun_ajaran = db.relationship('TahunAjaran', backref='rps_list',     lazy=True)
-    dosen_koor   = db.relationship('User',        backref='rps_list',     lazy=True)
+    dosen_koor   = db.relationship('User',        foreign_keys=[user_id], backref='rps_list',     lazy=True)
+    creator      = db.relationship('User',        foreign_keys=[created_by], backref='rps_created', lazy=True)
     # (relasi ke MataKuliah lewat backref 'matakuliah' di models/matakuliah.py)
 
     def __repr__(self):
