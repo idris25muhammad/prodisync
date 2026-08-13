@@ -68,7 +68,12 @@ def list():
     if semester:
         query = query.filter(RPS.semester == semester)
 
-    rps_list = query.order_by(MataKuliah.kode.asc(), MataKuliah.nama.asc()).all()
+    page = request.args.get('page', 1, type=int)
+    rps_pagination = (
+        query.order_by(MataKuliah.kode.asc(), MataKuliah.nama.asc())
+        .paginate(page=page, per_page=10, error_out=False)
+    )
+    rps_list = rps_pagination.items
 
     users = User.query.order_by(User.nama.asc()).all() if current_user.is_kaprodi else []
     tahun_ajaran_list = TahunAjaran.query.order_by(TahunAjaran.tahun.desc(), TahunAjaran.semester.asc()).all()
@@ -76,6 +81,7 @@ def list():
     return render_template(
         'rps/list.html',
         rps_list=rps_list,
+        pagination=rps_pagination,
         users=users,
         q=q,
         tahun_ajaran_id=tahun_ajaran_id,
