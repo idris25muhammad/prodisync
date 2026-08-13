@@ -194,32 +194,29 @@ def delete(id):
     user = User.query.get_or_404(id)
 
     if user.id == current_user.id:
-        flash('Anda tidak bisa menghapus akun sendiri.', 'danger')
-        return redirect(url_for('user.list'))
+        return redirect(url_for('user.list', msg='Anda tidak bisa menghapus akun sendiri.', t='danger'))
 
     # User yang menjadi Dosen Koordinator RPS tidak bisa dihapus
     rps_koor = RPS.query.filter(RPS.user_id == user.id).first()
     if rps_koor:
         nama_mk = rps_koor.matakuliah.nama if rps_koor.matakuliah else '(mata kuliah tidak diketahui)'
-        flash(
+        msg = (
             f'{user.nama} masih menjadi Dosen Koordinator untuk RPS "{nama_mk}". '
-            'Hapus RPS tersebut atau ganti dosen koordinatornya terlebih dahulu.',
-            'danger',
+            'Hapus RPS tersebut atau ganti dosen koordinatornya terlebih dahulu.'
         )
-        return redirect(url_for('user.list'))
+        return redirect(url_for('user.list', msg=msg, t='danger'))
 
     try:
         db.session.delete(user)
         db.session.commit()
-        flash(f'Akun {user.nama} berhasil dihapus.', 'success')
+        return redirect(url_for('user.list', msg=f'Akun {user.nama} berhasil dihapus.', t='success'))
     except IntegrityError:
         db.session.rollback()
-        flash(
-            'Akun tidak bisa dihapus karena masih terkait dengan data lain '
-            '(pengumuman, agenda, arsip, dsb).',
-            'danger',
+        return redirect(
+            url_for('user.list',
+                    msg='Akun tidak bisa dihapus karena masih terkait dengan data lain (pengumuman, agenda, arsip, dsb).',
+                    t='danger')
         )
-    return redirect(url_for('user.list'))
 
 
 @bp.route('/reset-password/<int:id>', methods=['POST'])
