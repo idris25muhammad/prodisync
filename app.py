@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, url_for
 from config import Config
 from extensions import db, login_manager, migrate, csrf
 from models import User, TahunAjaran, Panduan, MataKuliah, RPS, Pengumuman, ArsipDokumen, Agenda
@@ -77,6 +77,22 @@ def create_app():
         except Exception:
             ta_aktif = None
         return dict(ta_aktif=ta_aktif)
+
+    # Cache-busting statis: tambahkan ?v=<mtime file> agar browser tidak
+    # memakai versi lama yang ter-cache (nginx expires 30d utk /static/).
+    @app.context_processor
+    def inject_static_ver():
+        import os
+
+        def static_v(filename):
+            path = os.path.join(app.root_path, 'static', filename)
+            try:
+                v = int(os.path.getmtime(path))
+            except OSError:
+                v = 0
+            return url_for('static', filename=filename) + '?v=' + str(v)
+
+        return dict(static_v=static_v)
 
 
 
