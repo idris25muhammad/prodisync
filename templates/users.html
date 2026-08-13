@@ -374,15 +374,19 @@
         const t = params.get('t') || 'danger';
         if (msg) {
             const el = document.createElement('div');
-            el.className = 'fixed top-5 right-5 z-[9999] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl p-4 w-80';
+            el.className = 'fixed top-5 right-5 z-[9999] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl p-4 w-80 flex items-center gap-3';
             const isSuccess = t === 'success';
-            el.innerHTML = `
-                <div class="flex items-center gap-3">
-                    <div class="flex-shrink-0 w-8 h-8 rounded-full ${isSuccess ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : 'bg-red-100 dark:bg-red-900/30 text-red-600'} flex items-center justify-center font-bold">
-                        ${isSuccess ? '✓' : '✕'}
-                    </div>
-                    <div class="flex-1 text-sm font-medium">${msg}</div>
-                </div>`;
+
+            const icon = document.createElement('div');
+            icon.className = `flex-shrink-0 w-8 h-8 rounded-full ${isSuccess ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : 'bg-red-100 dark:bg-red-900/30 text-red-600'} flex items-center justify-center font-bold`;
+            icon.textContent = isSuccess ? '✓' : '✕';
+
+            const text = document.createElement('div');
+            text.className = 'flex-1 text-sm font-medium';
+            text.textContent = msg;
+
+            el.appendChild(icon);
+            el.appendChild(text);
             document.body.appendChild(el);
             setTimeout(() => {
                 el.style.transition = 'all 0.3s';
