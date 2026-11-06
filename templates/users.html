@@ -140,6 +140,14 @@
                                     </svg>
                                 </button>
 
+                                <button type="button" onclick="openResetModal({{ u.id }}, {{ u.nama|tojson|forceescape }})"
+                                    title="Reset Password"
+                                    class="p-1.5 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                                    </svg>
+                                </button>
+
                                 {% if u.id != current_user.id %}
                                 <button type="button" onclick="openDeleteModal({{ u.id }}, {{ u.nama|tojson|forceescape }})"
                                     title="Hapus"
@@ -435,6 +443,7 @@
         <h2 id="modal-reset-title" class="text-lg font-bold mb-1 text-slate-900 dark:text-white">Reset Password</h2>
         <p id="reset-nama" class="text-sm text-slate-500 mb-4"></p>
         <form id="reset-form" method="POST" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input id="reset-password-input" type="password" name="password" required placeholder="Password baru"
                 class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-amber-500">
             <div class="flex justify-end gap-3">
@@ -621,7 +630,7 @@
     }
 
     function openResetModal(id, nama) {
-        document.getElementById('reset-form').action = `/users/reset-password/${id}`;
+        document.getElementById('reset-form').action = `{{ url_for('user.list') }}reset-password/${id}`;
         document.getElementById('reset-nama').textContent = 'Ganti password untuk: ' + nama;
         document.getElementById('reset-password-input').value = '';
         openModal('modal-reset');

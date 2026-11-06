@@ -10,19 +10,20 @@ Dibangun dengan **Flask 3.0** (Python), **MySQL 8.0**, **SQLAlchemy ORM**, dan *
 
 | Modul | Deskripsi |
 |---|---|
-| **Autentikasi & RBAC** | Login aman (Argon2), role-based access: Kaprodi / Tim Kurikulum & Dosen. |
+| **Multi-Program Studi** | Master program studi lintas jenjang (D4, D3, S1, S2) dengan penugasan Kaprodi dan isolasi data per prodi. |
+| **Autentikasi & RBAC** | Login aman (Argon2), role-based access 4 level: Kajur (Admin Jurusan), KPS (Kaprodi), Tim Kurikulum, dan Dosen. |
 | **Editor RPS (Tab Wizard)** | 5-tab wizard editor: Identitas & Deskripsi, CLO & SO-PI, Weekly Course Plan (tabel 16 minggu), Sarana & Assessment Plan (multi-metode IABEE), SO Assessment Plan (kriteria PBL), Kesepakatan & Pustaka. |
-| **Workflow Approval RPS** | Dosen submit &rarr; Kaprodi approve/reject (dengan alasan). Approved RPS terkunci dari edit. Kaprodi bisa revisi kembali ke draft. |
+| **Workflow Approval RPS** | Dosen submit &rarr; Tim Kurikulum / KPS approve/reject (dengan alasan). Approved RPS terkunci dari edit. KPS/Tim Kurikulum bisa revisi kembali ke draft. |
 | **Progress Pengisian RPS** | Perhitungan progres proporsional: weekly plan per minggu, evaluasi per minggu, kriteria penilaian per persentase. |
-| **Preview & Print PDF** | Render PDF A4 (xhtml2pdf) dengan cetak browser. Tombol hanya muncul setelah approved. |
-| **Katalog Mata Kuliah** | Daftar MK lengkap dengan filter, search, prasyarat, dan integrasi RPS. |
+| **Preview & Print PDF / Export JSON** | Render PDF A4 (xhtml2pdf) dengan cetak browser serta ekspor format JSON terstandarisasi setelah approved. |
+| **Katalog Mata Kuliah** | Daftar MK lengkap per program studi dengan filter kurikulum, pencarian, dan integrasi RPS. |
 | **Kurikulum Terintegrasi** | Peta kurikulum + aturan prasyarat mata kuliah. |
-| **Dashboard Kaprodi & Dosen** | Statistik status workflow (Approved / Submitted / Assigned / Rejected), progress RPS per MK, distribusi per dosen, agenda terdekat. |
-| **Pengumuman Prodi** | Publikasi pengumuman (teks + lampiran file). |
-| **Agenda & Jadwal** | CRUD agenda kegiatan + tampilan kalender. |
+| **Dashboard Pimpinan & Dosen** | Statistik status workflow (Approved / Submitted / Assigned / Rejected), progress RPS per MK, distribusi per dosen, agenda terdekat, serta filter prodi untuk Kajur. |
+| **Pengumuman Prodi & Jurusan** | Publikasi pengumuman (teks + editor Quill + lampiran file) tingkat jurusan maupun prodi. |
+| **Agenda & Jadwal** | CRUD agenda kegiatan + tampilan kalender terintegrasi. |
 | **Arsip Dokumen** | Unggah & kelola dokumen prodi (akses umum / terbatas per dosen). |
 | **Panduan Akademik** | Publikasi panduan (file upload / link eksternal). |
-| **Manajemen Pengguna** | Admin akun dosen & kaprodi. |
+| **Manajemen Pengguna** | Admin akun dosen, tim kurikulum, KPS, dan Kajur beserta penugasan prodi. |
 | **Tahun Ajaran** | CRUD tahun ajaran, set aktif/nonaktif. |
 | **Dark Mode** | Tailwind dark theme, toggle, persistent via localStorage. |
 | **Mobile-First Responsive** | Bottom tab bar + sheet drawer di mobile, top navbar + dropdown di desktop. |
@@ -34,8 +35,10 @@ Dibangun dengan **Flask 3.0** (Python), **MySQL 8.0**, **SQLAlchemy ORM**, dan *
 
 | Aktor | Hak Akses |
 |---|---|
-| **Dosen** | Buat & edit RPS mata kuliah sendiri, submit approval, lihat pengumuman/agenda/arsip, cetak PDF (setelah approved). |
-| **Kaprodi / Tim Kurikulum** | Akses semua RPS, kelola CPL & SO-PI, approve/reject/revisi RPS, kelola user, kurikulum, pengumuman, agenda, arsip, panduan, tahun ajaran. |
+| **Ketua Jurusan (Kajur / Admin)** | Akses menyeluruh tingkat jurusan: kelola master program studi, pantau statistik kurikulum seluruh prodi, approval RPS, kelola pengguna dan master data. |
+| **KPS / Kaprodi** | Penanggung jawab program studi: kelola kurikulum, CPL & SO-PI prodi masing-masing, review/approval RPS prodi, kelola pengguna prodi, konten, dan pengesahan RPS. |
+| **Tim Kurikulum** | Perancang kurikulum prodi: mengelola master mata kuliah, CPL/CLO & pemetaan SO-PI, serta bertindak sebagai Reviewer RPS mata kuliah yang ditugaskan. |
+| **Dosen Koordinator** | Pengampu mata kuliah: melengkapi detail RPS (rencana mingguan, evaluasi, kriteria penilaian, pustaka), submit RPS untuk review, serta mengunduh RPS terverifikasi. |
 
 ---
 

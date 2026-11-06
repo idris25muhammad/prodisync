@@ -264,17 +264,19 @@ def delete(id):
 @kaprodi_required
 def reset_password(id):
     user = User.query.get_or_404(id)
+    if not current_user.is_kajur:
+        if user.role in ('kajur', 'admin') or (user.prodi_id and user.prodi_id != current_user.prodi_id):
+            return redirect(url_for('user.list', msg='Anda tidak memiliki izin mereset password akun ini.', t='danger'))
+
     new_password = request.form.get('password', '').strip()
 
     if not new_password or len(new_password) < 6:
-        flash('Password baru minimal 6 karakter.', 'danger')
-        return redirect(url_for('user.list'))
+        return redirect(url_for('user.list', msg='Password baru minimal 6 karakter.', t='danger'))
 
     user.password = ph.hash(new_password)
     db.session.commit()
 
-    flash(f'Password untuk {user.nama} berhasil direset.', 'success')
-    return redirect(url_for('user.list'))
+    return redirect(url_for('user.list', msg=f'Password untuk {user.nama} berhasil direset.', t='success'))
 
 
 @bp.route('/ganti-password', methods=['GET', 'POST'])
