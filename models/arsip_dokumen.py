@@ -13,6 +13,7 @@ class ArsipDokumen(db.Model):
     __tablename__ = 'arsip_dokumen'
 
     id = db.Column(db.Integer, primary_key=True)
+    prodi_id = db.Column(db.Integer, db.ForeignKey('prodi.id'), nullable=True) # NULL = arsip tingkat jurusan
     nama = db.Column(db.String(255), nullable=False)
     link_url = db.Column(db.Text, nullable=False)
 
@@ -26,6 +27,7 @@ class ArsipDokumen(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relasi
+    prodi = db.relationship('Prodi', backref='arsip_list', lazy=True)
     uploader = db.relationship('User', foreign_keys=[uploader_id], backref='arsip_uploaded', lazy=True)
     allowed_users = db.relationship('User', secondary=arsip_allowed_users, backref='arsip_akses_diberikan', lazy=True)
 

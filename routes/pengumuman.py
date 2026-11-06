@@ -48,7 +48,7 @@ def serve_image(filename):
         abort(404)
 
     # Dosen hanya boleh melihat gambar yang dipakai pengumuman yang terlihat (dosen/publik)
-    if not current_user.is_kaprodi:
+    if not (current_user.is_kaprodi or current_user.is_kajur):
         visible = Pengumuman.query.filter(
             Pengumuman.visibility.in_(['dosen', 'publik']),
             Pengumuman.konten.contains(filename),
@@ -104,7 +104,7 @@ def download_file(filename):
         return redirect(url_for('pengumuman.index'))
 
     # Dosen hanya boleh mengunduh lampiran pengumuman yang bukan draft
-    if not current_user.is_kaprodi:
+    if not (current_user.is_kaprodi or current_user.is_kajur):
         p = Pengumuman.query.filter_by(file_path=filename).first()
         if not p or p.visibility == 'draft':
             abort(403)
@@ -121,8 +121,13 @@ def index():
     q = Pengumuman.query
 
     # Dosen hanya melihat visibility dosen & publik
-    if not current_user.is_kaprodi:
+    if not (current_user.is_kaprodi or current_user.is_kajur):
         q = q.filter(Pengumuman.visibility.in_(['dosen', 'publik']))
+
+    # Filter prodi jika dosen / kps (Kajur melihat semua)
+    user_prodi = getattr(current_user, 'prodi_id', None)
+    if user_prodi and not current_user.is_kajur:
+        q = q.filter(db.or_(Pengumuman.prodi_id == user_prodi, Pengumuman.prodi_id == None))
 
     # Filter tanggal
     date_from = request.args.get('date_from', '').strip()
@@ -167,7 +172,7 @@ def index():
 def detail(id):
     p = Pengumuman.query.get_or_404(id)
     # Dosen tidak boleh melihat draft
-    if not current_user.is_kaprodi and p.visibility == 'draft':
+    if not (current_user.is_kaprodi or current_user.is_kajur) and p.visibility == 'draft':
         abort(403)
     return render_template('pengumuman/detail.html', p=p)
 
@@ -214,7 +219,9 @@ def tambah():
                 flash('Format file tidak didukung! (jpg, png, docx, pdf)', 'danger')
                 return redirect(url_for('pengumuman.tambah'))
 
+        prodi_id = request.form.get('prodi_id', type=int) if current_user.is_kajur else getattr(current_user, 'prodi_id', None)
         p = Pengumuman(
+            prodi_id=prodi_id,
             judul=judul,
             konten=konten,
             visibility=visibility,

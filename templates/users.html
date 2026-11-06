@@ -1,4 +1,4 @@
-﻿{% extends 'base.html' %}
+{% extends 'base.html' %}
 {% block content %}
 <div class="space-y-8">
     <div class="flex justify-between items-center">
@@ -14,17 +14,29 @@
 
     <form method="get"
         class="mb-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm p-5">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div class="grid grid-cols-1 md:grid-cols-{{ '3' if current_user.is_kajur else '2' }} gap-5">
             <div>
                 <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Cari User</label>
                 <input type="search" name="q" value="{{ q or '' }}" placeholder="Cari nama atau email..."
                     class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800">
             </div>
+            {% if current_user.is_kajur %}
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Program Studi</label>
+                <select name="prodi_id"
+                    class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800 font-medium">
+                    <option value="">Semua Program Studi</option>
+                    {% for p in daftar_prodi %}
+                    <option value="{{ p.id }}" {% if prodi_id == p.id %}selected{% endif %}>{{ p.kode }} - {{ p.nama }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
             <div class="flex items-end gap-2">
                 <a href="{{ url_for('user.list') }}"
                     class="h-10 inline-flex items-center px-4 rounded-xl text-sm font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition-all">Reset</a>
                 <button type="submit"
-                    class="h-10 inline-flex items-center px-5 rounded-xl text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 transition-all">Cari</button>
+                    class="h-10 inline-flex items-center px-5 rounded-xl text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 transition-all">Filter</button>
             </div>
         </div>
     </form>
@@ -38,6 +50,7 @@
                         class="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider">
                         <th class="p-5">Nama</th>
                         <th class="p-5">Username</th>
+                        <th class="p-5">Prodi</th>
                         <th class="p-5">Email</th>
                         <th class="p-5 text-center">Role</th>
                         <th class="p-5">Dibuat</th>
@@ -58,13 +71,36 @@
                             {% endif %}
                         </td>
                         <td class="p-5 font-mono text-sm text-slate-500">{{ u.username }}</td>
+                        <td class="p-5 text-sm whitespace-nowrap">
+                            {% if u.prodi_rel %}
+                            <span class="px-2.5 py-1 rounded-md text-xs font-bold bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                                {{ u.prodi_rel.kode }}
+                            </span>
+                            {% elif u.role in ('kajur', 'admin') %}
+                            <span class="text-xs text-slate-400 italic font-medium">Semua (Jurusan)</span>
+                            {% else %}
+                            <span class="text-xs text-slate-400">—</span>
+                            {% endif %}
+                        </td>
                         <td class="p-5 text-sm text-slate-500">{{ u.email or '-' }}</td>
                         <td class="p-5 text-center">
-                            <span class="text-[11px] font-bold px-2 py-1 rounded-full
-                                {{ 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400' if u.role == 'kaprodi'
-                                   else 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300' }}">
-                                {{ 'TIMKUR' if u.role == 'kaprodi' else (u.role | upper) }}
+                            {% if u.role in ('kajur', 'admin') %}
+                            <span class="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                                KAJUR / ADMIN
                             </span>
+                            {% elif u.role in ('kps', 'kaprodi') %}
+                            <span class="text-[11px] font-bold px-2.5 py-1 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800">
+                                KPS
+                            </span>
+                            {% elif u.role == 'timkur' %}
+                            <span class="text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+                                TIM KURIKULUM
+                            </span>
+                            {% else %}
+                            <span class="text-[11px] font-bold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                                DOSEN
+                            </span>
+                            {% endif %}
                         </td>
                         <td class="p-5 text-xs text-slate-500 whitespace-nowrap">
                             {{ u.created_at.strftime('%d/%m/%Y %H:%M') if u.created_at else '-' }}
@@ -90,6 +126,7 @@
                                         researcher_id: {{ (u.researcher_id or "")|tojson|forceescape }},
                                         garuda_id: {{ (u.garuda_id or "")|tojson|forceescape }},
                                         afiliasi: {{ (u.afiliasi or "")|tojson|forceescape }},
+                                        prodi_id: {{ (u.prodi_id or 1)|tojson|forceescape }},
                                         prodi: {{ (u.prodi or "")|tojson|forceescape }},
                                         jabatan_fungsional: {{ (u.jabatan_fungsional or "")|tojson|forceescape }},
                                         bidang_keahlian: {{ (u.bidang_keahlian or "")|tojson|forceescape }},
@@ -227,7 +264,9 @@
                             <select id="user-role" name="role"
                                 class="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500">
                                 <option value="dosen">Dosen</option>
-                                <option value="kaprodi">Tim Kurikulum</option>
+                                <option value="timkur">Tim Kurikulum</option>
+                                <option value="kaprodi">KPS (Ketua Program Studi)</option>
+                                <option value="kajur">Admin / Ketua Jurusan (Kajur)</option>
                             </select>
                         </div>
                     </div>
@@ -273,9 +312,13 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Prodi</label>
-                            <input id="user-prodi" type="text" name="prodi"
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Program Studi</label>
+                            <select id="user-prodi_id" name="prodi_id"
                                 class="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500">
+                                {% for p in daftar_prodi %}
+                                    <option value="{{ p.id }}">{{ p.kode }} - {{ p.nama }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
 
                         <div>
@@ -514,7 +557,9 @@
         document.getElementById('user-researcher_id').value = '';
         document.getElementById('user-garuda_id').value = '';
         document.getElementById('user-afiliasi').value = '';
-        document.getElementById('user-prodi').value = '';
+        if (document.getElementById('user-prodi_id')) {
+            document.getElementById('user-prodi_id').value = '1';
+        }
         document.getElementById('user-jabatan_fungsional').value = '';
         document.getElementById('user-bidang_keahlian').value = '';
         document.getElementById('user-homepage_url').value = '';
@@ -557,7 +602,9 @@
         document.getElementById('user-researcher_id').value = user.researcher_id || '';
         document.getElementById('user-garuda_id').value = user.garuda_id || '';
         document.getElementById('user-afiliasi').value = user.afiliasi || '';
-        document.getElementById('user-prodi').value = user.prodi || '';
+        if (document.getElementById('user-prodi_id')) {
+            document.getElementById('user-prodi_id').value = user.prodi_id || '1';
+        }
         document.getElementById('user-jabatan_fungsional').value = user.jabatan_fungsional || '';
         document.getElementById('user-bidang_keahlian').value = user.bidang_keahlian || '';
         document.getElementById('user-homepage_url').value = user.homepage_url || '';

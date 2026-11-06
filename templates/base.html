@@ -23,8 +23,12 @@
         }
     </script>
     <script>
-        // Cek localStorage sebelum render untuk menghindari flash tema
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage))) {
+        // Cek localStorage sebelum render untuk menghindari flash tema (default: white/light)
+        if (localStorage.theme_ver !== 'v2') {
+            localStorage.removeItem('theme');
+            localStorage.theme_ver = 'v2';
+        }
+        if (localStorage.theme === 'dark') {
             document.documentElement.classList.add('dark');
         } else {
             document.documentElement.classList.remove('dark');
@@ -115,7 +119,17 @@
                         <span class="text-slate-800 dark:text-white">Prodi</span><span
                             class="{% if current_user.is_kaprodi %}text-blue-600 dark:text-blue-400{% else %}text-orange-500 dark:text-orange-400{% endif %}">Sync</span>
                     </a>
-                    {% if current_user.is_kaprodi %}
+                    {% if current_user.is_kajur %}
+                    <span
+                        class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 leading-none">
+                        Kajur
+                    </span>
+                    {% elif current_user.is_kaprodi %}
+                    <span
+                        class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-400 border border-purple-200 dark:border-purple-800 leading-none">
+                        KPS
+                    </span>
+                    {% elif current_user.is_timkur %}
                     <span
                         class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-200 dark:border-blue-800 leading-none">
                         TimKur
@@ -175,7 +189,7 @@
                                     <h4 class="text-[10px] font-bold text-slate-400 uppercase mb-3 tracking-wider">
                                         Perkuliahan</h4>
                                     <div class="space-y-1">
-                                        {% if current_user.is_kaprodi %}
+                                        {% if current_user.can_manage_kurikulum %}
                                         <a href="{{ url_for('so_pi.index') }}"
                                             class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
                                             <svg class="w-5 h-5 stroke-current opacity-70" fill="none"
@@ -241,7 +255,17 @@
                                     <h4 class="text-[10px] font-bold text-slate-400 uppercase mb-3 tracking-wider">
                                         Pengguna & Informasi</h4>
                                     <div class="space-y-1">
-                                        {% if current_user.is_kaprodi %}
+                                        {% if current_user.can_manage_prodi %}
+                                        <a href="{{ url_for('prodi.list') }}"
+                                            class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-blue-600 dark:text-blue-400 font-bold">
+                                            <svg class="w-5 h-5 stroke-current opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                            </svg>
+                                            <span class="text-sm">Program Studi</span>
+                                        </a>
+                                        {% endif %}
+
+                                        {% if current_user.is_kaprodi or current_user.is_kajur %}
                                         <a href="{{ url_for('user.list') }}"
                                             class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
                                             <svg class="w-5 h-5 stroke-current opacity-70" fill="none"

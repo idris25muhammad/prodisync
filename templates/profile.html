@@ -80,8 +80,12 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Program Studi</label>
-                            <input type="text" name="prodi" value="{{ current_user.prodi or '' }}"
+                            <select name="prodi_id"
                                 class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:text-white transition-all">
+                                {% for p in daftar_prodi %}
+                                    <option value="{{ p.id }}" {% if current_user.prodi_id == p.id %}selected{% endif %}>{{ p.kode }} - {{ p.nama }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Jabatan Fungsional</label>

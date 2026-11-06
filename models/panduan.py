@@ -5,6 +5,7 @@ class Panduan(db.Model):
     __tablename__ = 'panduan'
     
     id = db.Column(db.Integer, primary_key=True)
+    prodi_id = db.Column(db.Integer, db.ForeignKey('prodi.id'), nullable=True) # NULL = panduan umum tingkat jurusan
     nama = db.Column(db.String(255), nullable=False)
     tipe = db.Column(db.String(10), nullable=False) # 'file' atau 'link'
     file_path = db.Column(db.String(255), nullable=True) 
@@ -14,6 +15,9 @@ class Panduan(db.Model):
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relasi
+    prodi = db.relationship('Prodi', backref='panduan_list', lazy=True)
 
     def __repr__(self):
         return f"<Panduan {self.nama}>"

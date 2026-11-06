@@ -13,15 +13,22 @@ def so_sort_key(code):
 class StudentOutcome(db.Model):
     """Student Outcome (SO) — capaian lulusan level prodi."""
     __tablename__ = 'student_outcome'
+    __table_args__ = (
+        db.UniqueConstraint('prodi_id', 'so_code', name='uq_prodi_so_code'),
+    )
 
     id             = db.Column(db.Integer, primary_key=True)
-    so_code        = db.Column(db.String(20),  nullable=False, unique=True)
+    prodi_id       = db.Column(db.Integer, db.ForeignKey('prodi.id'), nullable=False)
+    created_by     = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    so_code        = db.Column(db.String(20),  nullable=False)
     so_description = db.Column(db.Text,        nullable=False)
     is_active      = db.Column(db.Boolean,     nullable=False, default=True)
 
     created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
     updated_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now(), onupdate=db.func.now())
 
+    prodi      = db.relationship('Prodi', backref='student_outcomes', lazy=True)
+    creator    = db.relationship('User', foreign_keys=[created_by], lazy=True)
     indicators = db.relationship(
         'PerformanceIndicator',
         backref='student_outcome',
@@ -31,7 +38,7 @@ class StudentOutcome(db.Model):
     )
 
     def __repr__(self):
-        return f'<StudentOutcome {self.so_code}>'
+        return f'<StudentOutcome {self.so_code} prodi={self.prodi_id}>'
 
 
 class PerformanceIndicator(db.Model):

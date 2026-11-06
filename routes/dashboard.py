@@ -1,5 +1,5 @@
 from datetime import date
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request
 from flask_login import login_required, current_user
 from models import RPS, MataKuliah, User, TahunAjaran, Panduan, Agenda, ArsipDokumen
 from sqlalchemy import or_
@@ -94,13 +94,27 @@ def index():
         Agenda.is_aktif == True
     ).order_by(Agenda.tanggal.asc(), Agenda.waktu_mulai.asc()).first()
 
-    if current_user.is_kaprodi:
-        if ta_aktif:
-            rps_list = RPS.query.filter_by(tahun_ajaran_id=ta_aktif.id).all()
-        else:
-            rps_list = RPS.query.all()
+    user_prodi_id = getattr(current_user, 'prodi_id', None)
+    prodi_filter_id = request.args.get('prodi_id', type=int) if current_user.is_kajur else None
 
-        dosens = User.query.filter_by(role='dosen').all()
+    if current_user.can_manage_kurikulum:
+        query_rps = RPS.query
+        if user_prodi_id and not current_user.is_kajur:
+            query_rps = query_rps.filter_by(prodi_id=user_prodi_id)
+        elif prodi_filter_id:
+            query_rps = query_rps.filter_by(prodi_id=prodi_filter_id)
+
+        if ta_aktif:
+            rps_list = query_rps.filter_by(tahun_ajaran_id=ta_aktif.id).all()
+        else:
+            rps_list = query_rps.all()
+
+        query_dosen = User.query.filter(User.role.in_(['dosen', 'timkur']))
+        if user_prodi_id and not current_user.is_kajur:
+            query_dosen = query_dosen.filter_by(prodi_id=user_prodi_id)
+        elif prodi_filter_id:
+            query_dosen = query_dosen.filter_by(prodi_id=prodi_filter_id)
+        dosens = query_dosen.all()
 
         rps_selesai = 0  # approved
         rps_draft   = 0  # submitted
@@ -127,10 +141,10 @@ def index():
                 rps_belum += 1
 
         for d in dosens:
-            jumlah = RPS.query.filter_by(
-                user_id=d.id,
-                tahun_ajaran_id=ta_aktif.id if ta_aktif else None
-            ).count()
+            q_d = RPS.query.filter_by(user_id=d.id)
+            if ta_aktif:
+                q_d = q_d.filter_by(tahun_ajaran_id=ta_aktif.id)
+            jumlah = q_d.count()
             per_dosen.append({
                 'nama'  : d.nama if len(d.nama) <= 20 else d.nama[:20] + '...',
                 'jumlah': jumlah
@@ -143,6 +157,7 @@ def index():
             'dashboard/kaprodi.html',
             semua_ta=semua_ta,
             agenda_terdekat=agenda_terdekat,
+            prodi_id=prodi_filter_id,
             total_dosen=len(dosens),
             total_mk=len(rps_list),
             rps_selesai=rps_selesai,

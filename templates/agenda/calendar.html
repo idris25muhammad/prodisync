@@ -11,7 +11,7 @@
                 pengumpulan RPS.</p>
         </div>
 
-        {% if current_user.is_kaprodi %}
+        {% if current_user.is_kaprodi or current_user.is_kajur %}
         <button onclick="openTambahModal()"
             class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-md shadow-blue-600/10 flex items-center gap-2">
             <span>+ Tambah Agenda</span>
@@ -47,13 +47,20 @@
 
             {# Kategori Legend #}
             <div class="flex items-center gap-2.5 text-xs font-semibold flex-wrap">
-                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Rapat Umum</span>
-                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Rapat Nilai</span>
-                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span> Rapat RPS</span>
-                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Rapat ATS</span>
-                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Workshop</span>
-                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-teal-500"></span> Asesmen PBL</span>
-                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span> Lainnya</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Rapat
+                    Umum</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                    Rapat Nilai</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                    Rapat RPS</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Rapat
+                    ATS</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                    Workshop</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-teal-500"></span>
+                    Asesmen PBL</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
+                    Lainnya</span>
             </div>
         </div>
 
@@ -76,7 +83,7 @@
 </div>
 
 {# ── MODAL TAMBAH AGENDA ── #}
-{% if current_user.is_kaprodi %}
+{% if current_user.is_kaprodi or current_user.is_kajur %}
 <div id="modal-tambah"
     class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
     <div
@@ -308,7 +315,7 @@
 <script>
     let eventsData = [];
     let currentDate = new Date();
-    const isKaprodi = {{ 'true' if current_user.is_kaprodi else 'false' }};
+    const isKaprodi = {{ 'true' if (current_user.is_kaprodi or current_user.is_kajur) else 'false' }};
 
     const monthNames = [
         "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -376,8 +383,8 @@
 
             const cell = document.createElement('div');
             cell.className = `min-h-[110px] p-2 rounded-xl border flex flex-col justify-start transition-all cursor-pointer ${isToday
-                    ? 'border-blue-500 dark:border-blue-400 bg-blue-50/20 dark:bg-blue-950/20 shadow-sm'
-                    : 'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700'
+                ? 'border-blue-500 dark:border-blue-400 bg-blue-50/20 dark:bg-blue-950/20 shadow-sm'
+                : 'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700'
                 }`;
 
             // Header number of the day

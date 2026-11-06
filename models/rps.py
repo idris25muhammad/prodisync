@@ -7,6 +7,13 @@ class RPS(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
 
+    # FK ke prodi (untuk scoping multi-prodi & performa query)
+    prodi_id = db.Column(
+        db.Integer,
+        db.ForeignKey('prodi.id'),
+        nullable=False
+    )
+
     # FK ke katalog base mata kuliah
     matakuliah_id = db.Column(
         db.Integer,
@@ -68,10 +75,10 @@ class RPS(db.Model):
     updated_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now(), onupdate=db.func.now())
 
     # Relasi
+    prodi        = db.relationship('Prodi',        backref='rps_list',     lazy=True)
     tahun_ajaran = db.relationship('TahunAjaran', backref='rps_list',     lazy=True)
     dosen_koor   = db.relationship('User',        foreign_keys=[user_id], backref='rps_list',     lazy=True)
     creator      = db.relationship('User',        foreign_keys=[created_by], backref='rps_created', lazy=True)
-    # (relasi ke MataKuliah lewat backref 'matakuliah' di models/matakuliah.py)
 
     def __repr__(self):
-        return f'<RPS matakuliah_id={self.matakuliah_id} TA={self.tahun_ajaran_id}>'
+        return f'<RPS matakuliah_id={self.matakuliah_id} prodi={self.prodi_id} TA={self.tahun_ajaran_id}>'

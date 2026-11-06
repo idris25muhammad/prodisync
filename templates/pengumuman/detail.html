@@ -65,8 +65,8 @@
             </div>
             {% endif %}
 
-            <!-- Kaprodi Actions -->
-            {% if current_user.is_kaprodi %}
+            <!-- Kaprodi / Kajur Actions -->
+            {% if current_user.is_kaprodi or current_user.is_kajur %}
             <div class="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 flex gap-3">
                 <a href="{{ url_for('pengumuman.edit', id=p.id) }}"
                     class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-all">

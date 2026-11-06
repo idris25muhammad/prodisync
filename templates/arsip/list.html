@@ -10,7 +10,7 @@
                 beserta kontrol hak akses user.</p>
         </div>
 
-        {% if current_user.is_kaprodi %}
+        {% if current_user.is_kaprodi or current_user.is_kajur %}
         <button onclick="openTambahModal()"
             class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-md shadow-blue-600/10 flex items-center gap-2">
             <span>+ Tambah Arsip</span>
@@ -94,7 +94,7 @@
                     <span>🔗</span> Buka Link External
                 </a>
 
-                {% if current_user.is_kaprodi %}
+                {% if current_user.is_kaprodi or current_user.is_kajur %}
                 {% set user_ids_str = a.allowed_users | map(attribute='id') | join(',') %}
                 <button type="button"
                     onclick="openEditModal('{{ a.id }}', '{{ a.nama | replace("'", "\\'") }}', '{{ a.url | replace("'", "\\'") }}', '{{ a.akses_tipe }}', '{{ user_ids_str }}', {{ 'true' if a.is_aktif else 'false' }})"

@@ -1,6 +1,6 @@
 <div id="tab-1" class="tab-content space-y-6">
 
-    {% if not current_user.is_kaprodi %}
+    {% if not can_edit_cpl %}
     <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
         <div class="flex items-start gap-3">
             <svg class="w-5 h-5 text-blue-500 dark:text-blue-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -69,7 +69,7 @@
     {# ── Bagian Deskripsi dengan WYSIWYG Editor ── #}
     <h2 id="head-2" class="text-xl font-bold border-b border-slate-200 dark:border-slate-700 pb-3 mt-8">Course Description
     </h2>
-    {% if not current_user.is_kaprodi %}
+    {% if not can_edit_cpl %}
     <div class="space-y-2">
         <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg p-4 text-sm text-slate-900 dark:text-slate-100 prose max-w-none"
             id="deskripsi-readonly">{{ matkul.matakuliah.deskripsi | safe if matkul.matakuliah and matkul.matakuliah.deskripsi else '<em class="text-slate-400">Belum ada deskripsi.</em>' }}</div>

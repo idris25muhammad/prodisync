@@ -19,7 +19,7 @@ def allowed_file(filename):
 @login_required # Hanya user yang sudah login yang bisa mengakses file ini
 def download_file(filename):
     # Dosen tidak boleh mengunduh panduan nonaktif
-    if not current_user.is_kaprodi:
+    if not (current_user.is_kaprodi or current_user.is_kajur):
         panduan = Panduan.query.filter_by(file_path=filename).first()
         if not panduan or not panduan.is_aktif:
             abort(403)
@@ -43,7 +43,7 @@ def list():
     query = Panduan.query
     if q:
         query = query.filter(Panduan.nama.ilike(f'%{q}%'))
-    if not current_user.is_kaprodi:
+    if not (current_user.is_kaprodi or current_user.is_kajur):
         query = query.filter(Panduan.is_aktif == True)
 
     pagination = query.order_by(Panduan.updated_at.desc()).paginate(

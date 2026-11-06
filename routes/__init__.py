@@ -10,3 +10,4 @@ from .pengumuman   import bp as pengumuman_bp
 from .arsip        import bp as arsip_bp
 from .agenda       import bp as agenda_bp
 from .so_pi        import bp as so_pi_bp
+from .prodi        import bp as prodi_bp

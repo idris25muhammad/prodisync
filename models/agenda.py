@@ -7,13 +7,14 @@ class Agenda(db.Model):
     __tablename__ = 'agenda'
 
     id = db.Column(db.Integer, primary_key=True)
+    prodi_id = db.Column(db.Integer, db.ForeignKey('prodi.id'), nullable=True) # NULL = agenda bersama jurusan
     judul = db.Column(db.String(255), nullable=False)
     deskripsi = db.Column(db.Text, nullable=True)
     tanggal = db.Column(db.Date, nullable=False)
     waktu_mulai = db.Column(db.Time, nullable=True)
     waktu_selesai = db.Column(db.Time, nullable=True)
     lokasi = db.Column(db.String(255), nullable=True)
-    kategori = db.Column(db.String(50), nullable=True, default='Rapat Umum') # Rapat umum, rapat nilai, rapat RPS, rapat ATS, Workshop, Asesmen PBL, Lainnya
+    kategori = db.Column(db.String(50), nullable=True, default='Rapat Umum')
 
     is_aktif = db.Column(db.Boolean, nullable=False, default=True, server_default='1')
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
@@ -22,6 +23,7 @@ class Agenda(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relasi
+    prodi = db.relationship('Prodi', backref='agenda_list', lazy=True)
     creator = db.relationship('User', foreign_keys=[created_by], backref='agenda_created', lazy=True)
 
     def __repr__(self):

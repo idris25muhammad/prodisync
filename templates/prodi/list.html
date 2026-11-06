@@ -1,0 +1,273 @@
+{% extends 'base.html' %}
+
+{% block title %}Kelola Program Studi{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    {# ── Header ── #}
+    <div class="flex justify-between items-center flex-wrap gap-4">
+        <div>
+            <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white">Program Studi</h1>
+            <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">
+                Kelola master program studi di bawah jurusan, serta penugasan Ketua Program Studi (Kaprodi).
+            </p>
+        </div>
+        <button onclick="openAddModal()"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-blue-600/20 transition-all hover:scale-105 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Tambah Program Studi
+        </button>
+    </div>
+
+    {# ── List Program Studi (Grid Cards) ── #}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for p in prodis %}
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between relative overflow-hidden group">
+            {# Status Accent Bar #}
+            <div class="absolute top-0 left-0 right-0 h-1.5 {% if p.is_aktif %}bg-blue-600{% else %}bg-slate-300 dark:bg-slate-700{% endif %}"></div>
+
+            <div>
+                <div class="flex justify-between items-start mb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="px-2.5 py-1 bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-lg text-xs font-black uppercase tracking-wider">
+                            {{ p.jenjang }}
+                        </span>
+                        <span class="font-mono font-bold text-lg text-slate-800 dark:text-slate-100">
+                            {{ p.kode }}
+                        </span>
+                    </div>
+                    {% if p.is_aktif %}
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full text-xs font-bold">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        Aktif
+                    </span>
+                    {% else %}
+                    <span class="inline-flex items-center px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-full text-xs font-semibold">
+                        Nonaktif
+                    </span>
+                    {% endif %}
+                </div>
+
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4 line-clamp-2">
+                    {{ p.nama }}
+                </h3>
+
+                {# Info Kaprodi #}
+                <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-3.5 mb-4 border border-slate-100 dark:border-slate-800">
+                    <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Ketua Program Studi</p>
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 text-white font-bold flex items-center justify-center text-xs shrink-0 shadow-sm">
+                            {{ (p.kaprodi.nama[:2] if p.kaprodi else 'KP') | upper }}
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-sm font-bold text-slate-800 dark:text-slate-200 truncate">
+                                {{ p.kaprodi.nama if p.kaprodi else 'Belum Ditunjuk' }}
+                            </p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 truncate">
+                                {{ p.kaprodi.email if p.kaprodi else '—' }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {# Statistik Cepat #}
+                <div class="grid grid-cols-2 gap-2 text-center py-2 mb-4 border-y border-slate-100 dark:border-slate-800 text-xs">
+                    <div>
+                        <span class="text-slate-400 block text-[10px] uppercase font-bold">Mata Kuliah</span>
+                        <span class="font-extrabold text-slate-800 dark:text-slate-200 text-base">{{ p.mata_kuliah_list|length }}</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px] uppercase font-bold">RPS Aktif</span>
+                        <span class="font-extrabold text-slate-800 dark:text-slate-200 text-base">{{ p.rps_list|length }}</span>
+                    </div>
+                </div>
+            </div>
+
+            {# Action Buttons #}
+            <div class="flex items-center justify-between pt-2 gap-2">
+                <form method="POST" action="{{ url_for('prodi.toggle', id=p.id) }}" class="inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit"
+                        class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors">
+                        {{ 'Nonaktifkan' if p.is_aktif else 'Aktifkan' }}
+                    </button>
+                </form>
+
+                <div class="flex items-center gap-1.5">
+                    <button type="button"
+                        onclick="openEditModal({{ p.id }}, '{{ p.kode }}', '{{ p.nama | replace("'", "\\'") }}', '{{ p.jenjang }}', {{ p.kaprodi_id or 'null' }})"
+                        class="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors"
+                        title="Edit">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                    </button>
+
+                    <form method="POST" action="{{ url_for('prodi.delete', id=p.id) }}" onsubmit="return confirm('Apakah Anda yakin ingin menghapus prodi {{ p.kode }}? Tindakan ini tidak dapat dibatalkan.');" class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit"
+                            class="p-2 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/60 transition-colors"
+                            title="Hapus">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-span-full py-12 text-center text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+            <p class="text-base font-bold">Belum ada Program Studi yang terdaftar.</p>
+            <p class="text-sm mt-1">Klik tombol "+ Tambah Program Studi" untuk mulai mendaftarkan.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{# ── Modal Tambah ── #}
+<div id="modal-add" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeAddModal()"></div>
+    <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 dark:border-slate-800 z-10 overflow-hidden">
+        <div class="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
+            <h2 class="text-xl font-extrabold text-slate-900 dark:text-white">Tambah Program Studi</h2>
+            <button onclick="closeAddModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 text-2xl leading-none">&times;</button>
+        </div>
+        <form method="POST" action="{{ url_for('prodi.add') }}" class="p-6 space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="grid grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Kode Prodi *</label>
+                    <input type="text" name="kode" required placeholder="TRPL" maxlength="20"
+                        class="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono uppercase dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div class="col-span-2">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Jenjang *</label>
+                    <select name="jenjang"
+                        class="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="D4" selected>D4 (Sarjana Terapan)</option>
+                        <option value="D3">D3 (Diploma Tiga)</option>
+                        <option value="S1">S1 (Sarjana)</option>
+                        <option value="S2">S2 (Magister Terapan)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nama Program Studi *</label>
+                <input type="text" name="nama" required placeholder="Teknologi Rekayasa Perangkat Lunak"
+                    class="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Penugasan Kaprodi</label>
+                <select name="kaprodi_id"
+                    class="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="">-- Belum Ditunjuk (Pilih Nanti) --</option>
+                    {% for d in dosen_list %}
+                    <option value="{{ d.id }}">{{ d.nama }} ({{ d.username }})</option>
+                    {% endfor %}
+                </select>
+                <p class="text-[11px] text-slate-400 mt-1">Dosen yang dipilih otomatis diangkat role-nya menjadi Kaprodi untuk prodi ini.</p>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <button type="button" onclick="closeAddModal()"
+                    class="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                    Batal
+                </button>
+                <button type="submit"
+                    class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md shadow-blue-500/20 transition-all">
+                    Simpan Prodi
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ── Modal Edit ── #}
+<div id="modal-edit" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeEditModal()"></div>
+    <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 dark:border-slate-800 z-10 overflow-hidden">
+        <div class="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
+            <h2 class="text-xl font-extrabold text-slate-900 dark:text-white">Edit Program Studi</h2>
+            <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 text-2xl leading-none">&times;</button>
+        </div>
+        <form id="form-edit" method="POST" action="" class="p-6 space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="grid grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Kode Prodi *</label>
+                    <input type="text" id="edit-kode" name="kode" required maxlength="20"
+                        class="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono uppercase dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div class="col-span-2">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Jenjang *</label>
+                    <select id="edit-jenjang" name="jenjang"
+                        class="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="D4">D4 (Sarjana Terapan)</option>
+                        <option value="D3">D3 (Diploma Tiga)</option>
+                        <option value="S1">S1 (Sarjana)</option>
+                        <option value="S2">S2 (Magister Terapan)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nama Program Studi *</label>
+                <input type="text" id="edit-nama" name="nama" required
+                    class="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Penugasan Kaprodi</label>
+                <select id="edit-kaprodi-id" name="kaprodi_id"
+                    class="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="">-- Belum Ditunjuk (Kosongkan) --</option>
+                    {% for d in dosen_list %}
+                    <option value="{{ d.id }}">{{ d.nama }} ({{ d.username }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <button type="button" onclick="closeEditModal()"
+                    class="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                    Batal
+                </button>
+                <button type="submit"
+                    class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md shadow-blue-500/20 transition-all">
+                    Simpan Perubahan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function openAddModal() {
+        document.getElementById('modal-add').classList.remove('hidden');
+    }
+
+    function closeAddModal() {
+        document.getElementById('modal-add').classList.add('hidden');
+    }
+
+    function openEditModal(id, kode, nama, jenjang, kaprodiId) {
+        document.getElementById('form-edit').action = `{{ url_for('prodi.list') }}edit/${id}`;
+        document.getElementById('edit-kode').value = kode;
+        document.getElementById('edit-nama').value = nama;
+        document.getElementById('edit-jenjang').value = jenjang;
+        document.getElementById('edit-kaprodi-id').value = kaprodiId || '';
+        document.getElementById('modal-edit').classList.remove('hidden');
+    }
+
+    function closeEditModal() {
+        document.getElementById('modal-edit').classList.add('hidden');
+    }
+</script>
+{% endblock %}

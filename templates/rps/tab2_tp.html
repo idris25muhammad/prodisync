@@ -5,7 +5,7 @@
             <p class="text-xs text-slate-500 mt-1">Level 1 adalah dasar (bawah). Level tertinggi adalah puncak
                 kompetensi.</p>
         </div>
-        {% if current_user.is_kaprodi %}
+        {% if can_edit_cpl %}
         <button type="button" onclick="addTP()"
             class="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 px-3 py-1.5 rounded-md font-bold text-sm hover:bg-blue-200 dark:hover:bg-blue-900/60">
             + Tambah CLO
@@ -13,7 +13,7 @@
         {% endif %}
     </div>
 
-    {% if not current_user.is_kaprodi %}
+    {% if not can_edit_cpl %}
     <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 flex items-start gap-3">
         <svg class="w-5 h-5 text-blue-500 dark:text-blue-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         <div>
@@ -43,7 +43,7 @@
                 <span class="tp-no text-sm font-bold text-slate-500 dark:text-slate-400">{{ loop.index }}</span>
             </div>
             <div class="md:col-span-7">
-                {% if current_user.is_kaprodi %}
+                {% if can_edit_cpl %}
                 <textarea name="tp_teks[]" rows="2"
                     class="w-full p-2 border rounded text-sm resize-y dark:bg-slate-800 dark:border-slate-600">{{ tp.teks }}</textarea>
                 {% else %}
@@ -51,7 +51,7 @@
                 {% endif %}
             </div>
             <div class="md:col-span-3 space-y-2">
-                {% if current_user.is_kaprodi %}
+                {% if can_edit_cpl %}
                 <select name="tp_level[]"
                     class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
                     <option value="1" {% if tp.level==1 %}selected{% endif %}>Lvl 1</option>
@@ -67,7 +67,7 @@
                 <div>
                     <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">SO-PI</label>
                     <div class="relative">
-                        {% if current_user.is_kaprodi %}
+                        {% if can_edit_cpl %}
                         <input type="text" name="so_pi[]" value="{{ tp.sopi }}" readonly onclick="openSopiModal(this)"
                             placeholder="Pilih SO-PI..."
                             class="w-full p-2 pr-8 border rounded text-sm dark:bg-slate-800 dark:border-slate-600 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
@@ -79,7 +79,7 @@
                     </div>
                 </div>
             </div>
-            {% if current_user.is_kaprodi %}
+            {% if can_edit_cpl %}
             <div class="md:col-span-1 flex md:justify-end">
                 <button type="button" onclick="this.closest('.tp-row').remove(); syncTPSelections(); renumberTpRows();"
                     class="text-red-400 hover:text-red-600 dark:hover:text-red-400 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-all"
@@ -94,7 +94,7 @@
         </div>
         {% endfor %}
         {% else %}
-        {% if current_user.is_kaprodi %}
+        {% if can_edit_cpl %}
         <div class="tp-row grid grid-cols-1 md:grid-cols-12 gap-3 items-start py-4">
             <div class="md:col-span-1">
                 <span class="tp-no text-sm font-bold text-slate-500 dark:text-slate-400">1</span>
@@ -190,7 +190,7 @@
     async function loadSopiData() {
         if (sopiDataCache) return sopiDataCache;
         try {
-            const response = await fetch("{{ url_for('rps.api_so_pi') }}");
+            const response = await fetch("{{ url_for('rps.api_so_pi', rps_id=(rps.id if rps is defined else matkul.id)) }}");
             sopiDataCache = await response.json();
             return sopiDataCache;
         } catch (e) {

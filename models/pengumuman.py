@@ -5,6 +5,7 @@ class Pengumuman(db.Model):
     __tablename__ = 'pengumuman'
 
     id         = db.Column(db.Integer, primary_key=True)
+    prodi_id   = db.Column(db.Integer, db.ForeignKey('prodi.id'), nullable=True) # NULL = pengumuman tingkat jurusan
     judul      = db.Column(db.String(255), nullable=False)
     konten     = db.Column(db.Text, nullable=False)
     visibility = db.Column(db.String(20), nullable=False, default='draft')  # draft | dosen | publik
@@ -12,6 +13,7 @@ class Pengumuman(db.Model):
 
     penulis_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     penulis    = db.relationship('User', backref='pengumuman', lazy=True)
+    prodi      = db.relationship('Prodi', backref='pengumuman_list', lazy=True)
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

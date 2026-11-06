@@ -43,7 +43,7 @@ def create_app():
 
     from routes import (
         auth_bp, dashboard_bp, matakuliah_bp, rps_bp, user_bp,
-        kurikulum_bp, tahun_ajaran_bp, panduan_bp, pengumuman_bp, arsip_bp, agenda_bp, so_pi_bp
+        kurikulum_bp, tahun_ajaran_bp, panduan_bp, pengumuman_bp, arsip_bp, agenda_bp, so_pi_bp, prodi_bp
     )
     app.register_blueprint(user_bp)
     app.register_blueprint(auth_bp)
@@ -57,6 +57,7 @@ def create_app():
     app.register_blueprint(arsip_bp)
     app.register_blueprint(agenda_bp)
     app.register_blueprint(so_pi_bp)
+    app.register_blueprint(prodi_bp)
 
     # Cegah browser menyimpan halaman HTML (cache / back-forward cache)
     # agar setelah logout/ganti user, tombol Back tidak menampilkan
@@ -77,6 +78,16 @@ def create_app():
         except Exception:
             ta_aktif = None
         return dict(ta_aktif=ta_aktif)
+
+    # Daftar Prodi Aktif (Global)
+    @app.context_processor
+    def inject_prodi():
+        from models import Prodi
+        try:
+            daftar_prodi = Prodi.query.filter_by(is_aktif=True).order_by(Prodi.nama.asc()).all()
+        except Exception:
+            daftar_prodi = []
+        return dict(daftar_prodi=daftar_prodi)
 
     # Cache-busting statis: tambahkan ?v=<mtime file> agar browser tidak
     # memakai versi lama yang ter-cache (nginx expires 30d utk /static/).
@@ -102,10 +113,12 @@ def create_app():
         """Seed default data (User & Tahun Ajaran)."""
         if not User.query.first():
             users = [
+                User(username='kajur', password=ph.hash('kajur123'),
+                     nama='Ketua Jurusan', email='kajur@polibatam.ac.id', role='kajur'),
                 User(username='idris', password=ph.hash('idris123'),
-                     nama='Muhammad Idris', email='idris@polibatam.ac.id', role='dosen'),
+                     nama='Muhammad Idris', email='idris@polibatam.ac.id', role='kajur', prodi_id=1),
                 User(username='kps',   password=ph.hash('kps123'),
-                     nama='Koordinator Prodi', email='kps-rks@polibatam.ac.id', role='kaprodi'),
+                     nama='Koordinator Prodi', email='kps-rks@polibatam.ac.id', role='kaprodi', prodi_id=1),
             ]
             db.session.add_all(users)
             db.session.commit()
@@ -254,10 +267,10 @@ def create_app():
         inserted = 0
         skipped  = 0
         for kode, nama, kurikulum, deskripsi in katalog:
-            if MataKuliah.query.filter_by(kode=kode, kurikulum=kurikulum).first():
+            if MataKuliah.query.filter_by(prodi_id=1, kode=kode, kurikulum=kurikulum).first():
                 skipped += 1
                 continue
-            db.session.add(MataKuliah(kode=kode, nama=nama, kurikulum=kurikulum, deskripsi=deskripsi))
+            db.session.add(MataKuliah(prodi_id=1, kode=kode, nama=nama, kurikulum=kurikulum, deskripsi=deskripsi))
             inserted += 1
 
         db.session.commit()
@@ -286,9 +299,9 @@ def create_app():
 
         so_inserted = pi_inserted = 0
         for so in raw.get('student_outcome', []):
-            existing_so = StudentOutcome.query.filter_by(so_code=so['so_code']).first()
+            existing_so = StudentOutcome.query.filter_by(prodi_id=1, so_code=so['so_code']).first()
             if not existing_so:
-                existing_so = StudentOutcome(so_code=so['so_code'], so_description=so.get('so_description', ''))
+                existing_so = StudentOutcome(prodi_id=1, so_code=so['so_code'], so_description=so.get('so_description', ''))
                 db.session.add(existing_so)
                 db.session.flush()
                 so_inserted += 1

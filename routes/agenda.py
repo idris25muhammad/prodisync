@@ -23,7 +23,7 @@ def events_api():
 
     query = Agenda.query
 
-    if not current_user.is_kaprodi:
+    if not (current_user.is_kaprodi or current_user.is_kajur):
         query = query.filter_by(is_aktif=True)
 
     events_list = query.order_by(Agenda.tanggal.asc(), Agenda.waktu_mulai.asc()).all()
@@ -84,7 +84,9 @@ def add():
             pass
 
     try:
+        prodi_id = getattr(current_user, 'prodi_id', None) if not current_user.is_kajur else (request.form.get('prodi_id', type=int) or None)
         baru_agenda = Agenda(
+            prodi_id=prodi_id,
             judul=judul,
             deskripsi=deskripsi or None,
             tanggal=tanggal_val,

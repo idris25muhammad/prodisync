@@ -1,4 +1,4 @@
-﻿{% extends 'base.html' %}
+{% extends 'base.html' %}
 {% block content %}
 
 <div class="flex justify-between items-center mb-8">
@@ -6,7 +6,7 @@
         <h1 class="text-3xl font-extrabold">Semester Lesson Plan</h1>
         <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Kelola dan pantau status Semester Lesson Plan (SLP) per mata kuliah dan tahun ajaran.</p>
     </div>
-    {% if current_user.is_kaprodi %}
+    {% if current_user.can_manage_kurikulum %}
     <button onclick="document.getElementById('modal-tambah').classList.remove('hidden')"
         class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20 hover:scale-105">
         + Tambah RPS
@@ -59,14 +59,27 @@
                     <option value="">Semua Semester</option>
                 </select>
             </div>
-            {% if current_user.is_kaprodi %}
+            {% if current_user.can_manage_kurikulum %}
             <div class="w-56">
-                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Tim Kurikulum</label>
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Tim Kurikulum (Reviewer)</label>
                 <select name="data"
                     class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800">
                     <option value="all" {% if data == 'all' %}selected{% endif %}>Semua</option>
-                    {% for user in users if user.is_kaprodi %}
+                    <option value="mine" {% if data == 'mine' %}selected{% endif %}>Ditugaskan ke Saya</option>
+                    {% for user in users if user.can_manage_kurikulum %}
                     <option value="{{ user.id }}" {% if data == user.id|string %}selected{% endif %}>{{ user.nama }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            {% if current_user.is_kajur %}
+            <div class="w-56">
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Program Studi</label>
+                <select name="prodi_id"
+                    class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800 font-medium">
+                    <option value="">Semua Program Studi</option>
+                    {% for p in daftar_prodi %}
+                    <option value="{{ p.id }}" {% if prodi_id == p.id %}selected{% endif %}>{{ p.kode }} - {{ p.nama }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -157,9 +170,12 @@
             <thead>
                 <tr class="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-700">
                     <th class="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-500 w-8">#</th>
+                    {% if current_user.is_kajur %}
+                    <th class="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-500">Prodi</th>
+                    {% endif %}
                     <th class="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-500">Kode</th>
                     <th class="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-500">Mata Kuliah</th>
-                    {% if current_user.is_kaprodi %}
+                    {% if current_user.can_manage_kurikulum %}
                     <th class="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-500">Tim Kurikulum</th>
                     <th class="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-slate-500">Dosen Koor</th>
                     {% endif %}
@@ -172,6 +188,13 @@
                 {% set progress = hitung_progress_rps(rps_obj) %}
                 <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors group">
                     <td class="px-4 py-3 text-slate-400 text-xs font-medium">{{ loop.index }}</td>
+                    {% if current_user.is_kajur %}
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <span class="px-2 py-0.5 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-md text-[11px] font-bold">
+                            {{ rps_obj.prodi.kode if rps_obj.prodi else (mk.prodi.kode if mk and mk.prodi else 'RKS') }}
+                        </span>
+                    </td>
+                    {% endif %}
                     <td class="px-4 py-3">
                         <span class="font-mono font-bold text-blue-600 dark:text-blue-400 text-xs">{{ mk.kode }}</span>
                         {% if rps_obj.rps_status == 'approved' and progress == 100 %}
@@ -196,7 +219,7 @@
                             <span class="text-[11px] font-bold {% if progress == 100 %}text-green-600 dark:text-green-400{% else %}text-blue-600 dark:text-blue-400{% endif %} w-7 text-right shrink-0">{{ progress }}%</span>
                         </div>
                     </td>
-                    {% if current_user.is_kaprodi %}
+                    {% if current_user.can_manage_kurikulum %}
                     <td class="px-4 py-3 max-w-[160px]">
                         <p class="text-xs text-slate-600 dark:text-slate-300 truncate font-medium" title="{{ rps_obj.creator.nama if rps_obj.creator else '—' }}">
                             {{ rps_obj.creator.nama if rps_obj.creator else '—' }}
@@ -235,7 +258,7 @@
                                     {{ progress }},
                                     '{{ rps_obj.prasyarat or "—" }}',
                                     {{ rps_obj.id }},
-                                    {{ 'true' if current_user.is_kaprodi else 'false' }},
+                                    {{ 'true' if current_user.can_review_rps(rps_obj) else 'false' }},
                                     '{{ rps_obj.matakuliah.kode if rps_obj.matakuliah else mk.kode }}'
                                 )"
                                 title="Lihat Detail"
@@ -246,14 +269,33 @@
                                 </svg>
                             </button>
 
-                            {# Tombol Edit RPS - sembunyikan jika approved (kecuali kaprodi tetap bisa lihat) #}
-                            {% if rps_obj.rps_status != 'approved' or current_user.is_kaprodi %}
-                            <a href="{{ url_for('rps.editor', id=rps_obj.id) }}" title="{% if current_user.is_kaprodi %}Lihat RPS{% else %}Edit RPS{% endif %}"
+                            {# Tombol Edit RPS - sembunyikan jika approved (kecuali tim kurikulum/kaprodi tetap bisa buka) #}
+                            {% if rps_obj.rps_status != 'approved' or current_user.can_manage_kurikulum %}
+                            <a href="{{ url_for('rps.editor', id=rps_obj.id) }}" title="{% if current_user.can_manage_kurikulum %}Buka RPS (Kurikulum){% else %}Edit RPS{% endif %}"
                                 class="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                 </svg>
                             </a>
+                            {% endif %}
+
+                            {# Quick Approve / Reject bagi Reviewer yang berwenang jika status submitted #}
+                            {% if rps_obj.rps_status == 'submitted' and current_user.can_review_rps(rps_obj) %}
+                            <form method="POST" action="{{ url_for('rps.approve', id=rps_obj.id) }}" class="inline" onsubmit="return confirm('Approve RPS ini?')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" title="Approve RPS"
+                                    class="p-1.5 rounded-lg bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/60 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                </button>
+                            </form>
+                            <button type="button" onclick="openRejectModal({{ rps_obj.id }})" title="Reject / Minta Revisi"
+                                class="p-1.5 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/60 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
                             {% endif %}
 
                             {# Tombol Preview/Print PDF - hanya jika approved #}
@@ -266,11 +308,11 @@
                             </a>
                             {% endif %}
 
-                            {% if current_user.is_kaprodi %}
+                            {% if current_user.can_manage_kurikulum %}
                             {# Tombol Edit Meta #}
                             <button type="button"
-                                onclick="openEditMetaModal({{ rps_obj.id }}, {{ mk.sks or 0 }}, {{ rps_obj.semester or '' }}, '{{ rps_obj.tahun_ajaran_id }}', '{{ dosen_obj.id if dosen_obj else '' }}', '{{ dosen_obj.nama | replace("'", "\\'") if dosen_obj else '' }}', '{{ rps_obj.prasyarat or '' }}', '{{ rps_obj.tgl_pengesahan_kaprodi or '' }}', '{{ rps_obj.qr_kaprodi or '' }}', '{{ rps_obj.created_by or '' }}')"
-                                title="Edit Metadata"
+                                onclick="openEditMetaModal({{ rps_obj.id }}, {{ mk.sks or 0 }}, '{{ rps_obj.semester or '' }}', '{{ rps_obj.tahun_ajaran_id }}', '{{ dosen_obj.id if dosen_obj else '' }}', '{{ dosen_obj.nama | replace("'", "\\'") if dosen_obj else '' }}', '{{ rps_obj.prasyarat or '' }}', '{{ rps_obj.tgl_pengesahan_kaprodi or '' }}', '{{ rps_obj.qr_kaprodi or '' }}', '{{ rps_obj.created_by or '' }}')"
+                                title="Edit Metadata & Reviewer"
                                 class="p-1.5 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -286,8 +328,9 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                 </svg>
                             </button>
-
                             {% endif %}
+
+
                         </div>
                     </td>
                 </tr>
@@ -337,7 +380,7 @@
     <div class="p-16 flex flex-col items-center justify-center">
         <div class="text-5xl mb-4">📭</div>
         <p class="text-slate-500 font-medium">Belum ada RPS yang tersedia.</p>
-        {% if current_user.is_kaprodi %}
+        {% if current_user.can_manage_kurikulum %}
         <p class="text-slate-400 mt-1 text-sm">Klik <strong class="text-blue-600 dark:text-blue-400">+ Tambah RPS</strong> untuk membuat RPS baru.</p>
         {% endif %}
     </div>
@@ -355,7 +398,7 @@
 
     const csrfToken = (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
 
-    function openDetail(kode, nama, sks, semester, ta, dosen, creator, status, progress, prasyarat, id, isKaprodi, mkKode) {
+    function openDetail(kode, nama, sks, semester, ta, dosen, creator, status, progress, prasyarat, id, canReview, mkKode) {
         document.getElementById('dp-kode').textContent        = kode;
         document.getElementById('dp-nama').textContent        = nama;
         document.getElementById('dp-sks').textContent         = sks + ' SKS';
@@ -372,13 +415,13 @@
 
         const actionsEl = document.getElementById('dp-actions');
         actionsEl.innerHTML = `
-            ${(status !== 'approved' || isKaprodi) ? `
+            ${(status !== 'approved' || canReview) ? `
             <a href="{{ request.script_root }}/rps/editor/${id}"
                 class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold transition-colors shadow-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                 </svg>
-                ${isKaprodi ? 'Lihat RPS' : 'Edit RPS'}
+                ${canReview ? 'Buka RPS (Kurikulum)' : 'Edit RPS'}
             </a>
             ` : ''}
             ${status === 'approved' ? `
@@ -397,7 +440,7 @@
                 Export JSON
             </a>
             ` : ''}
-            ${(isKaprodi && status === 'submitted') ? `
+            ${(canReview && status === 'submitted') ? `
             <form method="POST" action="{{ request.script_root }}/rps/${id}/approve" class="flex flex-col gap-2">
                 <input type="hidden" name="csrf_token" value="${csrfToken}">
                 <button type="submit"
@@ -434,7 +477,7 @@
 
 
 
-{% if current_user.is_kaprodi %}
+{% if current_user.can_manage_kurikulum %}
 {# ── Modal Tambah RPS ── #}
 <div id="modal-tambah" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -447,6 +490,7 @@
                 class="text-slate-400 hover:text-slate-600 text-2xl leading-none font-bold">&times;</button>
         </div>
         <form method="POST" action="{{ url_for('rps.add') }}" enctype="multipart/form-data" class="p-6 space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="grid grid-cols-2 gap-4">
 
                 {# Search Mata Kuliah #}
@@ -523,6 +567,19 @@
                     <p class="text-xs text-slate-400 mt-1">Ketik nama dosen, lalu pilih dari daftar.</p>
                 </div>
 
+                <div class="col-span-2">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tim Kurikulum (Reviewer MK) *</label>
+                    <select name="created_by" id="add_created_by" required
+                        class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800">
+                        {% for user in users if user.can_manage_kurikulum %}
+                        <option value="{{ user.id }}" {% if user.id == current_user.id %}selected{% endif %}>
+                            {{ user.nama }} ({{ user.role_label }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <p class="text-xs text-slate-400 mt-1">Anggota Tim Kurikulum yang ditugaskan mereview, menyetujui, atau mengembalikan RPS ini.</p>
+                </div>
+
                 {# Pengesahan Kaprodi #}
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tgl Pengesahan Kaprodi</label>
@@ -563,6 +620,7 @@
                 class="text-slate-400 hover:text-slate-600 text-2xl leading-none font-bold">&times;</button>
         </div>
         <form id="form-edit-meta" method="POST" enctype="multipart/form-data" class="p-6 space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">SKS (Readonly)</label>
@@ -613,12 +671,12 @@
                 </div>
 
                 <div class="col-span-2">
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Dibuat Oleh</label>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tim Kurikulum (Reviewer MK)</label>
                     <select name="created_by" id="edit-created-by"
                         class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800">
                         <option value="">— Pilih Pembuat —</option>
-                        {% for user in users if user.is_kaprodi %}
-                        <option value="{{ user.id }}">{{ user.nama }}</option>
+                        {% for user in users if user.can_manage_kurikulum %}
+                        <option value="{{ user.id }}">{{ user.nama }} ({{ user.role_label }})</option>
                         {% endfor %}
                     </select>
                     <p class="text-xs text-slate-400 mt-1">Kaprodi/tim kurikulum yang membuat RPS ini.</p>
@@ -681,6 +739,7 @@
                 class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 rounded-lg text-xl leading-none">&times;</button>
         </div>
         <form method="POST" action="{{ request.script_root }}/rps/0/reject" id="reject-form" class="px-5 py-4 space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <textarea name="reason" rows="5" required
                 class="w-full rounded-lg border border-slate-300 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-100"
                 placeholder="Contoh: CPL belum sinkron dengan CPMK, daftar pustaka perlu diperbarui."></textarea>

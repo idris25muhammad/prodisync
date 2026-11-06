@@ -9,9 +9,23 @@
 
         </div>
 
-        {# ── Toolbar Manajemen Tahun Ajaran ── #}
-        <div
-            class="flex items-center gap-3 bg-white dark:bg-slate-900 p-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div class="flex items-center gap-3 flex-wrap">
+            {% if current_user.is_kajur %}
+            <div class="flex items-center gap-2 bg-white dark:bg-slate-900 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Prodi:</span>
+                <select onchange="window.location.href='{{ url_for('dashboard.index') }}' + (this.value ? '?prodi_id=' + this.value : '')"
+                    class="bg-transparent text-sm font-semibold text-blue-600 dark:text-blue-400 outline-none cursor-pointer">
+                    <option value="">Semua Program Studi</option>
+                    {% for p in daftar_prodi %}
+                    <option value="{{ p.id }}" {% if prodi_id == p.id %}selected{% endif %}>{{ p.kode }} - {{ p.nama }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            {# ── Toolbar Manajemen Tahun Ajaran ── #}
+            <div
+                class="flex items-center gap-3 bg-white dark:bg-slate-900 p-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
             <div class="flex items-center gap-1">
                 {% if semua_ta %}
                 <select id="ta-select" onchange="syncSetAktifBtn()"
@@ -24,7 +38,7 @@
                     {% endfor %}
                 </select>
 
-                {% if current_user.is_kaprodi %}
+                {% if current_user.is_kaprodi or current_user.is_kajur %}
                 <div class="flex items-center border-slate-200 dark:border-slate-700 pl-2">
                     <button id="btn-set-aktif" onclick="setAktifManual()" hidden
                         class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-bold transition-all shadow-md shadow-blue-600/10 ml-2"
@@ -54,7 +68,7 @@
                     TA</span>
                 {% endif %}
 
-                {% if current_user.is_kaprodi %}
+                {% if current_user.is_kaprodi or current_user.is_kajur %}
                 <button onclick="document.getElementById('modal-ta').classList.remove('hidden')"
                     class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-bold transition-all shadow-md shadow-blue-600/10 ml-2">
                     + Tambah TA

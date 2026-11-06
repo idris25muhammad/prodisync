@@ -50,7 +50,7 @@ def list():
     # Filter visible items based on permissions
     semua_arsip = []
     for item in semua_arsip_raw:
-        if current_user.is_kaprodi or item.uploader_id == current_user.id:
+        if current_user.is_kaprodi or current_user.is_kajur or item.uploader_id == current_user.id:
             semua_arsip.append(item)
         elif item.is_aktif:
             if item.akses_tipe == 'semua':

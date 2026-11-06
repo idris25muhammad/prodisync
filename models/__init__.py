@@ -1,3 +1,4 @@
+from .prodi        import Prodi
 from .user         import User
 from .matakuliah   import MataKuliah
 from .rps          import RPS
@@ -7,5 +8,3 @@ from .pengumuman   import Pengumuman
 from .arsip_dokumen import ArsipDokumen
 from .agenda        import Agenda
 from .so_pi         import StudentOutcome, PerformanceIndicator, ProficiencyLevel, so_sort_key
-
-

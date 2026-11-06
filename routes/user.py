@@ -21,8 +21,16 @@ PER_PAGE = 10
 def list():
     q = request.args.get('q', '').strip()
     page = request.args.get('page', 1, type=int)
+    prodi_id = request.args.get('prodi_id', type=int)
 
     query = User.query
+    if not current_user.is_kajur:
+        user_prodi = getattr(current_user, 'prodi_id', None)
+        if user_prodi:
+            query = query.filter(User.prodi_id == user_prodi)
+    elif prodi_id:
+        query = query.filter(User.prodi_id == prodi_id)
+
     if q:
         query = query.filter(
             or_(
@@ -34,7 +42,7 @@ def list():
     pagination = query.order_by(User.role.asc(), User.nama.asc()).paginate(
         page=page, per_page=PER_PAGE, error_out=False
     )
-    return render_template('users.html', users=pagination.items, pagination=pagination, q=q)
+    return render_template('users.html', users=pagination.items, pagination=pagination, q=q, prodi_id=prodi_id)
 
 
 @bp.route('/add', methods=['POST'])
@@ -57,6 +65,7 @@ def add():
     researcher_id = request.form.get('researcher_id', '').strip()
     garuda_id = request.form.get('garuda_id', '').strip()
     afiliasi = request.form.get('afiliasi', '').strip()
+    prodi_id = request.form.get('prodi_id', type=int) or getattr(current_user, 'prodi_id', None) or 1
     prodi = request.form.get('prodi', '').strip()
     jabatan_fungsional = request.form.get('jabatan_fungsional', '').strip()
     bidang_keahlian = request.form.get('bidang_keahlian', '').strip()
@@ -67,7 +76,12 @@ def add():
         flash('Nama, username, dan password wajib diisi.', 'danger')
         return redirect(url_for('user.list'))
 
-    if role not in ['dosen', 'kaprodi']:
+    if role in ('kps', 'kaprodi'):
+        role = 'kaprodi'
+    elif role in ('admin', 'kajur'):
+        role = 'kajur'
+
+    if role not in ['dosen', 'timkur', 'kaprodi', 'kajur']:
         flash('Role tidak valid.', 'danger')
         return redirect(url_for('user.list'))
 
@@ -103,6 +117,7 @@ def add():
         researcher_id=researcher_id or None,
         garuda_id=garuda_id or None,
         afiliasi=afiliasi or None,
+        prodi_id=prodi_id,
         prodi=prodi or None,
         jabatan_fungsional=jabatan_fungsional or None,
         bidang_keahlian=bidang_keahlian or None,
@@ -148,7 +163,12 @@ def edit(id):
         flash('Nama dan username wajib diisi.', 'danger')
         return redirect(url_for('user.list'))
 
-    if role not in ['dosen', 'kaprodi']:
+    if role in ('kps', 'kaprodi'):
+        role = 'kaprodi'
+    elif role in ('admin', 'kajur'):
+        role = 'kajur'
+
+    if role not in ['dosen', 'timkur', 'kaprodi', 'kajur']:
         flash('Role tidak valid.', 'danger')
         return redirect(url_for('user.list'))
 
@@ -193,6 +213,9 @@ def edit(id):
     user.researcher_id = researcher_id or None
     user.garuda_id = garuda_id or None
     user.afiliasi = afiliasi or None
+    prodi_id = request.form.get('prodi_id', type=int)
+    if prodi_id:
+        user.prodi_id = prodi_id
     user.prodi = prodi or None
     user.jabatan_fungsional = jabatan_fungsional or None
     user.bidang_keahlian = bidang_keahlian or None
@@ -302,6 +325,9 @@ def profile():
         current_user.nidn = request.form.get('nidn', '').strip() or None
         current_user.nip = request.form.get('nip', '').strip() or None
         current_user.afiliasi = request.form.get('afiliasi', '').strip() or None
+        req_prodi_id = request.form.get('prodi_id', type=int)
+        if req_prodi_id:
+            current_user.prodi_id = req_prodi_id
         current_user.prodi = request.form.get('prodi', '').strip() or None
         current_user.jabatan_fungsional = request.form.get('jabatan_fungsional', '').strip() or None
         current_user.bidang_keahlian = request.form.get('bidang_keahlian', '').strip() or None
