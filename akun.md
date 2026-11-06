@@ -41,3 +41,4 @@ Berikut adalah daftar akun yang telah disiapkan di database lokal untuk menguji 
 ### 3. Uji Isolasi Data Antar-Prodi (Login sebagai `jajang` vs `kps`)
 - Login sebagai `jajang` (Kaprodi TRM), perhatikan bahwa daftar mata kuliah, RPS, dan SO-PI yang tampil terisolasi hanya untuk prodi TRM.
 - Buka `/prodi/` (akan muncul halaman 403 Forbidden karena pengelolaan master prodi khusus untuk Kajur).
+
