@@ -1,114 +1,48 @@
+{% set cdio_legend = [
+    ('pd', 'Product Development'),
+    ('wc', 'Written Communication'),
+    ('st', 'System Thinking'),
+    ('tw', 'Team Work'),
+    ('ce', 'Communication in English'),
+    ('ps', 'Professional Skills'),
+] %}
 <div class="kurikulum-cdio">
     <div class="kc-wrapper">
         <div class="kc-legend">
             <button type="button" class="kc-legend-item active" data-filter="all">
                 All Skills
+                <span class="kc-badge">{{ total_mk }}</span>
             </button>
-            <button type="button" class="kc-legend-item" data-filter="pd">
-                <span class="kc-dot pd"></span> Product Development
+            {% for code, label in cdio_legend %}
+            <button type="button" class="kc-legend-item" data-filter="{{ code }}">
+                <span class="kc-dot {{ code }}"></span> {{ label }}
+                <span class="kc-badge">{{ cdio_counts.get(code, 0) }}</span>
             </button>
-            <button type="button" class="kc-legend-item" data-filter="wc">
-                <span class="kc-dot wc"></span> Written Communication
-            </button>
-            <button type="button" class="kc-legend-item" data-filter="st">
-                <span class="kc-dot st"></span> System Thinking
-            </button>
-            <button type="button" class="kc-legend-item" data-filter="tw">
-                <span class="kc-dot tw"></span> Team Work
-            </button>
-            <button type="button" class="kc-legend-item" data-filter="ce">
-                <span class="kc-dot ce"></span> Communication in English
-            </button>
-            <button type="button" class="kc-legend-item" data-filter="ps">
-                <span class="kc-dot ps"></span> Professional Skills
-            </button>
+            {% endfor %}
         </div>
 
         <div class="kc-grid">
-            <div class="kc-cell kc-year" style="grid-row: span 2;">YEAR 4<span>CDIO skills are proficient</span></div>
-            <div class="kc-cell kc-project" style="grid-row: span 2;">Project Capstone</div>
-            <div class="kc-cell kc-semester">Semester 8</div>
-            <div class="kc-cell kc-course-container">
-                <div class="kc-course-box tw">Final Project</div>
-                <div class="kc-course-box ce">English for Workspace Communication</div>
-                <div class="kc-course-box wc">Internship Report</div>
-            </div>
+            {% for year in year_config | reverse %}
+            <div class="kc-cell kc-year" style="grid-row: span 2;">YEAR {{ year.year }}<span>{{ year.label }}</span></div>
+            <div class="kc-cell kc-project" style="grid-row: span 2;">{{ year.project }}</div>
 
-            <div class="kc-cell kc-semester">Semester 7</div>
+            {% for sem in year.semesters | reverse %}
+            <div class="kc-cell kc-semester">Semester {{ sem }}</div>
             <div class="kc-cell kc-course-container">
-                <div class="kc-course-box ps">Industrial Internship</div>
-                <div class="kc-course-box wc">Scientific Writing</div>
-                <div class="kc-course-box wc">Final Project Proposal</div>
+                {% for mk in mk_by_semester.get(sem, []) %}
+                {% set skill = cdio_map.get(mk.id, 'pd') %}
+                <div class="kc-course-box {{ skill }}"
+                     data-kode="{{ mk.kode }}"
+                     data-cdio="{{ skill }}"
+                     title="{{ mk.kode }} — {{ mk.nama }}{% if mk.prasyarat %} | Prasyarat: {{ mk.prasyarat }}{% endif %}">
+                    {{ mk.nama }}
+                </div>
+                {% else %}
+                <span class="kc-empty">Tidak ada mata kuliah</span>
+                {% endfor %}
             </div>
-
-            <div class="kc-cell kc-year" style="grid-row: span 2;">YEAR 3<span>CDIO skills are strengthened</span></div>
-            <div class="kc-cell kc-project" style="grid-row: span 2;">Project Cornerstone #2</div>
-            <div class="kc-cell kc-semester">Semester 6</div>
-            <div class="kc-cell kc-course-container">
-                <div class="kc-course-box tw">Cyber Security Project</div>
-                <div class="kc-course-box pd">IoT Security</div>
-                <div class="kc-course-box st">Statistic and Probability</div>
-                <div class="kc-course-box ps">Cyber Security Law and Ethics</div>
-                <div class="kc-course-box wc">Research Methodology</div>
-                <div class="kc-course-box st">Cyber Security Policy and Audit</div>
-                <div class="kc-course-box pd">AI for Cybersecurity</div>
-            </div>
-
-            <div class="kc-cell kc-semester">Semester 5</div>
-            <div class="kc-cell kc-course-container">
-                <div class="kc-course-box pd">Ethical Hacking</div>
-                <div class="kc-course-box pd">Mobile Security</div>
-                <div class="kc-course-box pd">Cloud Computing Security</div>
-                <div class="kc-course-box pd">Digital Forensic</div>
-                <div class="kc-course-box st">Business Continuity Management</div>
-                <div class="kc-course-box ce">English Communication</div>
-                <div class="kc-course-box ps">Entrepreneurship</div>
-            </div>
-
-            <div class="kc-cell kc-year" style="grid-row: span 2;">YEAR 2<span>CDIO skills are reinforced</span></div>
-            <div class="kc-cell kc-project" style="grid-row: span 2;">Project Cornerstone #1</div>
-            <div class="kc-cell kc-semester">Semester 4</div>
-            <div class="kc-cell kc-course-container">
-                <div class="kc-course-box pd">Web Application Pentest</div>
-                <div class="kc-course-box pd">Database Security</div>
-                <div class="kc-course-box pd">DevSecOps</div>
-                <div class="kc-course-box pd">Threat Intelligence Essential</div>
-                <div class="kc-course-box st">Cyber Security Risk and Management</div>
-                <div class="kc-course-box ce">General English</div>
-            </div>
-
-            <div class="kc-cell kc-semester">Semester 3</div>
-            <div class="kc-cell kc-course-container">
-                <div class="kc-course-box pd">SOC Essential</div>
-                <div class="kc-course-box pd">Internetworking</div>
-                <div class="kc-course-box pd">Network Defender Essentials</div>
-                <div class="kc-course-box pd">Web Fundamental</div>
-                <div class="kc-course-box pd">DevOps</div>
-                <div class="kc-course-box st">Bahasa Indonesia</div>
-                <div class="kc-course-box ps">Religious Education</div>
-            </div>
-
-            <div class="kc-cell kc-year" style="grid-row: span 2;">YEAR 1<span>CDIO skills are introduced</span></div>
-            <div class="kc-cell kc-project" style="grid-row: span 2;">Project Foundation</div>
-            <div class="kc-cell kc-semester">Semester 2</div>
-            <div class="kc-cell kc-course-container">
-                <div class="kc-course-box pd">Computer System Administration</div>
-                <div class="kc-course-box pd">Computer Network</div>
-                <div class="kc-course-box pd">Windows Fundamental</div>
-                <div class="kc-course-box st">Calculus</div>
-                <div class="kc-course-box pd">Applied Cryptography</div>
-                <div class="kc-course-box ps">Civic Education</div>
-            </div>
-
-            <div class="kc-cell kc-semester">Semester 1</div>
-            <div class="kc-cell kc-course-container">
-                <div class="kc-course-box st">Fundamental of Cyber Security</div>
-                <div class="kc-course-box pd">Programming and Algorithm</div>
-                <div class="kc-course-box pd">Linux Fundamental</div>
-                <div class="kc-course-box st">Fundamental of Physics</div>
-                <div class="kc-course-box st">Discrete Mathematics</div>
-                <div class="kc-course-box ps">Pancasila Education</div>
-            </div>
+            {% endfor %}
+            {% endfor %}
         </div>
     </div>
 </div>
@@ -193,6 +127,32 @@
     border-radius: 9999px;
     box-shadow: 0 0 0 2px #ffffff, 0 0 0 3px rgba(0,0,0,0.05);
     flex: 0 0 auto;
+}
+
+.kurikulum-cdio .kc-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 6px;
+    border-radius: 9999px;
+    font-size: 9px;
+    font-weight: 700;
+    background-color: var(--kc-border-color);
+    color: var(--kc-text);
+}
+
+.kurikulum-cdio .kc-legend-item.active .kc-badge {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+.kurikulum-cdio .kc-empty {
+    font-size: 11px;
+    font-style: italic;
+    color: #94a3b8;
+    padding: 8px 0;
 }
 
 .kurikulum-cdio .kc-grid {

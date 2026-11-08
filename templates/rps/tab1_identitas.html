@@ -49,7 +49,7 @@
         </div>
         <div>
             <label class="block text-xs font-bold text-slate-500 uppercase">Prerequisite Course</label>
-            <input type="text" name="prasyarat" value="{{ matkul.prasyarat or '-' }}" readonly
+            <input type="text" name="prasyarat" value="{{ (matkul.matakuliah.prasyarat if matkul.matakuliah else None) or matkul.prasyarat or '-' }}" readonly
                 class="mt-1 w-full p-2.5 border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg outline-none cursor-not-allowed">
         </div>
         <div class="grid grid-cols-2 gap-5">

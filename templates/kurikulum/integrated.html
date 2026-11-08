@@ -22,6 +22,39 @@
         </div>
     </div>
 
+    {# Filter bar #}
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
+        <form method="GET" action="{{ url_for('kurikulum.integrated') }}" class="flex flex-wrap items-center gap-4">
+            {% if current_user.is_kajur %}
+            <div class="flex items-center gap-2">
+                <label class="text-xs font-bold text-slate-500 uppercase">Program Studi:</label>
+                <select name="prodi_id" onchange="this.form.submit()"
+                    class="p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800 font-semibold text-blue-600 dark:text-blue-400">
+                    {% for p in prodi_list %}
+                    <option value="{{ p.id }}" {% if selected_prodi_id == p.id %}selected{% endif %}>{{ p.kode }} - {{ p.nama }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <div class="flex items-center gap-2">
+                <label class="text-xs font-bold text-slate-500 uppercase">Kurikulum:</label>
+                <select name="kurikulum" onchange="this.form.submit()"
+                    class="p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800 font-semibold text-slate-700 dark:text-slate-200">
+                    {% for k in kurikulum_list %}
+                    <option value="{{ k }}" {% if selected_kurikulum == k %}selected{% endif %}>{{ k }}</option>
+                    {% else %}
+                    <option value="">Belum ada kurikulum</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="ml-auto text-xs text-slate-400 font-medium">
+                Total: <strong class="text-slate-700 dark:text-slate-200">{{ total_mk }}</strong> Mata Kuliah
+            </div>
+        </form>
+    </div>
+
     <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-4">
         <div id="integratedCurriculumCapture" class="min-w-[1200px] bg-white dark:bg-slate-900">
            {% include 'kurikulum/_integrated_curr_map.html' %}

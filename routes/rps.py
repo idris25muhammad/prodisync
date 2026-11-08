@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 from extensions import db
 from models import RPS, MataKuliah, User, TahunAjaran
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 from utils.decorators import kaprodi_required, kurikulum_required
 import os
 import re
@@ -73,7 +73,7 @@ def list():
         query = query.filter(RPS.rps_status == rps_status)
 
     if semester:
-        query = query.filter(RPS.semester == semester)
+        query = query.filter(func.coalesce(MataKuliah.semester, RPS.semester) == semester)
 
     page = request.args.get('page', 1, type=int)
     rps_pagination = (
@@ -110,8 +110,6 @@ def add():
     matakuliah_id   = request.form.get('matakuliah_id',   type=int)
     user_id         = request.form.get('assigned_to',     type=int)
     tahun_ajaran_id = request.form.get('tahun_ajaran_id', type=int)
-    semester        = request.form.get('semester',        type=int)
-    prasyarat       = request.form.get('prasyarat',       '').strip()
     created_by      = request.form.get('created_by',      type=int) or current_user.id
 
     if not matakuliah_id:
@@ -125,7 +123,9 @@ def add():
         return redirect(url_for('rps.list'))
 
     mk = MataKuliah.query.get(matakuliah_id)
-
+    if not mk:
+        flash('Mata kuliah tidak ditemukan di katalog.', 'danger')
+        return redirect(url_for('rps.list'))
     # Cek duplikat (MK + TA yang sama)
     existing = RPS.query.filter_by(matakuliah_id=matakuliah_id, tahun_ajaran_id=tahun_ajaran_id).first()
     if existing:
@@ -168,8 +168,9 @@ def add():
         tahun_ajaran_id=tahun_ajaran_id,
         user_id=user_id,
         created_by=created_by,
-        semester=semester,
-        prasyarat=prasyarat or None,
+        # Semester & prasyarat bersumber dari katalog MK (disalin agar data lama tetap konsisten)
+        semester=mk.semester,
+        prasyarat=mk.prasyarat,
         qr_kaprodi=filename_qr,
         tgl_pengesahan_kaprodi=tgl_kaprodi,
         rps_status='assigned',
@@ -192,9 +193,6 @@ def edit_meta(id):
     if not current_user.can_manage_kurikulum and rps.user_id != current_user.id:
         flash('Anda tidak memiliki akses.', 'danger')
         return redirect(url_for('rps.list'))
-
-    rps.semester  = request.form.get('semester',  type=int) or rps.semester
-    rps.prasyarat = request.form.get('prasyarat', '').strip() or None
 
     if current_user.can_manage_kurikulum:
         rps.user_id         = request.form.get('assigned_to',     type=int) or rps.user_id
@@ -340,17 +338,17 @@ def _parse_detail_form(rps):
 
     rencana_mingguan = [
         {
-            'minggu'      : minggu_ke[i],
-            'tp_ref'      : tp_ref[i],
-            'kemampuan'   : kemampuan[i],
-            'bahan_kajian': bahan[i],
-            'sub_bahan'   : sub_bahan[i],
-            'modalitas'   : modalitas[i],
-            'waktu'       : waktu[i],
-            'pengalaman'  : pengalaman[i]
+            'minggu'      : minggu_ke[i].strip(),
+            'tp_ref'      : tp_ref[i].strip() if i < len(tp_ref) else '',
+            'kemampuan'   : kemampuan[i].strip() if i < len(kemampuan) else '',
+            'bahan_kajian': bahan[i].strip() if i < len(bahan) else '',
+            'sub_bahan'   : sub_bahan[i].strip() if i < len(sub_bahan) else '',
+            'modalitas'   : modalitas[i].strip() if i < len(modalitas) else '',
+            'waktu'       : waktu[i].strip() if i < len(waktu) else '',
+            'pengalaman'  : pengalaman[i].strip() if i < len(pengalaman) else ''
         }
         for i in range(len(minggu_ke))
-        if bahan[i].strip() or kemampuan[i].strip()
+        if minggu_ke[i].strip()
     ]
 
     sarana = [
@@ -368,13 +366,17 @@ def _parse_detail_form(rps):
 
     rencana_evaluasi = [
         {
-            'minggu'    : eval_minggu[i],
-            'tp'        : eval_tp[i],
-            'metode'    : eval_metode[i],
-            'keterangan': eval_keterangan[i]
+            'minggu'    : eval_minggu[i].strip(),
+            'tp'        : eval_tp[i].strip() if i < len(eval_tp) else '',
+            'metode'    : eval_metode[i].strip() if i < len(eval_metode) else '',
+            'keterangan': eval_keterangan[i].strip() if i < len(eval_keterangan) else ''
         }
         for i in range(len(eval_minggu))
-        if eval_tp[i].strip() or eval_metode[i].strip() or eval_keterangan[i].strip()
+        if eval_minggu[i].strip() and (
+            (i < len(eval_tp) and eval_tp[i].strip()) or
+            (i < len(eval_metode) and eval_metode[i].strip()) or
+            (i < len(eval_keterangan) and eval_keterangan[i].strip())
+        )
     ]
 
     kriteria = [
@@ -623,10 +625,9 @@ def _parse_tp_refs(raw):
 
 def _normalize_week_key(raw):
     """
-    Field minggu bisa berupa angka murni ("1".."14") ATAU label teks untuk
-    masa asesmen tengah/akhir semester ("ATS"/"AAS"). Normalisasi supaya key
-    yang dipakai di header & dict cells konsisten (mis. "01" -> "1",
-    "ats" -> "ATS", "Minggu 5" -> "5").
+    Field minggu bisa berupa angka murni ("1".."14"), rentang ("2-5"),
+    ATAU label teks untuk masa asesmen ("ATS"/"AAS"). Normalisasi supaya key
+    yang dipakai di header & dict cells konsisten.
     Return string key, atau None kalau tidak ada nilai valid sama sekali.
     """
     if raw is None:
@@ -634,25 +635,32 @@ def _normalize_week_key(raw):
     s = str(raw).strip()
     if not s:
         return None
-    if s.isdigit():
-        return str(int(s))
-    upper = s.upper()
+    clean = re.sub(r'^(?:minggu|week)\s*', '', s, flags=re.IGNORECASE).strip()
+    if clean.isdigit():
+        return str(int(clean))
+    upper = clean.upper()
     if upper in ('ATS', 'AAS'):
         return upper
-    n = _extract_ref_number(s)
-    return str(n) if n is not None else upper
+    range_match = re.match(r'^(\d+)\s*-\s*(\d+)$', clean)
+    if range_match:
+        return f"{int(range_match.group(1))}-{int(range_match.group(2))}"
+    return clean
 
 
 def _week_sort_key(key):
-    """Urutan kolom Section X: angka naik dulu, lalu ATS, lalu AAS, lalu sisanya."""
-    if str(key).isdigit():
-        return (0, int(key), '')
-    upper = str(key).upper()
+    """Urutan kolom Section X: 1-7, lalu ATS, lalu 8-14, lalu AAS, lalu sisanya."""
+    s = str(key).strip()
+    upper = s.upper()
     if upper == 'ATS':
-        return (1, 0, '')
+        return (7, 5, 'ATS')
     if upper == 'AAS':
-        return (2, 0, '')
-    return (3, 0, upper)
+        return (14, 5, 'AAS')
+    if s.isdigit():
+        return (int(s), 0, '')
+    range_match = re.match(r'^(\d+)\s*-\s*(\d+)$', s)
+    if range_match:
+        return (int(range_match.group(1)), int(range_match.group(2)), '')
+    return (99, 0, upper)
 
 
 # ── Helper: Section IV (SO-PI table) & Section V (CLO table) ────────────────
@@ -979,7 +987,7 @@ def _build_rps_data(rps, dosen):
     rencana_mingguan_clean = [dict(item) for item in (rps.rencana_mingguan or [])]
 
     # Format prasyarat dengan nama mata kuliah jika hanya berisi kode
-    prasyarat_val = rps.prasyarat or ''
+    prasyarat_val = ((mk.prasyarat if mk else None) or rps.prasyarat or '').strip()
     if prasyarat_val and prasyarat_val != '-':
         items = [x.strip() for x in prasyarat_val.split(',') if x.strip()]
         formatted_prasyarat = []
@@ -1055,7 +1063,7 @@ def _build_rps_data(rps, dosen):
             'matkul'       : mk.nama if mk else '',
             'kode'         : mk.kode if mk else '',
             'sks'          : (mk.sks or 0) if mk else 0,
-            'semester'     : rps.semester,
+            'semester'     : (mk.semester if mk and mk.semester else rps.semester),
             'status'       : (mk.tipe.capitalize() if (mk and mk.tipe) else 'Wajib'),
             'prasyarat'    : prasyarat_display,
             'co_requisite' : co_requisite,
@@ -1132,8 +1140,6 @@ def editor(id):
                 flash('CPL belum didefinisikan. Kontak tim kurikulum.', 'danger')
                 return redirect(url_for('rps.list'))
 
-            rps.semester  = request.form.get('semester',  rps.semester)
-            rps.prasyarat = request.form.get('prasyarat', rps.prasyarat)
             _parse_detail_form(rps)
         else:
             # Tim Kurikulum / KPS / Kajur: bisa update CPL / TP dan SEMUA bagian
@@ -1141,8 +1147,6 @@ def editor(id):
                 rps.matakuliah.deskripsi = request.form.get('deskripsi', rps.matakuliah.deskripsi)
             _parse_tp_form(rps)
             _parse_detail_form(rps)
-            rps.semester  = request.form.get('semester',  rps.semester)
-            rps.prasyarat = request.form.get('prasyarat', rps.prasyarat)
 
         # Handle Tanggal Pengesahan Koordinator (Save directly to DB Column)
         tgl_koor_str = request.form.get('tanggal_koor', '').strip()
@@ -1200,10 +1204,15 @@ def editor(id):
 
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             from flask import jsonify
+            cpl_now = bool(
+                rps.tp_data
+                and any(tp.get('sopi', '').strip() for tp in rps.tp_data if isinstance(tp, dict))
+            )
             return jsonify({
                 'status': 'success',
                 'message': 'Draft tersimpan otomatis',
                 'progress': hitung_progress_rps(rps),
+                'cpl_defined': cpl_now,
             })
 
         if can_edit_kurikulum_parts and not is_koordinator:
@@ -1240,12 +1249,14 @@ def editor(id):
 
 # ── Route: Preview RPS ────────────────────────────────────────────────────────
 @bp.route('/preview/<int:id>')
-@login_required
 def preview(id):
-    if current_user.can_manage_kurikulum:
-        rps = RPS.query.get_or_404(id)
-    else:
-        rps = RPS.query.filter_by(id=id, user_id=current_user.id).first_or_404()
+    # RPS yang sudah di-approve dapat dilihat publik tanpa login.
+    rps = RPS.query.get_or_404(id)
+    if rps.rps_status != 'approved':
+        if not current_user.is_authenticated:
+            return current_app.login_manager.unauthorized()
+        if not current_user.can_manage_kurikulum and rps.user_id != current_user.id:
+            abort(404)
 
     if not (rps.rencana_mingguan or rps.sarana_prasarana or rps.rencana_evaluasi
             or rps.kriteria_penilaian or rps.kesepakatan or rps.pustaka or rps.tp_data):
@@ -1296,10 +1307,29 @@ def view_qr(id):
     return send_from_directory(upload_dir, rps.qr_dosen_koor)
 
 
+# ── Helper: apakah file QR dipakai oleh RPS yang sudah approved ──────────────
+def _qr_used_by_approved_rps(filename):
+    approved = RPS.query.filter(RPS.rps_status == 'approved')
+    if approved.filter(or_(RPS.qr_dosen_koor == filename, RPS.qr_kaprodi == filename)).first():
+        return True
+    # QR kaprodi bawaan MK, dipakai jika RPS approved tidak punya qr_kaprodi sendiri
+    return approved.join(MataKuliah, RPS.matakuliah_id == MataKuliah.id).filter(
+        MataKuliah.qr_kaprodi == filename,
+        or_(RPS.qr_kaprodi.is_(None), RPS.qr_kaprodi == '')
+    ).first() is not None
+
+
 # ── Route: Serve file QR generik (dipakai rps_template.html: qr_dosen_koor & qr_kaprodi) ──
 @bp.route('/qr-file/<path:filename>')
-@login_required
 def qr_file(filename):
+    # QR yang tampil di RPS approved boleh diakses publik (dipakai preview publik).
+    if _qr_used_by_approved_rps(filename):
+        qr_dir = os.path.join(current_app.root_path, 'storage', 'qr')
+        return send_from_directory(qr_dir, filename)
+
+    if not current_user.is_authenticated:
+        return current_app.login_manager.unauthorized()
+
     # Dosen hanya boleh mengambil QR milik RPS yang dia pegang sendiri.
     # Tim kurikulum/KPS/Kajur boleh mengakses semua.
     if not current_user.can_manage_kurikulum:

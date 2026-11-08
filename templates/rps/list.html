@@ -250,13 +250,13 @@
                                     '{{ mk.kode }}',
                                     '{{ mk.nama | replace("'", "\\'") }}',
                                     '{{ mk.sks or 0 }}',
-                                    '{{ rps_obj.semester or "—" }}',
+                                    '{{ mk.semester or rps_obj.semester or "—" }}',
                                     '{{ (rps_obj.tahun_ajaran.tahun ~ " " ~ rps_obj.tahun_ajaran.semester) if rps_obj.tahun_ajaran else "—" }}',
                                     '{{ dosen_obj.nama | replace("'", "\\'") if dosen_obj else "—" }}',
                                     '{{ rps_obj.creator.nama | replace("'", "\\'") if rps_obj.creator else "—" }}',
                                     '{{ rps_obj.rps_status }}',
                                     {{ progress }},
-                                    '{{ rps_obj.prasyarat or "—" }}',
+                                    '{{ mk.prasyarat or rps_obj.prasyarat or "—" }}',
                                     {{ rps_obj.id }},
                                     {{ 'true' if current_user.can_review_rps(rps_obj) else 'false' }},
                                     '{{ rps_obj.matakuliah.kode if rps_obj.matakuliah else mk.kode }}'
@@ -311,7 +311,8 @@
                             {% if current_user.can_manage_kurikulum %}
                             {# Tombol Edit Meta #}
                             <button type="button"
-                                onclick="openEditMetaModal({{ rps_obj.id }}, {{ mk.sks or 0 }}, '{{ rps_obj.semester or '' }}', '{{ rps_obj.tahun_ajaran_id }}', '{{ dosen_obj.id if dosen_obj else '' }}', '{{ dosen_obj.nama | replace("'", "\\'") if dosen_obj else '' }}', '{{ rps_obj.prasyarat or '' }}', '{{ rps_obj.tgl_pengesahan_kaprodi or '' }}', '{{ rps_obj.qr_kaprodi or '' }}', '{{ rps_obj.created_by or '' }}')"
+                                onclick="openEditMetaModal(this)"
+                                data-meta='{{ {"id": rps_obj.id, "kode": mk.kode, "nama": mk.nama, "sks": mk.sks, "semester": mk.semester, "kurikulum": mk.kurikulum or "", "tipe": mk.tipe or "wajib", "prasyarat": mk.prasyarat or "", "ta_id": rps_obj.tahun_ajaran_id, "dosen_id": dosen_obj.id if dosen_obj else "", "dosen_nama": dosen_obj.nama if dosen_obj else "", "tgl_kaprodi": rps_obj.tgl_pengesahan_kaprodi.isoformat() if rps_obj.tgl_pengesahan_kaprodi else "", "qr_kaprodi": rps_obj.qr_kaprodi or "", "creator_id": rps_obj.created_by or ""} | tojson }}'
                                 title="Edit Metadata & Reviewer"
                                 class="p-1.5 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -478,130 +479,133 @@
 
 
 {% if current_user.can_manage_kurikulum %}
+{% set inp = 'w-full px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-slate-800' %}
+{% set lbl = 'block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5' %}
+{% set sec = 'text-[11px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-400 mb-3' %}
+{% set filecls = 'w-full text-xs text-slate-500 file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100' %}
+
+{# Kartu ringkasan MK (readonly, sumber: Katalog Mata Kuliah). prefix = 'add' / 'edit' #}
+{% macro mk_summary(prefix) %}
+<div id="{{ prefix }}-mk-card" class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-4">
+    <div class="flex items-start justify-between gap-3 mb-3">
+        <div class="min-w-0">
+            <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Data dari Katalog Mata Kuliah</p>
+            <p class="font-bold text-slate-800 dark:text-slate-100 truncate mt-0.5">
+                <span id="{{ prefix }}-mk-kode" class="font-mono text-blue-600 dark:text-blue-400">—</span>
+                <span id="{{ prefix }}-mk-nama"></span>
+            </p>
+        </div>
+        <a href="{{ url_for('matakuliah.list') }}" target="_blank"
+            class="shrink-0 text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline">Ubah di Katalog ↗</a>
+    </div>
+    <dl class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+        <div><dt class="text-[10px] font-bold uppercase text-slate-400">SKS</dt><dd id="{{ prefix }}-mk-sks" class="font-semibold">—</dd></div>
+        <div><dt class="text-[10px] font-bold uppercase text-slate-400">Semester</dt><dd id="{{ prefix }}-mk-semester" class="font-semibold">—</dd></div>
+        <div><dt class="text-[10px] font-bold uppercase text-slate-400">Tipe</dt><dd id="{{ prefix }}-mk-tipe" class="font-semibold">—</dd></div>
+        <div><dt class="text-[10px] font-bold uppercase text-slate-400">Kurikulum</dt><dd id="{{ prefix }}-mk-kurikulum" class="font-semibold truncate">—</dd></div>
+        <div class="col-span-2 sm:col-span-4"><dt class="text-[10px] font-bold uppercase text-slate-400">Prasyarat</dt><dd id="{{ prefix }}-mk-prasyarat" class="font-semibold font-mono text-xs mt-0.5">—</dd></div>
+    </dl>
+</div>
+{% endmacro %}
+
 {# ── Modal Tambah RPS ── #}
 <div id="modal-tambah" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onclick="document.getElementById('modal-tambah').classList.add('hidden')"></div>
     <div
-        class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl border border-slate-200 dark:border-slate-700 z-10 max-h-[90vh] overflow-y-auto">
-        <div class="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
-            <h2 class="text-lg font-bold">Tambah RPS Baru</h2>
-            <button onclick="document.getElementById('modal-tambah').classList.add('hidden')"
-                class="text-slate-400 hover:text-slate-600 text-2xl leading-none font-bold">&times;</button>
+        class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-4xl border border-slate-200 dark:border-slate-700 z-10 max-h-[92vh] flex flex-col">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700 shrink-0">
+            <div>
+                <h2 class="text-lg font-bold">Tambah SLP Baru</h2>
+                <p class="text-xs text-slate-400 mt-0.5">SKS, semester, tipe, kurikulum &amp; prasyarat otomatis diambil dari Katalog Mata Kuliah.</p>
+            </div>
+            <button type="button" onclick="document.getElementById('modal-tambah').classList.add('hidden')"
+                class="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 text-2xl leading-none font-bold">&times;</button>
         </div>
-        <form method="POST" action="{{ url_for('rps.add') }}" enctype="multipart/form-data" class="p-6 space-y-4">
+        <form method="POST" action="{{ url_for('rps.add') }}" enctype="multipart/form-data" class="flex flex-col min-h-0 flex-1">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="grid grid-cols-2 gap-4">
+            <div class="overflow-y-auto px-6 py-5 space-y-6">
 
-                {# Search Mata Kuliah #}
-                <div class="col-span-2">
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Mata Kuliah *</label>
-                    <div class="relative">
-                        <input type="text" id="mk-search" placeholder="Cari kode atau nama mata kuliah..."
-                            autocomplete="off"
-                            class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800">
-                        <div id="mk-dropdown"
-                            class="absolute z-20 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl hidden max-h-52 overflow-y-auto">
+                <section>
+                    <h3 class="{{ sec }}">Mata Kuliah</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="md:col-span-2">
+                            <label class="{{ lbl }}">Mata Kuliah *</label>
+                            <div class="relative">
+                                <input type="text" id="mk-search" placeholder="Klik atau ketik kode/nama mata kuliah..."
+                                    autocomplete="off" class="{{ inp }}">
+                                <div id="mk-dropdown"
+                                    class="absolute z-20 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl hidden max-h-60 overflow-y-auto">
+                                </div>
+                            </div>
+                            <input type="hidden" name="matakuliah_id" id="matakuliah-id-hidden">
+                        </div>
+                        <div>
+                            <label class="{{ lbl }}">Tahun Ajaran *</label>
+                            <select name="tahun_ajaran_id" id="tambah-tahun-ajaran" required class="{{ inp }}">
+                                <option value="">Pilih Tahun Ajaran</option>
+                                {% for ta in tahun_ajaran_list %}
+                                <option value="{{ ta.id }}" {% if ta.is_aktif %}selected{% endif %}>{{ ta.tahun }} {{ ta.semester }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="md:col-span-3">
+                            {{ mk_summary('add') }}
+                            <p id="add-sem-warning" class="hidden text-xs font-semibold text-amber-600 dark:text-amber-400 mt-2"></p>
                         </div>
                     </div>
-                    <input type="hidden" name="matakuliah_id" id="matakuliah-id-hidden">
-                    <p id="mk-selected-info" class="text-xs text-blue-600 dark:text-blue-400 mt-1 font-medium hidden">
-                    </p>
-                    <p class="text-xs text-slate-400 mt-1">Ketik untuk mencari dari katalog mata kuliah.</p>
-                </div>
+                </section>
 
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">SKS (Readonly)</label>
-                    <input type="number" name="sks" id="tambah-sks-input" required readonly min="1" max="8" value="3"
-                        class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm bg-slate-100 dark:bg-slate-800/60 cursor-not-allowed outline-none font-semibold">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tahun Ajaran *</label>
-                    <select name="tahun_ajaran_id" id="tambah-tahun-ajaran" required
-                        class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800">
-                        <option value="">Pilih Tahun Ajaran</option>
-                        {% for ta in tahun_ajaran_list %}
-                        <option value="{{ ta.id }}" {% if ta.is_aktif %}selected{% endif %}>{{ ta.tahun }} {{
-                            ta.semester }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                {# Semester dinamis #}
-                <div
-                    class="col-span-2 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Semester Kurikulum</label>
-                    <div id="tambah-semester-container" class="flex gap-4 items-center flex-wrap">
-                        <p class="text-xs text-slate-400 italic">Pilih tahun ajaran terlebih dahulu.</p>
-                    </div>
-                </div>
-
-                {# Prasyarat multi-select #}
-                <div class="col-span-2">
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Prasyarat</label>
-                    <div id="prasyarat-tags-add" class="flex flex-wrap gap-1.5 mb-2"></div>
-                    <div class="relative">
-                        <input type="text" id="prasyarat-search-add"
-                            placeholder="Cari kode atau nama matakuliah prasyarat..." autocomplete="off"
-                            class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800">
-                        <div id="prasyarat-drop-add"
-                            class="absolute z-30 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl hidden max-h-48 overflow-y-auto">
+                <section class="pt-5 border-t border-slate-100 dark:border-slate-800">
+                    <h3 class="{{ sec }}">Penugasan</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="{{ lbl }}">Dosen Koordinator *</label>
+                            <input type="text" id="assigned_to_search" list="users-list" placeholder="Ketik nama dosen, lalu pilih..."
+                                autocomplete="off" class="{{ inp }}">
+                            <datalist id="users-list">
+                                {% for user in users %}
+                                <option value="{{ user.nama }}" data-id="{{ user.id }}"></option>
+                                {% endfor %}
+                            </datalist>
+                            <input type="hidden" name="assigned_to" id="assigned_to">
+                        </div>
+                        <div>
+                            <label class="{{ lbl }}">Tim Kurikulum (Reviewer) *</label>
+                            <select name="created_by" id="add_created_by" required class="{{ inp }}">
+                                {% for user in users if user.can_manage_kurikulum %}
+                                <option value="{{ user.id }}" {% if user.id == current_user.id %}selected{% endif %}>
+                                    {{ user.nama }} ({{ user.role_label }})
+                                </option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
-                    <input type="hidden" name="prasyarat" id="prasyarat-hidden-add">
-                    <p class="text-xs text-slate-400 mt-1">Pilih satu atau lebih mata kuliah prasyarat.</p>
-                </div>
+                </section>
 
-                <div class="col-span-2">
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Dosen Koordinator *</label>
-                    <input type="text" id="assigned_to_search" list="users-list" placeholder="Cari nama dosen..."
-                        autocomplete="off"
-                        class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800">
-                    <datalist id="users-list">
-                        {% for user in users %}
-                        <option value="{{ user.nama }}" data-id="{{ user.id }}"></option>
-                        {% endfor %}
-                    </datalist>
-                    <input type="hidden" name="assigned_to" id="assigned_to">
-                    <p class="text-xs text-slate-400 mt-1">Ketik nama dosen, lalu pilih dari daftar.</p>
-                </div>
-
-                <div class="col-span-2">
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tim Kurikulum (Reviewer MK) *</label>
-                    <select name="created_by" id="add_created_by" required
-                        class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800">
-                        {% for user in users if user.can_manage_kurikulum %}
-                        <option value="{{ user.id }}" {% if user.id == current_user.id %}selected{% endif %}>
-                            {{ user.nama }} ({{ user.role_label }})
-                        </option>
-                        {% endfor %}
-                    </select>
-                    <p class="text-xs text-slate-400 mt-1">Anggota Tim Kurikulum yang ditugaskan mereview, menyetujui, atau mengembalikan RPS ini.</p>
-                </div>
-
-                {# Pengesahan Kaprodi #}
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tgl Pengesahan Kaprodi</label>
-                    <input type="date" name="tgl_pengesahan_kaprodi"
-                        class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Upload QR Kaprodi</label>
-                    <input type="file" name="qr_kaprodi" accept=".png, .jpg, .jpeg"
-                        class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
-                </div>
+                <section class="pt-5 border-t border-slate-100 dark:border-slate-800">
+                    <h3 class="{{ sec }}">Pengesahan Kaprodi <span class="normal-case font-semibold text-slate-400 tracking-normal">(opsional — default dari Katalog MK)</span></h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="{{ lbl }}">Tanggal Pengesahan</label>
+                            <input type="date" name="tgl_pengesahan_kaprodi" class="{{ inp }}">
+                        </div>
+                        <div>
+                            <label class="{{ lbl }}">Upload QR Kaprodi</label>
+                            <input type="file" name="qr_kaprodi" accept=".png, .jpg, .jpeg" class="{{ filecls }}">
+                        </div>
+                    </div>
+                </section>
             </div>
 
-            <div class="flex justify-end gap-3 pt-2">
+            <div class="flex justify-end gap-3 px-6 py-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/30 rounded-b-2xl shrink-0">
                 <button type="button" onclick="document.getElementById('modal-tambah').classList.add('hidden')"
-                    class="px-5 py-2.5 rounded-lg text-sm font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition-all">
+                    class="px-5 py-2.5 rounded-lg text-sm font-semibold bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 transition-all">
                     Batal
                 </button>
                 <button type="submit"
                     class="px-5 py-2.5 rounded-lg text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all">
-                    Simpan RPS
+                    Simpan SLP
                 </button>
             </div>
         </form>
@@ -613,94 +617,79 @@
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onclick="document.getElementById('modal-edit-meta').classList.add('hidden')"></div>
     <div
-        class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 dark:border-slate-700 z-10 max-h-[90vh] overflow-y-auto">
-        <div class="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
-            <h2 class="text-lg font-bold">Edit Data RPS</h2>
-            <button onclick="document.getElementById('modal-edit-meta').classList.add('hidden')"
-                class="text-slate-400 hover:text-slate-600 text-2xl leading-none font-bold">&times;</button>
+        class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-4xl border border-slate-200 dark:border-slate-700 z-10 max-h-[92vh] flex flex-col">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700 shrink-0">
+            <div>
+                <h2 class="text-lg font-bold">Edit Data SLP</h2>
+                <p class="text-xs text-slate-400 mt-0.5">Data mata kuliah hanya dapat diubah melalui Katalog Mata Kuliah.</p>
+            </div>
+            <button type="button" onclick="document.getElementById('modal-edit-meta').classList.add('hidden')"
+                class="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 text-2xl leading-none font-bold">&times;</button>
         </div>
-        <form id="form-edit-meta" method="POST" enctype="multipart/form-data" class="p-6 space-y-4">
+        <form id="form-edit-meta" method="POST" enctype="multipart/form-data" class="flex flex-col min-h-0 flex-1">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">SKS (Readonly)</label>
-                    <input type="number" id="edit-sks" name="sks" min="1" max="8" readonly
-                        class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm bg-slate-100 dark:bg-slate-800/60 cursor-not-allowed outline-none font-semibold">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tahun Ajaran</label>
-                    <select id="edit-tahun-ajaran" name="tahun_ajaran_id"
-                        class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800">
-                        {% for ta in tahun_ajaran_list %}
-                        <option value="{{ ta.id }}">{{ ta.tahun }} {{ ta.semester }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div
-                    class="col-span-2 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Semester Kurikulum</label>
-                    <div id="edit-semester-container" class="flex gap-4 items-center flex-wrap">
-                        <p class="text-xs text-slate-400 italic">Pilih tahun ajaran terlebih dahulu.</p>
-                    </div>
-                </div>
-                <div class="col-span-2">
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Prasyarat</label>
-                    <div id="prasyarat-tags-edit" class="flex flex-wrap gap-1.5 mb-2"></div>
-                    <div class="relative">
-                        <input type="text" id="prasyarat-search-edit"
-                            placeholder="Cari kode atau nama matakuliah prasyarat..." autocomplete="off"
-                            class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800">
-                        <div id="prasyarat-drop-edit"
-                            class="absolute z-30 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl hidden max-h-48 overflow-y-auto">
+            <div class="overflow-y-auto px-6 py-5 space-y-6">
+
+                <section>
+                    <h3 class="{{ sec }}">Mata Kuliah</h3>
+                    {{ mk_summary('edit') }}
+                </section>
+
+                <section class="pt-5 border-t border-slate-100 dark:border-slate-800">
+                    <h3 class="{{ sec }}">Penugasan</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="{{ lbl }}">Tahun Ajaran</label>
+                            <select id="edit-tahun-ajaran" name="tahun_ajaran_id" class="{{ inp }}">
+                                {% for ta in tahun_ajaran_list %}
+                                <option value="{{ ta.id }}">{{ ta.tahun }} {{ ta.semester }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="{{ lbl }}">Dosen Koordinator</label>
+                            <input type="text" id="edit_assigned_to_search" list="edit-users-list"
+                                placeholder="Ketik nama dosen..." autocomplete="off" class="{{ inp }}">
+                            <datalist id="edit-users-list">
+                                {% for user in users %}
+                                <option value="{{ user.nama }}" data-id="{{ user.id }}"></option>
+                                {% endfor %}
+                            </datalist>
+                            <input type="hidden" name="assigned_to" id="edit-assigned-to">
+                        </div>
+                        <div>
+                            <label class="{{ lbl }}">Tim Kurikulum (Reviewer)</label>
+                            <select name="created_by" id="edit-created-by" class="{{ inp }}">
+                                <option value="">— Pilih Reviewer —</option>
+                                {% for user in users if user.can_manage_kurikulum %}
+                                <option value="{{ user.id }}">{{ user.nama }} ({{ user.role_label }})</option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
-                    <input type="hidden" name="prasyarat" id="edit-prasyarat">
-                    <p class="text-xs text-slate-400 mt-1">Pilih satu atau lebih mata kuliah prasyarat.</p>
-                </div>
-                <div class="col-span-2">
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Dosen Koordinator</label>
-                    <input type="text" id="edit_assigned_to_search" list="edit-users-list"
-                        placeholder="Cari nama dosen..." autocomplete="off"
-                        class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800">
-                    <datalist id="edit-users-list">
-                        {% for user in users %}
-                        <option value="{{ user.nama }}" data-id="{{ user.id }}"></option>
-                        {% endfor %}
-                    </datalist>
-                    <input type="hidden" name="assigned_to" id="edit-assigned-to">
-                </div>
+                </section>
 
-                <div class="col-span-2">
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tim Kurikulum (Reviewer MK)</label>
-                    <select name="created_by" id="edit-created-by"
-                        class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800">
-                        <option value="">— Pilih Pembuat —</option>
-                        {% for user in users if user.can_manage_kurikulum %}
-                        <option value="{{ user.id }}">{{ user.nama }} ({{ user.role_label }})</option>
-                        {% endfor %}
-                    </select>
-                    <p class="text-xs text-slate-400 mt-1">Kaprodi/tim kurikulum yang membuat RPS ini.</p>
-                </div>
-
-                {# Pengesahan Kaprodi Edit #}
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tgl Pengesahan Kaprodi</label>
-                    <input type="date" id="edit-tgl-kaprodi" name="tgl_pengesahan_kaprodi"
-                        class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Upload QR Kaprodi</label>
-                    <input type="file" name="qr_kaprodi" accept=".png, .jpg, .jpeg"
-                        class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
-                    <div id="edit-qr-kaprodi-preview" class="text-[10px] text-emerald-600 font-semibold mt-1"></div>
-                </div>
+                <section class="pt-5 border-t border-slate-100 dark:border-slate-800">
+                    <h3 class="{{ sec }}">Pengesahan Kaprodi</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="{{ lbl }}">Tanggal Pengesahan</label>
+                            <input type="date" id="edit-tgl-kaprodi" name="tgl_pengesahan_kaprodi" class="{{ inp }}">
+                        </div>
+                        <div>
+                            <label class="{{ lbl }}">Upload QR Kaprodi</label>
+                            <input type="file" name="qr_kaprodi" accept=".png, .jpg, .jpeg" class="{{ filecls }}">
+                            <div id="edit-qr-kaprodi-preview" class="text-[11px] text-emerald-600 font-semibold mt-1 truncate"></div>
+                        </div>
+                    </div>
+                </section>
             </div>
-            <div class="flex justify-end gap-3 pt-2">
+
+            <div class="flex justify-end gap-3 px-6 py-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/30 rounded-b-2xl shrink-0">
                 <button type="button" onclick="document.getElementById('modal-edit-meta').classList.add('hidden')"
-                    class="px-5 py-2.5 rounded-lg text-sm font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition-all">Batal</button>
+                    class="px-5 py-2.5 rounded-lg text-sm font-semibold bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 transition-all">Batal</button>
                 <button type="submit"
-                    class="px-5 py-2.5 rounded-lg text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all">Simpan</button>
+                    class="px-5 py-2.5 rounded-lg text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all">Simpan Perubahan</button>
             </div>
         </form>
     </div>
@@ -755,132 +744,94 @@
 {% endif %}
 
 <script>
-    // ── Prasyarat Multi-select Component ─────────────────────────────────────
-    function createPrasyaratWidget(searchInputId, dropId, tagsId, hiddenId) {
-        const searchInput = document.getElementById(searchInputId);
-        const drop = document.getElementById(dropId);
-        const tagsContainer = document.getElementById(tagsId);
-        const hiddenInput = document.getElementById(hiddenId);
-        if (!searchInput || !drop || !tagsContainer || !hiddenInput) return null;
-
-        let selectedList = [];
-
-        function renderTags() {
-            tagsContainer.innerHTML = '';
-            selectedList.forEach((val, idx) => {
-                const chip = document.createElement('span');
-                chip.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800';
-                chip.innerHTML = `<span>${val}</span> <button type="button" class="hover:text-red-500 font-bold ml-1 text-sm leading-none">&times;</button>`;
-                chip.querySelector('button').addEventListener('click', () => {
-                    selectedList.splice(idx, 1);
-                    syncHidden();
-                    renderTags();
-                });
-                tagsContainer.appendChild(chip);
-            });
-        }
-
-        function syncHidden() {
-            hiddenInput.value = selectedList.join(', ');
-        }
-
-        function setList(arr) {
-            selectedList = arr.map(s => s.trim()).filter(Boolean);
-            syncHidden();
-            renderTags();
-        }
-
-        let timer;
-        searchInput.addEventListener('input', function () {
-            clearTimeout(timer);
-            const q = this.value.trim();
-            if (q.length < 1) { drop.classList.add('hidden'); return; }
-
-            timer = setTimeout(async () => {
-                const res = await fetch(`{{ url_for('matakuliah.search') }}?q=${encodeURIComponent(q)}`);
-                const data = await res.json();
-                drop.innerHTML = '';
-                if (!data.length) {
-                    drop.innerHTML = '<p class="px-3 py-2 text-xs text-slate-400 italic">Tidak ditemukan.</p>';
-                } else {
-                    data.forEach(item => {
-                        const codeStr = item.kode;
-                        if (selectedList.includes(codeStr)) return;
-
-                        const btn = document.createElement('button');
-                        btn.type = 'button';
-                        btn.className = 'w-full text-left px-3 py-2 text-xs hover:bg-blue-50 dark:hover:bg-slate-700 border-b border-slate-100 dark:border-slate-700 last:border-0 flex items-center justify-between';
-                        btn.innerHTML = `<span class="font-bold font-mono text-blue-600">${item.kode}</span> <span class="ml-2 text-slate-700 dark:text-slate-200 truncate">${item.nama}</span>`;
-                        btn.addEventListener('click', () => {
-                            if (!selectedList.includes(codeStr)) {
-                                selectedList.push(codeStr);
-                                syncHidden();
-                                renderTags();
-                            }
-                            searchInput.value = '';
-                            drop.classList.add('hidden');
-                        });
-                        drop.appendChild(btn);
-                    });
-                }
-                drop.classList.remove('hidden');
-            }, 200);
-        });
-
-        document.addEventListener('click', e => {
-            if (!searchInput.contains(e.target) && !drop.contains(e.target)) drop.classList.add('hidden');
-        });
-
-        return { setList };
+    // ── Ringkasan MK (readonly, dari Katalog) ─────────────────────────────────
+    function fillMkSummary(prefix, mk) {
+        const set = (id, v) => { const el = document.getElementById(`${prefix}-mk-${id}`); if (el) el.textContent = v; };
+        set('kode', mk ? mk.kode : '—');
+        set('nama', mk ? mk.nama : 'Pilih mata kuliah terlebih dahulu');
+        set('sks', mk && mk.sks ? `${mk.sks} SKS` : '—');
+        set('semester', mk && mk.semester ? `Semester ${mk.semester}` : 'Belum diatur');
+        set('tipe', mk ? (mk.tipe === 'pilihan' ? 'Pilihan' : 'Wajib') : '—');
+        set('kurikulum', mk && mk.kurikulum ? mk.kurikulum : '—');
+        set('prasyarat', mk && mk.prasyarat ? mk.prasyarat : 'Tidak ada');
     }
 
-    let addPrasyaratWidget = null;
-    let editPrasyaratWidget = null;
+    // Peringatan bila semester MK tidak sesuai dengan tahun ajaran (ganjil/genap)
+    let addSelectedMk = null;
+    function checkSemesterMatch() {
+        const warn = document.getElementById('add-sem-warning');
+        const sel = document.getElementById('tambah-tahun-ajaran');
+        if (!warn || !sel) return;
+        const txt = (sel.options[sel.selectedIndex]?.text || '').toLowerCase();
+        const sem = addSelectedMk?.semester;
+        let msg = '';
+        if (addSelectedMk && !sem) {
+            msg = '⚠ Semester mata kuliah ini belum diatur di Katalog Mata Kuliah.';
+        } else if (sem && ((txt.includes('ganjil') && sem % 2 === 0) || (txt.includes('genap') && sem % 2 === 1))) {
+            msg = `⚠ Mata kuliah ini ada di Semester ${sem}, tidak sesuai dengan tahun ajaran yang dipilih.`;
+        }
+        warn.textContent = msg;
+        warn.classList.toggle('hidden', !msg);
+    }
 
     // ── Search Mata Kuliah (Autocomplete) ──────────────────────────────────────
     const mkSearch = document.getElementById('mk-search');
     const mkDrop = document.getElementById('mk-dropdown');
     const mkHidden = document.getElementById('matakuliah-id-hidden');
-    const mkInfo = document.getElementById('mk-selected-info');
-    const sksInput = document.getElementById('tambah-sks-input');
+    const escHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     let mkTimer;
 
     if (mkSearch) {
+        fillMkSummary('add', null);
+
+        async function runMkSearch() {
+            const q = mkSearch.value.trim();
+            const res = await fetch(`{{ url_for('matakuliah.search') }}?q=${encodeURIComponent(q)}`);
+            const data = await res.json();
+            mkDrop.innerHTML = '';
+            if (!data.length) {
+                mkDrop.innerHTML = '<p class="px-4 py-3 text-sm text-slate-400 italic">Tidak ada hasil.</p>';
+            } else {
+                data.forEach(item => {
+                    const el = document.createElement('button');
+                    el.type = 'button';
+                    el.className = 'w-full text-left px-4 py-2.5 hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors border-b border-slate-100 dark:border-slate-700 last:border-0 flex items-center gap-2';
+                    el.innerHTML = `<span class="font-mono text-blue-600 dark:text-blue-400 font-bold text-xs shrink-0">${escHtml(item.kode)}</span>
+                                    <span class="text-sm font-medium truncate flex-1">${escHtml(item.nama)}</span>
+                                    <span class="text-[11px] text-slate-400 shrink-0">${item.sks || 3} SKS${item.semester ? ' · Sem ' + item.semester : ''}${item.kurikulum ? ' · ' + escHtml(item.kurikulum) : ''}</span>`;
+                    el.addEventListener('click', () => {
+                        mkHidden.value = item.id;
+                        mkSearch.value = `${item.kode} — ${item.nama}`;
+                        addSelectedMk = item;
+                        fillMkSummary('add', item);
+                        checkSemesterMatch();
+                        mkDrop.classList.add('hidden');
+                    });
+                    mkDrop.appendChild(el);
+                });
+            }
+            mkDrop.classList.remove('hidden');
+        }
+
         mkSearch.addEventListener('input', function () {
             clearTimeout(mkTimer);
-            const q = this.value.trim();
             mkHidden.value = '';
-            mkInfo.classList.add('hidden');
-            if (q.length < 1) { mkDrop.classList.add('hidden'); return; }
+            addSelectedMk = null;
+            fillMkSummary('add', null);
+            checkSemesterMatch();
+            mkTimer = setTimeout(runMkSearch, 250);
+        });
+        mkSearch.addEventListener('focus', () => {
+            if (!mkHidden.value) { clearTimeout(mkTimer); mkTimer = setTimeout(runMkSearch, 50); }
+        });
 
-            mkTimer = setTimeout(async () => {
-                const res = await fetch(`{{ url_for('matakuliah.search') }}?q=${encodeURIComponent(q)}`);
-                const data = await res.json();
-                mkDrop.innerHTML = '';
-                if (!data.length) {
-                    mkDrop.innerHTML = '<p class="px-4 py-3 text-sm text-slate-400 italic">Tidak ada hasil.</p>';
-                } else {
-                    data.forEach(item => {
-                        const el = document.createElement('button');
-                        el.type = 'button';
-                        el.className = 'w-full text-left px-4 py-3 hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors border-b border-slate-100 dark:border-slate-700 last:border-0';
-                        el.innerHTML = `<span class="font-mono text-blue-600 font-bold text-xs">${item.kode}</span>
-                                        <span class="ml-2 text-sm font-medium">${item.nama}</span>
-                                        <span class="ml-2 text-xs font-bold text-slate-500">(${item.sks || 3} SKS)</span>
-                                        ${item.kurikulum ? `<span class="ml-2 text-xs text-slate-400">${item.kurikulum}</span>` : ''}`;
-                        el.addEventListener('click', () => {
-                            mkHidden.value = item.id;
-                            mkSearch.value = `${item.kode} — ${item.nama}`;
-                            if (sksInput) sksInput.value = item.sks || 3;
-                            mkInfo.textContent = `✓ Terpilih: ${item.kode} — ${item.nama} (${item.sks || 3} SKS)`;
-                            mkInfo.classList.remove('hidden');
-                            mkDrop.classList.add('hidden');
-                        });
-                        mkDrop.appendChild(el);
-                    });
-                }
-                mkDrop.classList.remove('hidden');
-            }, 250);
+        mkSearch.closest('form').addEventListener('submit', e => {
+            if (!mkHidden.value) {
+                e.preventDefault();
+                mkSearch.focus();
+                mkSearch.classList.add('ring-2', 'ring-red-500');
+                setTimeout(() => mkSearch.classList.remove('ring-2', 'ring-red-500'), 1500);
+            }
         });
 
         document.addEventListener('click', e => {
@@ -917,45 +868,7 @@
         semSel.value = currentSem !== null ? String(currentSem) : '';
     }
 
-    // ── Semester dinamis (Tambah & Edit Modal) ─────────────────────────────────
-    function updateSemesterRadioUI(selectId, containerId, currentVal = null) {
-        const sel = document.getElementById(selectId);
-        const cont = document.getElementById(containerId);
-        if (!sel || !cont) return;
-
-        const txt = sel.options[sel.selectedIndex]?.text || '';
-        cont.innerHTML = '';
-        const sems = txt.toLowerCase().includes('ganjil') ? [1, 3, 5, 7] :
-            txt.toLowerCase().includes('genap') ? [2, 4, 6, 8] : [];
-
-        if (!sems.length) {
-            cont.innerHTML = '<p class="text-xs text-red-500 italic">Pilih tahun ajaran untuk melihat semester.</p>';
-            return;
-        }
-
-        const activeClass = 'flex items-center gap-2.5 px-3.5 py-2 rounded-xl border border-blue-600 dark:border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-bold shadow-sm transition-all cursor-pointer select-none text-xs';
-        const inactiveClass = 'flex items-center gap-2.5 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium hover:bg-slate-50 dark:hover:bg-slate-750 transition-all cursor-pointer select-none text-xs';
-
-        sems.forEach(num => {
-            const isChecked = Boolean(currentVal && parseInt(currentVal) === num);
-            const wrap = document.createElement('label');
-            wrap.className = isChecked ? activeClass : inactiveClass;
-            wrap.innerHTML = `<input type="radio" name="semester" value="${num}" ${isChecked ? 'checked' : ''} class="w-4 h-4 accent-blue-600 dark:accent-blue-500 cursor-pointer flex-shrink-0">
-                              <span>Semester ${num}</span>`;
-
-            const input = wrap.querySelector('input');
-            input.addEventListener('change', () => {
-                cont.querySelectorAll('label').forEach(lbl => {
-                    const inp = lbl.querySelector('input');
-                    lbl.className = inp && inp.checked ? activeClass : inactiveClass;
-                });
-            });
-
-            cont.appendChild(wrap);
-        });
-    }
-
-    // ── Dosen search (Tambah) ─────────────────────────────────────────────────
+    // ── Dosen search (Tambah & Edit) ──────────────────────────────────────────
     function setupDosenSearch(inputId, hiddenId, datalistId) {
         const input = document.getElementById(inputId);
         const hidden = document.getElementById(hiddenId);
@@ -972,38 +885,27 @@
     }
 
     // ── Modal Edit Metadata ───────────────────────────────────────────────────
-    function openEditMetaModal(id, sks, semester, taId, dosenId, dosenNama, prasyarat, tglKaprodi, qrKaprodi, creatorId) {
-        const form = document.getElementById('form-edit-meta');
-        form.action = `{{ url_for('rps.list') }}edit/${id}`;
-        document.getElementById('edit-sks').value = sks;
-
-        if (editPrasyaratWidget) {
-            editPrasyaratWidget.setList(prasyarat ? prasyarat.split(',') : []);
-        } else {
-            document.getElementById('edit-prasyarat').value = prasyarat;
-        }
+    function openEditMetaModal(btn) {
+        const m = JSON.parse(btn.dataset.meta);
+        document.getElementById('form-edit-meta').action = `{{ url_for('rps.list') }}edit/${m.id}`;
+        fillMkSummary('edit', m);
 
         const taSelect = document.getElementById('edit-tahun-ajaran');
-        if (taSelect) {
-            taSelect.value = taId;
-            updateSemesterRadioUI('edit-tahun-ajaran', 'edit-semester-container', semester);
-        }
+        if (taSelect) taSelect.value = m.ta_id;
 
         const editSearch = document.getElementById('edit_assigned_to_search');
         const editHidden = document.getElementById('edit-assigned-to');
-        if (editSearch) editSearch.value = dosenNama;
-        if (editHidden) editHidden.value = dosenId;
+        if (editSearch) editSearch.value = m.dosen_nama || '';
+        if (editHidden) editHidden.value = m.dosen_id || '';
 
         const creatorSelect = document.getElementById('edit-created-by');
-        if (creatorSelect) creatorSelect.value = creatorId || '';
+        if (creatorSelect) creatorSelect.value = m.creator_id || '';
 
         const tglEl = document.getElementById('edit-tgl-kaprodi');
-        if (tglEl) tglEl.value = tglKaprodi || '';
+        if (tglEl) tglEl.value = m.tgl_kaprodi || '';
 
         const qrPrevEl = document.getElementById('edit-qr-kaprodi-preview');
-        if (qrPrevEl) {
-            qrPrevEl.textContent = qrKaprodi ? ('✓ QR Kaprodi Tersimpan: ' + qrKaprodi) : '';
-        }
+        if (qrPrevEl) qrPrevEl.textContent = m.qr_kaprodi ? ('✓ QR Kaprodi tersimpan: ' + m.qr_kaprodi) : '';
 
         document.getElementById('modal-edit-meta').classList.remove('hidden');
     }
@@ -1040,28 +942,13 @@
 
     // ── Init ──────────────────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', () => {
-        addPrasyaratWidget = createPrasyaratWidget('prasyarat-search-add', 'prasyarat-drop-add', 'prasyarat-tags-add', 'prasyarat-hidden-add');
-        editPrasyaratWidget = createPrasyaratWidget('prasyarat-search-edit', 'prasyarat-drop-edit', 'prasyarat-tags-edit', 'edit-prasyarat');
-
         const filterTA = document.getElementById('filter-tahun-ajaran');
         if (filterTA) {
             filterTA.addEventListener('change', updateFilterSemesterSelect);
             updateFilterSemesterSelect();
         }
 
-        const tambahTA = document.getElementById('tambah-tahun-ajaran');
-        if (tambahTA) {
-            tambahTA.addEventListener('change', () => updateSemesterRadioUI('tambah-tahun-ajaran', 'tambah-semester-container'));
-            if (tambahTA.value) updateSemesterRadioUI('tambah-tahun-ajaran', 'tambah-semester-container');
-        }
-
-        const editTA = document.getElementById('edit-tahun-ajaran');
-        if (editTA) {
-            editTA.addEventListener('change', () => {
-                const active = document.querySelector('#edit-semester-container input[type="radio"]:checked');
-                updateSemesterRadioUI('edit-tahun-ajaran', 'edit-semester-container', active?.value);
-            });
-        }
+        document.getElementById('tambah-tahun-ajaran')?.addEventListener('change', checkSemesterMatch);
 
         setupDosenSearch('assigned_to_search', 'assigned_to', 'users-list');
         setupDosenSearch('edit_assigned_to_search', 'edit-assigned-to', 'edit-users-list');

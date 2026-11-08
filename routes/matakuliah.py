@@ -71,6 +71,10 @@ def add():
     desk     = request.form.get('deskripsi', '').strip()
     tipe     = request.form.get('tipe',      'wajib').strip()
     sks      = request.form.get('sks', type=int) or None
+    semester = request.form.get('semester', type=int) or None
+    prasyarat = request.form.get('prasyarat', '').strip() or None
+    kategori = request.form.get('kategori', '').strip() or None
+    cdio_skill = request.form.get('cdio_skill', 'pd').strip() or 'pd'
     if not current_user.is_kajur:
         prodi_id = getattr(current_user, 'prodi_id', None) or 1
     else:
@@ -92,6 +96,10 @@ def add():
         deskripsi=desk,
         tipe=tipe,
         sks=sks,
+        semester=semester,
+        prasyarat=prasyarat,
+        kategori=kategori,
+        cdio_skill=cdio_skill,
     )
 
     db.session.add(mk)
@@ -131,6 +139,10 @@ def edit(id):
     mk.deskripsi = request.form.get('deskripsi', '').strip()
     mk.tipe      = request.form.get('tipe', 'wajib').strip()
     mk.sks       = request.form.get('sks', type=int) or None
+    mk.semester  = request.form.get('semester', type=int) or None
+    mk.prasyarat = request.form.get('prasyarat', '').strip() or None
+    mk.kategori  = request.form.get('kategori', '').strip() or None
+    mk.cdio_skill = request.form.get('cdio_skill', 'pd').strip() or 'pd'
 
     db.session.commit()
     flash('Mata kuliah berhasil diperbarui!', 'success')
@@ -158,20 +170,43 @@ def delete(id):
 @bp.route('/search')
 @login_required
 def search():
-    """API endpoint: cari MK untuk autocomplete di form tambah RPS."""
+    """API endpoint: cari MK untuk autocomplete (form RPS & pilihan prasyarat)."""
     from flask import jsonify
-    q = request.args.get('q', '').strip()
+    q          = request.args.get('q', '').strip()
+    kurikulum  = request.args.get('kurikulum', '').strip()
+    exclude_id = request.args.get('exclude_id', type=int)
     query = MataKuliah.query
     if not current_user.is_kajur:
         user_prodi = getattr(current_user, 'prodi_id', None) or 1
         query = query.filter(MataKuliah.prodi_id == user_prodi)
-    results = query.filter(
-        or_(
-            MataKuliah.kode.ilike(f'%{q}%'),
-            MataKuliah.nama.ilike(f'%{q}%'),
+    elif request.args.get('prodi_id', type=int):
+        query = query.filter(MataKuliah.prodi_id == request.args.get('prodi_id', type=int))
+    if kurikulum:
+        query = query.filter(MataKuliah.kurikulum == kurikulum)
+    if exclude_id:
+        query = query.filter(MataKuliah.id != exclude_id)
+    if q:
+        query = query.filter(
+            or_(
+                MataKuliah.kode.ilike(f'%{q}%'),
+                MataKuliah.nama.ilike(f'%{q}%'),
+            )
         )
-    ).limit(10).all()
+    results = query.order_by(
+        MataKuliah.semester.is_(None), MataKuliah.semester.asc(), MataKuliah.kode.asc()
+    ).limit(20).all()
     return jsonify([
-        {'id': m.id, 'kode': m.kode, 'nama': m.nama, 'sks': m.sks or 3, 'kurikulum': m.kurikulum or ''}
+        {
+            'id': m.id,
+            'kode': m.kode,
+            'nama': m.nama,
+            'sks': m.sks or 3,
+            'semester': m.semester,
+            'prasyarat': m.prasyarat or '',
+            'kategori': m.kategori or '',
+            'cdio_skill': m.cdio_skill or 'pd',
+            'kurikulum': m.kurikulum or '',
+            'tipe': m.tipe or 'wajib',
+        }
         for m in results
     ])

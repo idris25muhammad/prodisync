@@ -17,19 +17,33 @@ function safeGet(id) {
 }
 
 // ── Role-based access ────────────────────────────────────────────────────────
-function canAccessTab(tabId) {
-    if (typeof isKaprodi === 'undefined' || typeof cplDefined === 'undefined') return true;
+function checkCplDefinedClient() {
+    if (typeof cplDefined !== 'undefined' && cplDefined) return true;
+    const sopiInputs = document.querySelectorAll('input[name="so_pi[]"]');
+    for (let inp of sopiInputs) {
+        if (inp.value && inp.value.trim()) return true;
+    }
+    return false;
+}
 
-    if (typeof isApproved !== 'undefined' && isApproved && !isKaprodi) {
+function canAccessTab(tabId) {
+    const isCurriculum = (typeof canEditCpl !== 'undefined' && canEditCpl) || (typeof isKaprodi !== 'undefined' && isKaprodi);
+    if (typeof isApproved !== 'undefined' && isApproved && !isCurriculum) {
         alert('RPS sudah di-approve, tidak dapat diedit.');
         return false;
     }
 
     const koorTabs = ['tab-3', 'tab-4', 'tab-5', 'tab-6', 'tab-7'];
 
-    // Tim Kurikulum boleh akses semua tab. Dosen koordinator butuh CPL
+    // Tim Kurikulum / KPS / Kajur boleh akses semua tab. Dosen koordinator butuh CPL
     // untuk membuka bagian di luar Identitas/Deskripsi/Tujuan Pembelajaran.
-    if (!isKaprodi && !cplDefined && koorTabs.indexOf(tabId) !== -1) return false;
+    if (!isCurriculum && koorTabs.indexOf(tabId) !== -1) {
+        const hasCpl = (typeof cplDefined !== 'undefined' && cplDefined) || checkCplDefinedClient();
+        if (!hasCpl) {
+            showToast('Course Learning Outcomes (CPL/CLO) belum ditentukan oleh Tim Kurikulum.', 'error');
+            return false;
+        }
+    }
     return true;
 }
 
@@ -64,7 +78,17 @@ window.showTab = function (tabId) {
         );
     }
 
-    if (tabId === 'tab-3' || tabId === 'tab-4') {
+    if (tabId === 'tab-3') {
+        const mc = document.getElementById('minggu-container');
+        if (mc && !mc.innerHTML.trim() && typeof renderRencanaMingguan === 'function') {
+            renderRencanaMingguan();
+        }
+        syncTPSelections();
+    } else if (tabId === 'tab-4') {
+        const rc = document.getElementById('reneval-container');
+        if (rc && !rc.innerHTML.trim() && typeof renderRencanaEvaluasi === 'function') {
+            renderRencanaEvaluasi();
+        }
         syncTPSelections();
     }
 
@@ -137,8 +161,8 @@ function progressLevel(pct) {
     if (pct >= 100) return { bar: 'bg-emerald-500', fun: 'TOO EASY DEK!' };
     if (pct >= 80)  return { bar: 'bg-cyan-500',    fun: 'SAYA AKAN LAWAN!' };
     if (pct >= 60)  return { bar: 'bg-orange-500',  fun: 'semangat.. yok bisa yok..' };
-    if (pct >= 50)  return { bar: 'bg-orange-500',  fun: 'Ayo cepat isi.. nanti ' + kp + ' marah lo..' };
-    return { bar: 'bg-red-500', fun: pct >= 40 ? ('Ayo cepat isi.. nanti ' + kp + ' marah lo..') : 'Baru mulai.. ayo isi!' };
+    if (pct >= 50)  return { bar: 'bg-orange-500',  fun: 'Ayo cepat isi.. nanti Kajur sama KPS marah lo..' };
+    return { bar: 'bg-red-500', fun: pct >= 40 ? ('Ayo cepat isi.. nanti Kajur sama KPS marah lo..') : 'Baru mulai.. ayo isi!' };
 }
 
 const PROGRESS_BAR_CLASSES = ['bg-emerald-500', 'bg-cyan-500', 'bg-orange-500', 'bg-red-500'];
@@ -170,6 +194,15 @@ function buildSaveFormData(excludeFiles) {
     const form = document.getElementById('rps-editor-form');
     if (!form) return null;
     const formData = new FormData(form);
+
+    // Pastikan CSRF token selalu ada dalam form data
+    if (!formData.has('csrf_token') || !formData.get('csrf_token')) {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        if (meta && meta.getAttribute('content')) {
+            formData.set('csrf_token', meta.getAttribute('content'));
+        }
+    }
+
     if (excludeFiles) {
         // Autosave/save manual tidak perlu re-upload file QR tiap kali
         ['qr_koor', 'qr_kaprodi'].forEach(function (name) {
@@ -180,13 +213,20 @@ function buildSaveFormData(excludeFiles) {
 }
 
 window.saveDraft = async function (silent) {
+    const isCurriculum = (typeof canEditCpl !== 'undefined' && canEditCpl) || (typeof isKaprodi !== 'undefined' && isKaprodi);
+
     if (typeof isApproved !== 'undefined' && isApproved) {
         if (!silent) alert('RPS sudah di-approve. Silakan klik Revisi terlebih dahulu.');
         return false;
     }
-    // Dosen tanpa CPL tidak boleh menyimpan (bagian belum bisa diisi)
-    if (typeof isKaprodi !== 'undefined' && typeof cplDefined !== 'undefined' && !isKaprodi && !cplDefined) {
-        return false;
+
+    // Dosen koordinator tanpa CPL tidak boleh menyimpan bagian yang belum bisa diisi
+    if (!isCurriculum) {
+        const hasCpl = (typeof cplDefined !== 'undefined' && cplDefined) || checkCplDefinedClient();
+        if (!hasCpl) {
+            if (!silent) showToast('CPL belum didefinisikan oleh Tim Kurikulum.', 'error');
+            return false;
+        }
     }
 
     if (typeof syncTPSelections === 'function') syncTPSelections();
@@ -196,10 +236,15 @@ window.saveDraft = async function (silent) {
 
     showToast('Menyimpan...', 'info');
     try {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        const token = meta ? meta.getAttribute('content') : '';
+        const headers = { 'X-Requested-With': 'XMLHttpRequest' };
+        if (token) headers['X-CSRFToken'] = token;
+
         const res = await fetch(window.location.href, {
             method: 'POST',
             body: formData,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            headers: headers
         });
         if (res.redirected) {
             console.error('Save di-redirect ke:', res.url);
@@ -215,6 +260,13 @@ window.saveDraft = async function (silent) {
             return false;
         }
         if (res.ok && data.status === 'success') {
+            if (data.cpl_defined !== undefined) {
+                cplDefined = Boolean(data.cpl_defined);
+                const warnBanner = document.getElementById('cpl-warning-banner');
+                if (warnBanner && cplDefined) {
+                    warnBanner.classList.add('hidden');
+                }
+            }
             if (data.progress !== undefined && typeof window.updateProgressUI === 'function') {
                 window.updateProgressUI(data.progress);
             }
@@ -241,6 +293,9 @@ window.saveAndNext = async function () {
     const next = { 'tab-1': 'tab-2', 'tab-2': 'tab-3', 'tab-3': 'tab-4', 'tab-4': 'tab-5', 'tab-5': 'tab-6', 'tab-6': 'tab-7' }[activeTabId];
     if (!next) return;
     await saveDraft(true);
+    if (activeTabId === 'tab-2' && checkCplDefinedClient()) {
+        cplDefined = true;
+    }
     showTab(next);
 };
 
@@ -324,17 +379,19 @@ const listSemester = ['1', '2', '3', '4', '5', '6', '7', 'ATS', '8', '9', '10', 
 
 // ── Saved Data Lookup ─────────────────────────────────────────────────────────
 function getSavedMingguan(m) {
-    if (!savedRpsDetail || !savedRpsDetail.rencana_mingguan) return null;
+    if (!savedRpsDetail || !Array.isArray(savedRpsDetail.rencana_mingguan)) return null;
+    const target = String(m || '').trim().toUpperCase();
     return savedRpsDetail.rencana_mingguan.find(function (i) {
-        return i.minggu === m;
-    });
+        return String(i.minggu || '').trim().toUpperCase() === target;
+    }) || null;
 }
 
 function getSavedEvaluasi(m) {
-    if (!savedRpsDetail || !savedRpsDetail.rencana_evaluasi) return null;
+    if (!savedRpsDetail || !Array.isArray(savedRpsDetail.rencana_evaluasi)) return null;
+    const target = String(m || '').trim().toUpperCase();
     return savedRpsDetail.rencana_evaluasi.find(function (i) {
-        return i.minggu === m;
-    });
+        return String(i.minggu || '').trim().toUpperCase() === target;
+    }) || null;
 }
 
 // ── Auto Bullet ───────────────────────────────────────────────────────────────
@@ -404,10 +461,10 @@ function syncTPSelections() {
     });
 }
 
-function updateCheckboxGroup(m, type, tpCount) {
+function updateCheckboxGroup(key, type, tpCount) {
     const prefix = type === 'mingguan' ? '' : 'eval-';
-    const container = safeGet(prefix + 'tp-box-' + m);
-    const hiddenInput = safeGet(prefix + 'hidden-tp-' + m);
+    const container = safeGet(prefix + 'tp-box-' + key);
+    const hiddenInput = safeGet(prefix + 'hidden-tp-' + key);
 
     if (!container || !hiddenInput) return;
 
@@ -418,7 +475,7 @@ function updateCheckboxGroup(m, type, tpCount) {
     }
 
     if (type === 'evaluasi') {
-        const sourceHidden = safeGet('hidden-tp-' + m);
+        const sourceHidden = safeGet('hidden-tp-' + key);
         if (!sourceHidden) return;
         
         hiddenInput.value = sourceHidden.value;
@@ -426,6 +483,9 @@ function updateCheckboxGroup(m, type, tpCount) {
         
         if (sel.length === 0) {
             container.innerHTML = '<span class="text-[10px] text-slate-400 italic">Belum diplot di Weekly Course Plan</span>';
+            if (typeof checkEvalStatus === 'function') {
+                checkEvalStatus(key);
+            }
             return;
         }
 
@@ -458,11 +518,13 @@ function updateCheckboxGroup(m, type, tpCount) {
             </div>`;
         });
         container.innerHTML = html;
+        if (typeof checkEvalStatus === 'function') {
+            checkEvalStatus(key);
+        }
         return;
     }
 
     const sel = hiddenInput.value.split(',').map(function (s) {
-        // Normalisasi "TP1" lama -> "CLO1" agar cocok dengan value checkbox baru
         return s.trim().replace(/^TP(\d+)$/i, 'CLO$1');
     }).filter(Boolean);
 
@@ -484,7 +546,7 @@ function updateCheckboxGroup(m, type, tpCount) {
                 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors">
                 <input type="checkbox" value="${val}"
                     ${sel.indexOf(val) !== -1 ? 'checked' : ''}
-                    onchange="updateHiddenTP('${m}','${type}')"
+                    onchange="updateHiddenTP('${key}','${type}')"
                     class="w-5 h-5 mr-1.5 accent-blue-600 cursor-pointer"> ${val}
             </label>
             ${tpTeks ? `
@@ -502,10 +564,10 @@ function updateCheckboxGroup(m, type, tpCount) {
     container.innerHTML = html;
 }
 
-window.updateHiddenTP = function (m, type) {
+window.updateHiddenTP = function (key, type) {
     const prefix = type === 'mingguan' ? '' : 'eval-';
-    const container = safeGet(prefix + 'tp-box-' + m);
-    const hiddenInput = safeGet(prefix + 'hidden-tp-' + m);
+    const container = safeGet(prefix + 'tp-box-' + key);
+    const hiddenInput = safeGet(prefix + 'hidden-tp-' + key);
 
     if (!container || !hiddenInput) return;
 
@@ -515,7 +577,10 @@ window.updateHiddenTP = function (m, type) {
         }).join(', ');
         
     if (type === 'mingguan') {
-        updateCheckboxGroup(m, 'evaluasi', getCloList().length);
+        updateCheckboxGroup(key, 'evaluasi', getCloList().length);
+        if (typeof checkWeekStatus === 'function') {
+            checkWeekStatus(key);
+        }
     }
 };
 

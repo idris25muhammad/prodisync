@@ -16,6 +16,10 @@ class MataKuliah(db.Model):
     kurikulum  = db.Column(db.String(50),  nullable=True)   # e.g. "v2 IABEE"
     deskripsi  = db.Column(db.Text,        nullable=True)
     tipe       = db.Column(db.String(20),  nullable=True, default='wajib') # 'wajib' / 'pilihan'
+    semester   = db.Column(db.Integer,     nullable=True)   # Semester 1-8
+    prasyarat  = db.Column(db.String(255), nullable=True)   # Kode MK prasyarat dipisah koma (e.g. "RKS-101, RKS-102")
+    kategori   = db.Column(db.String(50),  nullable=True)   # Rumpun/kategori (e.g. 'math', 'network', 'system', 'appsec', dll.)
+    cdio_skill = db.Column(db.String(20),  nullable=True, default='pd') # CDIO: 'pd', 'wc', 'st', 'tw', 'ce', 'ps'
 
     # Penandatangan Kaprodi
     qr_kaprodi             = db.Column(db.String(200), nullable=True)
