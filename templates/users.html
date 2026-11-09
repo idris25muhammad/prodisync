@@ -277,6 +277,16 @@
                                 <option value="kajur">Admin / Ketua Jurusan (Kajur)</option>
                             </select>
                         </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Program Studi</label>
+                            <select id="user-prodi_id" name="prodi_id"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500">
+                                {% for p in daftar_prodi %}
+                                    <option value="{{ p.id }}">{{ p.kode }} - {{ p.nama }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
                     </div>
 
                     <div id="password-group" class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
@@ -319,17 +329,7 @@
                                 class="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
 
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Program Studi</label>
-                            <select id="user-prodi_id" name="prodi_id"
-                                class="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500">
-                                {% for p in daftar_prodi %}
-                                    <option value="{{ p.id }}">{{ p.kode }} - {{ p.nama }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        <div>
+                        <div class="md:col-span-2">
                             <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Afiliasi</label>
                             <input id="user-afiliasi" type="text" name="afiliasi"
                                 class="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500">
