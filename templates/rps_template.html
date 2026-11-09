@@ -1100,12 +1100,18 @@
                                     </tr>
                                 </table>
 
-                                {% if current_user.is_authenticated and data.revisi %}
+                                {% if current_user.is_authenticated %}
                                 <div class="revisi-section" style="margin-top: 25px; page-break-inside: avoid; break-inside: avoid;">
                                     <div style="font-weight: bold; font-size: 9pt; text-transform: uppercase; color: #1e3a5f; margin-bottom: 6px; border-bottom: 1px solid #cbd5e1; padding-bottom: 3px;">
                                         Catatan Revisi / Riwayat Perubahan
                                     </div>
-                                    <div style="font-size: 8.5pt; color: #334155; white-space: pre-wrap; line-height: 1.5; padding: 8px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px;">{{ data.revisi }}</div>
+                                    <div style="font-size: 8.5pt; color: #334155; white-space: pre-wrap; line-height: 1.5; padding: 8px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px;">
+                                        {%- if data.revisi and data.revisi.strip() -%}
+                                            {{ data.revisi }}
+                                        {%- else -%}
+                                        <span style="color: #64748b; font-style: italic;">tidak ada revisi / riwayat perubahan</span>
+                                        {%- endif -%}
+                                    </div>
                                 </div>
                                 {% endif %}
 
