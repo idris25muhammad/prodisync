@@ -6,7 +6,7 @@
 
 <script>
     window.__RPS_LIST_URL = '{{ url_for('rps.list') }}';
-    window.__KAPRODI_NAMA = '{{ config.get('KAPRODI_NAMA', 'Maidel Fani') | e }}';
+    window.__KAPRODI_NAMA = '{{ (kps_nama or config.get('KAPRODI_NAMA', 'Maidel Fani')) | e }}';
     const savedRpsDetail = {
         rencana_mingguan: {{ matkul.rencana_mingguan | tojson | safe if matkul.rencana_mingguan else [] }},
         rencana_evaluasi: {{ matkul.rencana_evaluasi | tojson | safe if matkul.rencana_evaluasi else [] }}

@@ -977,6 +977,24 @@ def _build_course_json(rps):
     }
 
 
+# ── Helper: Mendapatkan nama KPS/Kaprodi dari prodi terkait ───────────────────
+def _get_kps_nama_for_prodi(prodi):
+    """Mendapatkan nama KPS/Kaprodi dari prodi terkait."""
+    if not prodi:
+        return current_app.config.get('KAPRODI_NAMA', '—')
+    if getattr(prodi, 'kaprodi', None) and prodi.kaprodi.nama:
+        return prodi.kaprodi.nama
+    prodi_id = getattr(prodi, 'id', None)
+    if prodi_id:
+        kps_user = User.query.filter(
+            User.prodi_id == prodi_id,
+            User.role.in_(['kps', 'kaprodi'])
+        ).order_by(User.id.asc()).first()
+        if kps_user and kps_user.nama:
+            return kps_user.nama
+    return current_app.config.get('KAPRODI_NAMA', '—')
+
+
 # ── Helper: Build data untuk PDF ──────────────────────────────────────────────
 def _build_rps_data(rps, dosen):
     mk     = rps.matakuliah
@@ -993,6 +1011,7 @@ def _build_rps_data(rps, dosen):
         if creator and getattr(creator, 'prodi', None):
             prodi = creator.prodi
     prodi_nama = prodi.nama if prodi else ''
+    kps_nama = _get_kps_nama_for_prodi(prodi)
 
     # Resolusi Tanggal
     tgl_koor_val = format_indo_date(rps.tgl_pengesahan_koor)
@@ -1100,7 +1119,7 @@ def _build_rps_data(rps, dosen):
             'tgl_kaprodi'  : tgl_kaprodi_val,
             'tgl_koor'     : tgl_koor_val,
             'disusun_oleh' : dosen.nama if dosen else '',
-            'disetujui_oleh': current_app.config.get('KAPRODI_NAMA', 'Maidel Fani'),
+            'disetujui_oleh': kps_nama,
         },
         'deskripsi'          : (mk.deskripsi if mk else '') or '',
         'tujuan_peta'        : {
@@ -1262,10 +1281,14 @@ def editor(id):
     if not can_edit_kurikulum_parts and rps.rps_status == 'assigned' and not cpl_defined:
         return render_template('rps/nocpl.html', matkul=rps)
 
+    prodi = rps.prodi or (rps.matakuliah.prodi if rps.matakuliah else None)
+    kps_nama = _get_kps_nama_for_prodi(prodi)
+
     return render_template(
         'rps_editor.html',
         matkul=rps,
         rps=rps,
+        kps_nama=kps_nama,
         readonly=(can_edit_kurikulum_parts and not is_koordinator),
         can_edit_cpl=can_edit_kurikulum_parts,
         hitung_progress_rps=hitung_progress_rps,
