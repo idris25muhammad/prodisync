@@ -52,7 +52,6 @@
                         <th class="p-5">Username</th>
                         <th class="p-5">Prodi</th>
                         <th class="p-5">Email</th>
-                        <th class="p-5 text-center">Role</th>
                         <th class="p-5">Dibuat</th>
                         <th class="p-5">Diupdate</th>
                         <th class="p-5 text-center">Aksi</th>
@@ -70,7 +69,28 @@
                             </span>
                             {% endif %}
                         </td>
-                        <td class="p-5 font-mono text-sm text-slate-500">{{ u.username }}</td>
+                        <td class="p-5">
+                            <div class="font-mono text-sm font-semibold text-slate-700 dark:text-slate-200">{{ u.username }}</div>
+                            <div class="mt-1">
+                                {% if u.role in ('kajur', 'admin') %}
+                                <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 leading-none">
+                                    KAJUR / ADMIN
+                                </span>
+                                {% elif u.role in ('kps', 'kaprodi') %}
+                                <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800 leading-none">
+                                    KPS
+                                </span>
+                                {% elif u.role == 'timkur' %}
+                                <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 leading-none">
+                                    TIM KURIKULUM
+                                </span>
+                                {% else %}
+                                <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 leading-none">
+                                    DOSEN
+                                </span>
+                                {% endif %}
+                            </div>
+                        </td>
                         <td class="p-5 text-sm whitespace-nowrap">
                             {% if u.prodi_rel %}
                             <span class="px-2.5 py-1 rounded-md text-xs font-bold bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
@@ -83,25 +103,6 @@
                             {% endif %}
                         </td>
                         <td class="p-5 text-sm text-slate-500">{{ u.email or '-' }}</td>
-                        <td class="p-5 text-center">
-                            {% if u.role in ('kajur', 'admin') %}
-                            <span class="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                                KAJUR / ADMIN
-                            </span>
-                            {% elif u.role in ('kps', 'kaprodi') %}
-                            <span class="text-[11px] font-bold px-2.5 py-1 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800">
-                                KPS
-                            </span>
-                            {% elif u.role == 'timkur' %}
-                            <span class="text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
-                                TIM KURIKULUM
-                            </span>
-                            {% else %}
-                            <span class="text-[11px] font-bold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-                                DOSEN
-                            </span>
-                            {% endif %}
-                        </td>
                         <td class="p-5 text-xs text-slate-500 whitespace-nowrap">
                             {{ u.created_at.strftime('%d/%m/%Y %H:%M') if u.created_at else '-' }}
                         </td>
@@ -162,7 +163,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="10" class="p-12 text-center text-slate-400 italic">
+                        <td colspan="7" class="p-12 text-center text-slate-400 italic">
                             Belum ada user terdaftar.
                         </td>
                     </tr>
