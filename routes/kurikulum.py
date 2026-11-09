@@ -27,6 +27,10 @@ def integrated():
     else:
         prodi_id = request.args.get('prodi_id', type=int) or getattr(current_user, 'prodi_id', None) or (prodi_list[0].id if prodi_list else 1)
 
+    current_prodi = Prodi.query.get(prodi_id)
+    is_d3 = bool(current_prodi and (current_prodi.jenjang or '').strip().upper() == 'D3')
+    max_semester = 6 if is_d3 else 8
+
     kurikulum_list = [
         r[0] for r in db.session.query(MataKuliah.kurikulum)
         .filter(MataKuliah.prodi_id == prodi_id, MataKuliah.kurikulum.isnot(None))
@@ -46,17 +50,24 @@ def integrated():
 
     all_mk = query.order_by(MataKuliah.semester.asc(), MataKuliah.kode.asc()).all()
 
-    mk_by_semester = {sem: [] for sem in range(1, 9)}
+    mk_by_semester = {sem: [] for sem in range(1, max_semester + 1)}
     for mk in all_mk:
         sem = mk.semester or 1
-        mk_by_semester[min(max(sem, 1), 8)].append(mk)
+        mk_by_semester[min(max(sem, 1), max_semester)].append(mk)
 
-    year_config = [
-        {'year': 1, 'label': 'CDIO skills are introduced',   'project': 'Project Foundation',     'semesters': [1, 2]},
-        {'year': 2, 'label': 'CDIO skills are reinforced',   'project': 'Project Cornerstone #1', 'semesters': [3, 4]},
-        {'year': 3, 'label': 'CDIO skills are strengthened', 'project': 'Project Cornerstone #2', 'semesters': [5, 6]},
-        {'year': 4, 'label': 'CDIO skills are proficient',   'project': 'Project Capstone',       'semesters': [7, 8]},
-    ]
+    if is_d3:
+        year_config = [
+            {'year': 1, 'label': 'CDIO skills are introduced',   'project': 'Project Foundation',     'semesters': [1, 2]},
+            {'year': 2, 'label': 'CDIO skills are reinforced',   'project': 'Project Cornerstone',    'semesters': [3, 4]},
+            {'year': 3, 'label': 'CDIO skills are proficient',   'project': 'Project Capstone',       'semesters': [5, 6]},
+        ]
+    else:
+        year_config = [
+            {'year': 1, 'label': 'CDIO skills are introduced',   'project': 'Project Foundation',     'semesters': [1, 2]},
+            {'year': 2, 'label': 'CDIO skills are reinforced',   'project': 'Project Cornerstone #1', 'semesters': [3, 4]},
+            {'year': 3, 'label': 'CDIO skills are strengthened', 'project': 'Project Cornerstone #2', 'semesters': [5, 6]},
+            {'year': 4, 'label': 'CDIO skills are proficient',   'project': 'Project Capstone',       'semesters': [7, 8]},
+        ]
 
     def normalize_skill(mk):
         skill = (mk.cdio_skill or '').strip().lower()
@@ -103,6 +114,11 @@ def prasyarat():
     if not selected_kurikulum and kurikulum_list:
         selected_kurikulum = kurikulum_list[0]
 
+    current_prodi = Prodi.query.get(prodi_id)
+    is_d3 = bool(current_prodi and (current_prodi.jenjang or '').strip().upper() == 'D3')
+    max_semester = 6 if is_d3 else 8
+    semester_list = list(range(max_semester, 0, -1))
+
     # Query mata kuliah
     query = MataKuliah.query.filter_by(prodi_id=prodi_id)
     if selected_kurikulum:
@@ -110,13 +126,13 @@ def prasyarat():
 
     all_mk = query.order_by(MataKuliah.semester.asc(), MataKuliah.kode.asc()).all()
 
-    # Kelompokkan mata kuliah per semester (1 s.d. 8)
-    mk_by_semester = {sem: [] for sem in range(1, 9)}
+    # Kelompokkan mata kuliah per semester (D3: 1 s.d. 6, D4: 1 s.d. 8)
+    mk_by_semester = {sem: [] for sem in range(1, max_semester + 1)}
     mk_map = {}
     for mk in all_mk:
         mk_map[mk.kode.strip()] = mk
         sem = mk.semester or 1
-        if 1 <= sem <= 8:
+        if 1 <= sem <= max_semester:
             mk_by_semester[sem].append(mk)
         else:
             mk_by_semester[1].append(mk)
@@ -160,4 +176,7 @@ def prasyarat():
         connections=connections,
         category_colors=category_colors,
         total_mk=len(all_mk),
+        semester_list=semester_list,
+        is_d3=is_d3,
+        max_semester=max_semester,
     )

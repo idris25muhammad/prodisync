@@ -4,9 +4,9 @@
             <div id="kurikulumMainWrapper"
                 class="km-wrapper relative w-max min-w-max max-w-none rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
                 <div class="km-grid">
-                    {% for sem in [8, 7, 6, 5, 4, 3, 2, 1] %}
+                    {% for sem in semester_list or [8, 7, 6, 5, 4, 3, 2, 1] %}
                     <div class="km-cell km-semester">Semester {{ sem }}</div>
-                    <div class="km-cell km-course-container {% if sem == 1 %}km-last-row{% endif %}">
+                    <div class="km-cell km-course-container {% if loop.last %}km-last-row{% endif %}">
                         {% set courses = mk_by_semester.get(sem, []) %}
                         {% if courses %}
                             {% for mk in courses %}
