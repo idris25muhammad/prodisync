@@ -64,6 +64,13 @@
                     class="mt-1 w-full p-2.5 border bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg outline-none cursor-not-allowed">
             </div>
         </div>
+        <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase">Dosen Pengampu</label>
+            <input type="text" name="pengampu" value="{{ matkul.pengampu or '' }}"
+                placeholder="Nama dosen pengampu (bisa beberapa dosen, pisahkan dengan koma)"
+                class="mt-1 w-full p-2.5 border rounded-lg text-sm bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500">
+            <span class="text-[11px] text-slate-400">Dosen pengampu lainnya, pisahkan dengan koma jika lebih dari satu dosen (opsional, boleh dikosongkan).</span>
+        </div>
     </div>
 
     {# ── Bagian Deskripsi dengan WYSIWYG Editor ── #}

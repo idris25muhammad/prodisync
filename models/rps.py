@@ -45,6 +45,10 @@ class RPS(db.Model):
     semester = db.Column(db.Integer, nullable=True,  default=1)
     prasyarat = db.Column(db.String(100), nullable=True)
 
+    # Dosen pengampu (beberapa dosen, boleh null) & Catatan revisi (freetext, boleh null)
+    pengampu = db.Column(db.Text, nullable=True)
+    revisi   = db.Column(db.Text, nullable=True)
+
     # Penandatangan
     qr_kaprodi             = db.Column(db.String(200), nullable=True)
     tgl_pengesahan_kaprodi = db.Column(db.Date,        nullable=True)

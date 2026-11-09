@@ -1,7 +1,7 @@
 from datetime import date
 from flask import Blueprint, render_template, request
 from flask_login import login_required, current_user
-from models import RPS, MataKuliah, User, TahunAjaran, Panduan, Agenda, ArsipDokumen
+from models import RPS, MataKuliah, User, TahunAjaran, Panduan, Agenda, ArsipDokumen, Prodi
 from sqlalchemy import or_
 
 bp = Blueprint('dashboard', __name__)
@@ -153,11 +153,20 @@ def index():
         progress_items = sorted(progress_items, key=lambda x: x['progress'])[:5]
         per_dosen      = sorted(per_dosen,      key=lambda x: x['jumlah'], reverse=True)[:5]
 
+        total_slp = query_rps.count()
+        total_prodi = Prodi.query.count()
+        total_users = User.query.filter_by(prodi_id=prodi_filter_id).count() if prodi_filter_id else User.query.count()
+        daftar_prodi = Prodi.query.order_by(Prodi.kode.asc()).all()
+
         return render_template(
             'dashboard/kaprodi.html',
             semua_ta=semua_ta,
             agenda_terdekat=agenda_terdekat,
             prodi_id=prodi_filter_id,
+            daftar_prodi=daftar_prodi,
+            total_slp=total_slp,
+            total_prodi=total_prodi,
+            total_users=total_users,
             total_dosen=len(dosens),
             total_mk=len(rps_list),
             rps_selesai=rps_selesai,

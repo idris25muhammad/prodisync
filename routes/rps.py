@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, current_app, send_from_directory
 from flask_login import login_required, current_user
 from extensions import db
-from models import RPS, MataKuliah, User, TahunAjaran
+from models import RPS, MataKuliah, User, TahunAjaran, Prodi
 from sqlalchemy import or_, func
 from utils.decorators import kaprodi_required, kurikulum_required
 import os
@@ -23,8 +23,17 @@ def list():
     q = request.args.get('q', '').strip()
     rps_status = request.args.get('status', '').strip()
     semester = request.args.get('semester', type=int)
-    prodi_id = request.args.get('prodi_id', type=int)
     data = request.args.get('data', 'all')
+
+    user_prodi = getattr(current_user, 'prodi_id', None)
+    if 'prodi_id' in request.args:
+        prodi_arg = request.args.get('prodi_id', '').strip()
+        if prodi_arg in ('all', ''):
+            prodi_id = None
+        else:
+            prodi_id = int(prodi_arg) if prodi_arg.isdigit() else None
+    else:
+        prodi_id = user_prodi
 
     if 'tahun_ajaran_id' in request.args:
         ta_arg = request.args.get('tahun_ajaran_id', '').strip()
@@ -52,10 +61,7 @@ def list():
             User, RPS.user_id == User.id
         ).filter(RPS.user_id == current_user.id)
 
-    if not current_user.is_kajur:
-        user_prodi = getattr(current_user, 'prodi_id', None) or 1
-        query = query.filter(RPS.prodi_id == user_prodi)
-    elif prodi_id:
+    if prodi_id:
         query = query.filter(RPS.prodi_id == prodi_id)
 
     if q:
@@ -77,13 +83,14 @@ def list():
 
     page = request.args.get('page', 1, type=int)
     rps_pagination = (
-        query.order_by(MataKuliah.kode.asc(), MataKuliah.nama.asc())
+        query.order_by(RPS.updated_at.desc(), RPS.id.desc())
         .paginate(page=page, per_page=10, error_out=False)
     )
     rps_list = rps_pagination.items
 
     users = User.query.order_by(User.nama.asc()).all() if current_user.can_manage_kurikulum else []
     tahun_ajaran_list = TahunAjaran.query.order_by(TahunAjaran.tahun.desc(), TahunAjaran.semester.asc()).all()
+    daftar_prodi = Prodi.query.filter_by(is_aktif=True).order_by(Prodi.kode.asc()).all()
 
     return render_template(
         'rps/list.html',
@@ -95,6 +102,7 @@ def list():
         rps_status=rps_status,
         semester=semester,
         prodi_id=prodi_id,
+        daftar_prodi=daftar_prodi,
         data=data,
         ta_aktif=ta_aktif,
         tahun_ajaran_list=tahun_ajaran_list,
@@ -126,6 +134,17 @@ def add():
     if not mk:
         flash('Mata kuliah tidak ditemukan di katalog.', 'danger')
         return redirect(url_for('rps.list'))
+
+    # KPS dan Tim Kurikulum hanya bisa create untuk prodi sendiri
+    if not current_user.is_kajur:
+        user_prodi = getattr(current_user, 'prodi_id', None)
+        if not user_prodi or (mk and mk.prodi_id != user_prodi):
+            flash('Anda hanya dapat membuat RPS untuk program studi Anda sendiri.', 'danger')
+            return redirect(url_for('rps.list'))
+        prodi_id = user_prodi
+    else:
+        prodi_id = mk.prodi_id if mk else (getattr(current_user, 'prodi_id', None) or 1)
+
     # Cek duplikat (MK + TA yang sama)
     existing = RPS.query.filter_by(matakuliah_id=matakuliah_id, tahun_ajaran_id=tahun_ajaran_id).first()
     if existing:
@@ -153,14 +172,6 @@ def add():
             filename_qr = f"kaprodi_rps_{int(time.time())}.{ext}"
             filepath = os.path.join(upload_dir, filename_qr)
             qr_kaprodi_file.save(filepath)
-    if not current_user.is_kajur:
-        user_prodi = getattr(current_user, 'prodi_id', None) or 1
-        if mk and mk.prodi_id != user_prodi:
-            flash('Mata kuliah tidak berasal dari program studi Anda.', 'danger')
-            return redirect(url_for('rps.list'))
-        prodi_id = user_prodi
-    else:
-        prodi_id = mk.prodi_id if mk else (getattr(current_user, 'prodi_id', None) or 1)
 
     db.session.add(RPS(
         prodi_id=prodi_id,
@@ -186,39 +197,36 @@ def add():
 def edit_meta(id):
     rps = RPS.query.get_or_404(id)
 
-    if not current_user.is_kajur and rps.prodi_id != getattr(current_user, 'prodi_id', None):
-        flash('Anda tidak memiliki akses ke RPS program studi lain.', 'danger')
+    # Edit metadata hanya bisa dilakukan oleh Kajur atau KPS & Timkur dari prodi terkait
+    is_prodi_terkait = (rps.prodi_id == getattr(current_user, 'prodi_id', None))
+    if not (current_user.is_kajur or (current_user.can_manage_kurikulum and is_prodi_terkait)):
+        flash('Edit metadata hanya dapat dilakukan oleh KPS dan Tim Kurikulum dari program studi terkait.', 'danger')
         return redirect(url_for('rps.list'))
 
-    if not current_user.can_manage_kurikulum and rps.user_id != current_user.id:
-        flash('Anda tidak memiliki akses.', 'danger')
-        return redirect(url_for('rps.list'))
+    rps.user_id         = request.form.get('assigned_to',     type=int) or rps.user_id
+    rps.tahun_ajaran_id = request.form.get('tahun_ajaran_id', type=int) or rps.tahun_ajaran_id
 
-    if current_user.can_manage_kurikulum:
-        rps.user_id         = request.form.get('assigned_to',     type=int) or rps.user_id
-        rps.tahun_ajaran_id = request.form.get('tahun_ajaran_id', type=int) or rps.tahun_ajaran_id
+    created_by = request.form.get('created_by', type=int)
+    if created_by:
+        rps.created_by = created_by
 
-        created_by = request.form.get('created_by', type=int)
-        if created_by:
-            rps.created_by = created_by
+    tgl_kaprodi_str = request.form.get('tgl_pengesahan_kaprodi', '').strip()
+    if tgl_kaprodi_str:
+        try:
+            rps.tgl_pengesahan_kaprodi = datetime.strptime(tgl_kaprodi_str, '%Y-%m-%d').date()
+        except ValueError:
+            pass
 
-        tgl_kaprodi_str = request.form.get('tgl_pengesahan_kaprodi', '').strip()
-        if tgl_kaprodi_str:
-            try:
-                rps.tgl_pengesahan_kaprodi = datetime.strptime(tgl_kaprodi_str, '%Y-%m-%d').date()
-            except ValueError:
-                pass
-
-        qr_kaprodi_file = request.files.get('qr_kaprodi')
-        if qr_kaprodi_file and qr_kaprodi_file.filename:
-            ext = qr_kaprodi_file.filename.rsplit('.', 1)[-1].lower()
-            if ext in ['png', 'jpg', 'jpeg']:
-                upload_dir = os.path.join(current_app.root_path, 'storage', 'qr')
-                os.makedirs(upload_dir, exist_ok=True)
-                filename_qr = f"kaprodi_rps_{rps.id}_qr_{int(time.time())}.{ext}"
-                filepath = os.path.join(upload_dir, filename_qr)
-                qr_kaprodi_file.save(filepath)
-                rps.qr_kaprodi = filename_qr
+    qr_kaprodi_file = request.files.get('qr_kaprodi')
+    if qr_kaprodi_file and qr_kaprodi_file.filename:
+        ext = qr_kaprodi_file.filename.rsplit('.', 1)[-1].lower()
+        if ext in ['png', 'jpg', 'jpeg']:
+            upload_dir = os.path.join(current_app.root_path, 'storage', 'qr')
+            os.makedirs(upload_dir, exist_ok=True)
+            filename_qr = f"kaprodi_rps_{rps.id}_qr_{int(time.time())}.{ext}"
+            filepath = os.path.join(upload_dir, filename_qr)
+            qr_kaprodi_file.save(filepath)
+            rps.qr_kaprodi = filename_qr
 
     db.session.commit()
     flash('RPS berhasil diperbarui!', 'success')
@@ -230,7 +238,8 @@ def edit_meta(id):
 @login_required
 def delete(id):
     rps = RPS.query.get_or_404(id)
-    if not (current_user.is_kajur or (current_user.is_kaprodi and rps.prodi_id == current_user.prodi_id) or (current_user.is_timkur and rps.created_by == current_user.id)):
+    is_prodi_terkait = (rps.prodi_id == getattr(current_user, 'prodi_id', None))
+    if not (current_user.is_kajur or (current_user.can_manage_kurikulum and is_prodi_terkait)):
         abort(403)
 
     db.session.delete(rps)
@@ -395,6 +404,10 @@ def _parse_detail_form(rps):
     rps.kriteria_penilaian  = kriteria or None
     rps.kesepakatan         = [k for k in request.form.getlist('kesepakatan[]') if k.strip()] or None
     rps.pustaka             = [p for p in request.form.getlist('pustaka[]')     if p.strip()] or None
+    if 'pengampu' in request.form:
+        rps.pengampu        = request.form.get('pengampu', '').strip() or None
+    if 'revisi' in request.form:
+        rps.revisi          = request.form.get('revisi', '').strip() or None
 
 
 def format_indo_date(dt):
@@ -971,6 +984,16 @@ def _build_rps_data(rps, dosen):
     for tp in (rps.tp_data or []):
         peta.setdefault(tp.get('level', 1), []).append(tp)
 
+    # Resolusi Program Studi
+    prodi = rps.prodi or (mk.prodi if mk else None)
+    if not prodi and rps.prodi_id:
+        prodi = Prodi.query.get(rps.prodi_id)
+    if not prodi and rps.created_by:
+        creator = User.query.get(rps.created_by)
+        if creator and getattr(creator, 'prodi', None):
+            prodi = creator.prodi
+    prodi_nama = prodi.nama if prodi else ''
+
     # Resolusi Tanggal
     tgl_koor_val = format_indo_date(rps.tgl_pengesahan_koor)
     tgl_kaprodi_val = format_indo_date(rps.tgl_pengesahan_kaprodi) or (format_indo_date(mk.tgl_pengesahan_kaprodi) if mk else '')
@@ -1060,6 +1083,8 @@ def _build_rps_data(rps, dosen):
 
     return {
         'identitas': {
+            'prodi'        : prodi_nama,
+            'program_studi': prodi_nama,
             'matkul'       : mk.nama if mk else '',
             'kode'         : mk.kode if mk else '',
             'sks'          : (mk.sks or 0) if mk else 0,
@@ -1069,6 +1094,7 @@ def _build_rps_data(rps, dosen):
             'co_requisite' : co_requisite,
             'dosen'        : dosen.nama if dosen else '',
             'email'        : dosen.email if dosen else '',
+            'pengampu'     : rps.pengampu or '',
         },
         'pengesahan': {
             'tgl_kaprodi'  : tgl_kaprodi_val,
@@ -1097,6 +1123,7 @@ def _build_rps_data(rps, dosen):
         'qr_dosen_koor'      : qr_koor_val,
         'qr_kaprodi'         : qr_kaprodi_val,
         'tanggal_koor'       : tgl_koor_val,
+        'revisi'             : rps.revisi or '',
     }
 
 
@@ -1105,13 +1132,17 @@ def _build_rps_data(rps, dosen):
 @login_required
 def editor(id):
     rps = RPS.query.get_or_404(id)
-    if not current_user.is_kajur and rps.prodi_id != getattr(current_user, 'prodi_id', None):
-        flash('Anda tidak memiliki akses ke RPS program studi lain.', 'danger')
+
+    is_koordinator = (rps.user_id == current_user.id)
+    is_prodi_terkait = (rps.prodi_id == getattr(current_user, 'prodi_id', None))
+
+    # Edit RPS hanya bisa dilakukan oleh Kajur, KPS & Timkur dari prodi terkait, atau Dosen Koordinator
+    if not current_user.is_kajur and not is_prodi_terkait and not is_koordinator:
+        flash('Anda tidak memiliki akses untuk mengedit RPS program studi lain.', 'danger')
         return redirect(url_for('rps.list'))
 
     can_review = current_user.can_review_rps(rps)
-    is_koordinator = (rps.user_id == current_user.id)
-    can_manage = current_user.can_manage_kurikulum
+    can_manage = current_user.can_manage_kurikulum and (current_user.is_kajur or is_prodi_terkait)
 
     if not (can_review or is_koordinator or can_manage):
         abort(403)

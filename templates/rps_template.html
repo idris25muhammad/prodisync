@@ -556,7 +556,7 @@
                                     <tr>
                                         <td class="col-label">Study Program</td>
                                         <td class="col-colon">:</td>
-                                        <td class="col-val">Cybersecurity Engineering (Rekayasa Keamanan Siber)</td>
+                                        <td class="col-val">{{ data.identitas.prodi or data.identitas.program_studi or '' }}</td>
                                     </tr>
                                     <tr>
                                         <td class="col-label">Course Code</td>
@@ -596,7 +596,7 @@
                                     <tr>
                                         <td class="col-label">Lecturer</td>
                                         <td class="col-colon">:</td>
-                                        <td class="col-val">{{ data.identitas.dosen }}</td>
+                                        <td class="col-val">{{ data.identitas.dosen }}{% if data.identitas.pengampu %}, {{ data.identitas.pengampu }}{% endif %}</td>
                                     </tr>
                                     <tr>
                                         <td class="col-label">Email</td>
@@ -1099,6 +1099,15 @@
                                         </td>
                                     </tr>
                                 </table>
+
+                                {% if current_user.is_authenticated and data.revisi %}
+                                <div class="revisi-section" style="margin-top: 25px; page-break-inside: avoid; break-inside: avoid;">
+                                    <div style="font-weight: bold; font-size: 9pt; text-transform: uppercase; color: #1e3a5f; margin-bottom: 6px; border-bottom: 1px solid #cbd5e1; padding-bottom: 3px;">
+                                        Catatan Revisi / Riwayat Perubahan
+                                    </div>
+                                    <div style="font-size: 8.5pt; color: #334155; white-space: pre-wrap; line-height: 1.5; padding: 8px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px;">{{ data.revisi }}</div>
+                                </div>
+                                {% endif %}
 
                             </div><!-- end .print-content -->
 

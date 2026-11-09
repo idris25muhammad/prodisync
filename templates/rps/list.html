@@ -72,18 +72,16 @@
                 </select>
             </div>
             {% endif %}
-            {% if current_user.is_kajur %}
             <div class="w-56">
                 <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Program Studi</label>
                 <select name="prodi_id"
                     class="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:bg-slate-800 font-medium">
-                    <option value="">Semua Program Studi</option>
+                    <option value="all" {% if prodi_id is none %}selected{% endif %}>Semua Program Studi</option>
                     {% for p in daftar_prodi %}
                     <option value="{{ p.id }}" {% if prodi_id == p.id %}selected{% endif %}>{{ p.kode }} - {{ p.nama }}</option>
                     {% endfor %}
                 </select>
             </div>
-            {% endif %}
         </div>
 
         <div class="flex items-end gap-2">
@@ -244,6 +242,10 @@
                     </td>
                     <td class="px-4 py-3">
                         <div class="flex items-center justify-center gap-1.5">
+                            {# Role check: hanya Kajur atau KPS & Timkur dari prodi terkait yang bisa edit/hapus #}
+                            {% set is_prodi_terkait = (current_user.is_kajur or (current_user.can_manage_kurikulum and current_user.prodi_id == rps_obj.prodi_id)) %}
+                            {% set can_edit_rps = is_prodi_terkait or (rps_obj.user_id == current_user.id and rps_obj.rps_status != 'approved') %}
+
                             {# Tombol Detail (Eye) #}
                             <button type="button"
                                 onclick="openDetail(
@@ -259,7 +261,8 @@
                                     '{{ mk.prasyarat or rps_obj.prasyarat or "—" }}',
                                     {{ rps_obj.id }},
                                     {{ 'true' if current_user.can_review_rps(rps_obj) else 'false' }},
-                                    '{{ rps_obj.matakuliah.kode if rps_obj.matakuliah else mk.kode }}'
+                                    '{{ rps_obj.matakuliah.kode if rps_obj.matakuliah else mk.kode }}',
+                                    {{ 'true' if can_edit_rps else 'false' }}
                                 )"
                                 title="Lihat Detail"
                                 class="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition-colors">
@@ -269,9 +272,9 @@
                                 </svg>
                             </button>
 
-                            {# Tombol Edit RPS - sembunyikan jika approved (kecuali tim kurikulum/kaprodi tetap bisa buka) #}
-                            {% if rps_obj.rps_status != 'approved' or current_user.can_manage_kurikulum %}
-                            <a href="{{ url_for('rps.editor', id=rps_obj.id) }}" title="{% if current_user.can_manage_kurikulum %}Buka RPS (Kurikulum){% else %}Edit RPS{% endif %}"
+                            {# Tombol Edit RPS - hanya tampil jika can_edit_rps #}
+                            {% if can_edit_rps %}
+                            <a href="{{ url_for('rps.editor', id=rps_obj.id) }}" title="{% if is_prodi_terkait %}Buka RPS (Kurikulum){% else %}Edit RPS{% endif %}"
                                 class="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
@@ -298,8 +301,8 @@
                             </button>
                             {% endif %}
 
-                            {# Tombol Preview/Print PDF - hanya jika approved #}
-                            {% if rps_obj.rps_status == 'approved' %}
+                            {# Tombol Preview/Print PDF - jika approved atau user adalah kurikulum/kajur #}
+                            {% if rps_obj.rps_status == 'approved' or current_user.can_manage_kurikulum %}
                             <a href="{{ url_for('rps.preview', id=rps_obj.id) }}" target="_blank" title="Preview & Print PDF"
                                 class="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -308,7 +311,8 @@
                             </a>
                             {% endif %}
 
-                            {% if current_user.can_manage_kurikulum %}
+                            {# Edit metadata dan delete hanya bisa dilakukan kps dan timkur dari prodi terkait #}
+                            {% if is_prodi_terkait %}
                             {# Tombol Edit Meta #}
                             <button type="button"
                                 onclick="openEditMetaModal(this)"
@@ -349,7 +353,7 @@
         {% if pagination.pages > 1 %}
         <div class="flex items-center gap-1">
             {% if pagination.has_prev %}
-            <a href="{{ url_for('rps.list', page=pagination.prev_num, q=q, tahun_ajaran_id=tahun_ajaran_id, status=rps_status, semester=semester, data=data) }}"
+            <a href="{{ url_for('rps.list', page=pagination.prev_num, q=q, tahun_ajaran_id=tahun_ajaran_id, status=rps_status, semester=semester, data=data, prodi_id=(prodi_id if prodi_id is not none else 'all')) }}"
                 class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">‹</a>
             {% else %}
             <span class="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 dark:text-slate-600 border border-slate-100 dark:border-slate-800 cursor-not-allowed">‹</span>
@@ -360,7 +364,7 @@
                     {% if p == pagination.page %}
                     <span class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white border border-blue-600">{{ p }}</span>
                     {% else %}
-                    <a href="{{ url_for('rps.list', page=p, q=q, tahun_ajaran_id=tahun_ajaran_id, status=rps_status, semester=semester, data=data) }}"
+                    <a href="{{ url_for('rps.list', page=p, q=q, tahun_ajaran_id=tahun_ajaran_id, status=rps_status, semester=semester, data=data, prodi_id=(prodi_id if prodi_id is not none else 'all')) }}"
                         class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">{{ p }}</a>
                     {% endif %}
                 {% else %}
@@ -369,7 +373,7 @@
             {% endfor %}
 
             {% if pagination.has_next %}
-            <a href="{{ url_for('rps.list', page=pagination.next_num, q=q, tahun_ajaran_id=tahun_ajaran_id, status=rps_status, semester=semester, data=data) }}"
+            <a href="{{ url_for('rps.list', page=pagination.next_num, q=q, tahun_ajaran_id=tahun_ajaran_id, status=rps_status, semester=semester, data=data, prodi_id=(prodi_id if prodi_id is not none else 'all')) }}"
                 class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">›</a>
             {% else %}
             <span class="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 dark:text-slate-600 border border-slate-100 dark:border-slate-800 cursor-not-allowed">›</span>
@@ -399,7 +403,7 @@
 
     const csrfToken = (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
 
-    function openDetail(kode, nama, sks, semester, ta, dosen, creator, status, progress, prasyarat, id, canReview, mkKode) {
+    function openDetail(kode, nama, sks, semester, ta, dosen, creator, status, progress, prasyarat, id, canReview, mkKode, canEdit) {
         document.getElementById('dp-kode').textContent        = kode;
         document.getElementById('dp-nama').textContent        = nama;
         document.getElementById('dp-sks').textContent         = sks + ' SKS';
@@ -415,33 +419,39 @@
         bar.className = 'h-2.5 rounded-full transition-all duration-700 ' + (progress === 100 ? 'bg-green-500' : 'bg-blue-500');
 
         const actionsEl = document.getElementById('dp-actions');
-        actionsEl.innerHTML = `
-            ${(status !== 'approved' || canReview) ? `
+        let actionButtons = '';
+        if (canEdit) {
+            actionButtons += `
             <a href="{{ request.script_root }}/rps/editor/${id}"
                 class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold transition-colors shadow-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                 </svg>
                 ${canReview ? 'Buka RPS (Kurikulum)' : 'Edit RPS'}
-            </a>
-            ` : ''}
-            ${status === 'approved' ? `
+            </a>`;
+        }
+        if (status === 'approved' || {{ 'true' if current_user.can_manage_kurikulum else 'false' }}) {
+            actionButtons += `
             <a href="{{ request.script_root }}/rps/preview/${id}" target="_blank"
                 class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold transition-colors shadow-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
                 </svg>
                 Preview &amp; Print PDF
-            </a>
+            </a>`;
+        }
+        if (status === 'approved') {
+            actionButtons += `
             <a href="{{ request.script_root }}/rps/${id}/export-json"
                 class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold transition-colors shadow-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                 </svg>
                 Export JSON
-            </a>
-            ` : ''}
-            ${(canReview && status === 'submitted') ? `
+            </a>`;
+        }
+        if (canReview && status === 'submitted') {
+            actionButtons += `
             <form method="POST" action="{{ request.script_root }}/rps/${id}/approve" class="flex flex-col gap-2">
                 <input type="hidden" name="csrf_token" value="${csrfToken}">
                 <button type="submit"
@@ -458,9 +468,9 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
                 Reject
-            </button>
-            ` : ''}
-        `;
+            </button>`;
+        }
+        actionsEl.innerHTML = actionButtons;
 
         document.getElementById('detail-panel').classList.remove('translate-x-full');
         document.getElementById('detail-overlay').classList.remove('hidden');
