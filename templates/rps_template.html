@@ -472,6 +472,31 @@
             font-weight: bold;
         }
 
+        .rubric-table .rubric-content-cell {
+            text-align: left;
+            font-weight: normal;
+            vertical-align: top;
+            padding: 4px 6px;
+        }
+
+        .rubric-table .rubric-bullet-list {
+            margin: 0;
+            padding-left: 14px;
+            list-style-type: disc;
+            text-align: left;
+        }
+
+        .rubric-table .rubric-bullet-list li {
+            margin-bottom: 2px;
+            line-height: 1.25;
+        }
+
+        .rubric-table .rubric-text {
+            display: block;
+            text-align: left;
+            line-height: 1.25;
+        }
+
         /* Section X */
         .matrix-table {
             font-size: 7.5pt;
@@ -904,7 +929,24 @@
                                             {% endif %}
                                             <td class="col-clo">{{ row.pi_code }} &mdash; {{ row.pi_description }}</td>
                                             {% for lvl in data.proficiency_levels %}
-                                            <td class="lvl-mark">{{ '\u2713' if row.level == lvl.level else '' }}</td>
+                                            {% set cell = row.cells.get(lvl.level) if (row.cells is defined and row.cells) else none %}
+                                            <td class="lvl-mark{% if cell and cell.type in ('text', 'bullets') %} rubric-content-cell{% endif %}">
+                                                {% if cell %}
+                                                    {% if cell.type == 'bullets' %}
+                                                        <ul class="rubric-bullet-list">
+                                                            {% for item in cell.bullet_items %}
+                                                            <li>{{ item }}</li>
+                                                            {% endfor %}
+                                                        </ul>
+                                                    {% elif cell.type == 'text' %}
+                                                        <span class="rubric-text">{{ cell.text }}</span>
+                                                    {% elif cell.type == 'check' %}
+                                                        {{ cell.text }}
+                                                    {% endif %}
+                                                {% else %}
+                                                    {{ '\u2713' if row.level == lvl.level else '' }}
+                                                {% endif %}
+                                            </td>
                                             {% endfor %}
                                         </tr>
                                         {% endfor %}

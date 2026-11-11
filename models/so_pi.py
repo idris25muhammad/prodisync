@@ -53,6 +53,7 @@ class PerformanceIndicator(db.Model):
     pi_code            = db.Column(db.String(50),  nullable=False)
     pi_description     = db.Column(db.Text,        nullable=False)
     level              = db.Column(db.Integer,     nullable=False, default=1)
+    rubric             = db.Column(db.JSON,        nullable=True)
 
     created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
     updated_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now(), onupdate=db.func.now())

@@ -274,33 +274,35 @@
 
 {# ── Modal: Tambah PI ── #}
 <div id="modal-pi-add" class="fixed inset-0 z-[100] hidden bg-black/50 items-center justify-center px-4 backdrop-blur-sm">
-    <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-xl shadow-2xl border border-slate-200 dark:border-slate-700">
-        <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-3xl shadow-2xl border border-slate-200 dark:border-slate-700 max-h-[90vh] flex flex-col">
+        <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center shrink-0">
             <h3 class="font-black text-lg text-slate-800 dark:text-slate-100">Tambah Performance Indicator</h3>
             <button type="button" onclick="closeModal('modal-pi-add')"
                 class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-xl leading-none">&times;</button>
         </div>
-        <form method="POST" action="{{ url_for('so_pi.pi_add') }}" class="p-5 space-y-4">
+        <form method="POST" action="{{ url_for('so_pi.pi_add') }}" class="p-6 space-y-4 overflow-y-auto flex-1">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" id="pi-add-so-id" name="student_outcome_id" value="">
-            <div>
-                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">SO Tujuan</label>
-                <input type="text" id="pi-add-so-label" readonly
-                    class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600 bg-slate-100 dark:bg-slate-700/50 cursor-not-allowed">
-            </div>
-            <div>
-                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Kode PI</label>
-                <input type="text" name="pi_code" required placeholder="contoh: PI-12.1"
-                    class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">SO Tujuan</label>
+                    <input type="text" id="pi-add-so-label" readonly
+                        class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600 bg-slate-100 dark:bg-slate-700/50 cursor-not-allowed">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Kode PI</label>
+                    <input type="text" id="pi-add-code" name="pi_code" required placeholder="contoh: PI-12.1"
+                        class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
+                </div>
             </div>
             <div>
                 <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Deskripsi PI</label>
-                <textarea name="pi_description" required rows="3"
+                <textarea id="pi-add-desc" name="pi_description" required rows="2"
                     class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600"></textarea>
             </div>
             <div>
                 <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Level Proficiency</label>
-                <select name="level"
+                <select name="level" id="pi-add-level" onchange="renderRubricFields('add', this.value, getCurrentRubricValues('add'))"
                     class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
                     <option value="1">1 - {{ levels[0].label if levels else '' }}</option>
                     <option value="2" selected>2 - {{ levels[1].label if levels and levels|length > 1 else '' }}</option>
@@ -308,6 +310,13 @@
                     <option value="4">4 - {{ levels[3].label if levels and levels|length > 3 else '' }}</option>
                     <option value="5">5 - {{ levels[4].label if levels and levels|length > 4 else '' }}</option>
                 </select>
+            </div>
+            <div class="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                <div class="flex items-center justify-between">
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase">Input Kriteria Rubrik Asesmen (Opsional)</label>
+                    <span class="text-[10px] text-slate-400">Gunakan <code class="font-bold text-blue-600 dark:text-blue-400">;</code> untuk pemisah bullet point</span>
+                </div>
+                <div id="pi-add-rubric-fields" class="space-y-2.5"></div>
             </div>
             <div class="flex justify-end gap-3 pt-2">
                 <button type="button" onclick="closeModal('modal-pi-add')"
@@ -321,34 +330,43 @@
 
 {# ── Modal: Edit PI ── #}
 <div id="modal-pi-edit" class="fixed inset-0 z-[100] hidden bg-black/50 items-center justify-center px-4 backdrop-blur-sm">
-    <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-xl shadow-2xl border border-slate-200 dark:border-slate-700">
-        <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-3xl shadow-2xl border border-slate-200 dark:border-slate-700 max-h-[90vh] flex flex-col">
+        <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center shrink-0">
             <h3 class="font-black text-lg text-slate-800 dark:text-slate-100">Edit Performance Indicator</h3>
             <button type="button" onclick="closeModal('modal-pi-edit')"
                 class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-xl leading-none">&times;</button>
         </div>
-        <form id="form-pi-edit" method="POST" action="" class="p-5 space-y-4">
+        <form id="form-pi-edit" method="POST" action="" class="p-6 space-y-4 overflow-y-auto flex-1">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div>
-                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Kode PI</label>
-                <input type="text" id="pi-edit-code" name="pi_code" required
-                    class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Kode PI</label>
+                    <input type="text" id="pi-edit-code" name="pi_code" required
+                        class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Level Proficiency</label>
+                    <select id="pi-edit-level" name="level" onchange="renderRubricFields('edit', this.value, getCurrentRubricValues('edit'))"
+                        class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
+                        <option value="1">1 - {{ levels[0].label if levels else '' }}</option>
+                        <option value="2">2 - {{ levels[1].label if levels and levels|length > 1 else '' }}</option>
+                        <option value="3">3 - {{ levels[2].label if levels and levels|length > 2 else '' }}</option>
+                        <option value="4">4 - {{ levels[3].label if levels and levels|length > 3 else '' }}</option>
+                        <option value="5">5 - {{ levels[4].label if levels and levels|length > 4 else '' }}</option>
+                    </select>
+                </div>
             </div>
             <div>
                 <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Deskripsi PI</label>
-                <textarea id="pi-edit-desc" name="pi_description" required rows="3"
+                <textarea id="pi-edit-desc" name="pi_description" required rows="2"
                     class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600"></textarea>
             </div>
-            <div>
-                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Level Proficiency</label>
-                <select id="pi-edit-level" name="level"
-                    class="w-full p-2 border rounded text-sm dark:bg-slate-800 dark:border-slate-600">
-                    <option value="1">1 - {{ levels[0].label if levels else '' }}</option>
-                    <option value="2">2 - {{ levels[1].label if levels and levels|length > 1 else '' }}</option>
-                    <option value="3">3 - {{ levels[2].label if levels and levels|length > 2 else '' }}</option>
-                    <option value="4">4 - {{ levels[3].label if levels and levels|length > 3 else '' }}</option>
-                    <option value="5">5 - {{ levels[4].label if levels and levels|length > 4 else '' }}</option>
-                </select>
+            <div class="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                <div class="flex items-center justify-between">
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase">Input Kriteria Rubrik Asesmen (Opsional)</label>
+                    <span class="text-[10px] text-slate-400">Gunakan <code class="font-bold text-blue-600 dark:text-blue-400">;</code> untuk pemisah bullet point</span>
+                </div>
+                <div id="pi-edit-rubric-fields" class="space-y-2.5"></div>
             </div>
             <div class="flex justify-end gap-3 pt-2">
                 <button type="button" onclick="closeModal('modal-pi-edit')"
@@ -399,9 +417,70 @@
         openModal('modal-so-edit');
     }
 
+    const proficiencyLevels = [
+        {% for lvl in levels %}
+        { level: {{ lvl.level }}, label: {{ lvl.label | tojson }} },
+        {% endfor %}
+    ];
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function getCurrentRubricValues(mode) {
+        const container = document.getElementById('pi-' + mode + '-rubric-fields');
+        if (!container) return {};
+        const values = {};
+        container.querySelectorAll('textarea[data-lvl]').forEach(el => {
+            const lvl = el.getAttribute('data-lvl');
+            values[lvl] = el.value;
+        });
+        return values;
+    }
+
+    function renderRubricFields(mode, levelVal, rubricData = {}) {
+        const container = document.getElementById('pi-' + mode + '-rubric-fields');
+        if (!container) return;
+        const count = parseInt(levelVal, 10) || 1;
+        container.innerHTML = '';
+
+        for (let lvl = 1; lvl <= count; lvl++) {
+            const lvlMeta = proficiencyLevels.find(l => l.level === lvl);
+            const labelText = lvlMeta ? lvlMeta.label : ('Level ' + lvl);
+            const val = rubricData[lvl] || rubricData[String(lvl)] || '';
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'bg-slate-50 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-200/70 dark:border-slate-700/60';
+            wrapper.innerHTML = `
+                <div class="flex items-center justify-between gap-2 mb-1.5">
+                    <span class="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                        <span class="px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 text-[10px] font-extrabold">Level ${lvl}</span>
+                        <span>Asesmen Level ${lvl}</span>
+                    </span>
+                    <span class="text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-md md:max-w-xl text-right" title="${escapeHtml(labelText)}">${escapeHtml(labelText)}</span>
+                </div>
+                <textarea name="rubric_${lvl}" data-lvl="${lvl}" rows="2"
+                    placeholder="Isi kriteria rubrik/asesmen level ${lvl} (opsional). Gunakan ';' untuk pemisah bullet point."
+                    class="w-full p-2 border rounded-lg text-xs leading-relaxed dark:bg-slate-800 dark:border-slate-600 focus:ring-1 focus:ring-blue-500">${escapeHtml(val)}</textarea>
+            `;
+            container.appendChild(wrapper);
+        }
+    }
+
     function openPiAdd(soId, soCode) {
         document.getElementById('pi-add-so-id').value = soId;
         document.getElementById('pi-add-so-label').value = soCode;
+        document.getElementById('pi-add-code').value = '';
+        document.getElementById('pi-add-desc').value = '';
+        const levelSelect = document.getElementById('pi-add-level');
+        levelSelect.value = '2';
+        renderRubricFields('add', 2, {});
         openModal('modal-pi-add');
     }
 
@@ -411,7 +490,8 @@
         {{ pi.id }}: {
             code: {{ pi.pi_code | tojson }},
             desc: {{ pi.pi_description | tojson }},
-            level: {{ pi.level }}
+            level: {{ pi.level }},
+            rubric: {{ (pi.rubric or {}) | tojson }}
         },
         {% endfor %}
         {% endfor %}
@@ -423,7 +503,9 @@
         document.getElementById('form-pi-edit').action = "{{ url_for('so_pi.pi_edit', id=0) }}".replace('/0', '/' + id);
         document.getElementById('pi-edit-code').value = d.code;
         document.getElementById('pi-edit-desc').value = d.desc;
-        document.getElementById('pi-edit-level').value = d.level;
+        const levelSelect = document.getElementById('pi-edit-level');
+        levelSelect.value = String(d.level);
+        renderRubricFields('edit', d.level, d.rubric || {});
         openModal('modal-pi-edit');
     }
 </script>

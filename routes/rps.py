@@ -462,6 +462,7 @@ def _load_so_pi_data(prodi_id=None):
                 'description': pi.pi_description,
                 'so_code'    : so.so_code,
                 'level'      : pi.level,
+                'rubric'     : pi.rubric or {},
             }
             so_pi_rows.append({
                 'so_code'        : so.so_code,
@@ -469,6 +470,7 @@ def _load_so_pi_data(prodi_id=None):
                 'pi_code'        : pi.pi_code,
                 'pi_description' : pi.pi_description,
                 'level'          : pi.level,
+                'rubric'         : pi.rubric or {},
             })
 
     for row in so_pi_rows:
@@ -739,10 +741,11 @@ def _build_so_pi_and_clo(rps):
             'level'            : first.get('level', 1),
             'pi_details'       : [
                 {
-                    'pi_code'   : c,
-                    'so_code'   : ref['pi_map'][c]['so_code'],
+                    'pi_code'    : c,
+                    'so_code'    : ref['pi_map'][c]['so_code'],
                     'description': ref['pi_map'][c]['description'],
-                    'level'     : ref['pi_map'][c]['level'],
+                    'level'      : ref['pi_map'][c]['level'],
+                    'rubric'     : ref['pi_map'][c].get('rubric') or {},
                 }
                 for c in pi_codes if c in ref['pi_map']
             ],
@@ -763,8 +766,44 @@ def _build_so_pi_and_clo(rps):
             'so_code'    : clo.get('so_code', ''),
             'description': clo.get('pi_description', ''),
             'level'      : clo.get('level', 1),
+            'rubric'     : {},
         }]
         for idx, d in enumerate(details):
+            pi_level = d.get('level', 1)
+            pi_rubric = d.get('rubric') or {}
+
+            cells = {}
+            for lvl in proficiency_levels:
+                lvl_num = lvl['level']
+                lvl_key = str(lvl_num)
+                raw_text = (pi_rubric.get(lvl_key) or pi_rubric.get(lvl_num) or '').strip()
+
+                if raw_text:
+                    if ';' in raw_text:
+                        items = [it.strip() for it in raw_text.split(';') if it.strip()]
+                        cells[lvl_num] = {
+                            'type': 'bullets',
+                            'items': items,
+                            'bullet_items': items,
+                            'text': raw_text,
+                        }
+                    else:
+                        cells[lvl_num] = {
+                            'type': 'text',
+                            'text': raw_text,
+                        }
+                else:
+                    if lvl_num == pi_level:
+                        cells[lvl_num] = {
+                            'type': 'check',
+                            'text': '✓',
+                        }
+                    else:
+                        cells[lvl_num] = {
+                            'type': 'empty',
+                            'text': '',
+                        }
+
             rubric_rows.append({
                 'clo_code'      : clo['code'],
                 'show_clo'      : idx == 0,
@@ -772,7 +811,9 @@ def _build_so_pi_and_clo(rps):
                 'so_code'       : d['so_code'],
                 'pi_code'       : d['pi_code'],
                 'pi_description': d['description'],
-                'level'         : d['level'],
+                'level'         : pi_level,
+                'rubric'        : pi_rubric,
+                'cells'         : cells,
             })
 
     return so_pi_list, clo_list, proficiency_levels, rubric_rows

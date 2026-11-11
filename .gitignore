@@ -22,3 +22,6 @@ storage/
 # IDE
 .vscode/
 .idea/
+
+# Agent architecture map
+arsitektur-sistem.md

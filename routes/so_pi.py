@@ -203,11 +203,18 @@ def pi_add():
         flash(f'PI "{pi_code}" sudah terdaftar di SO "{so.so_code}".', 'danger')
         return redirect(url_for('so_pi.index', prodi_id=so.prodi_id))
 
+    rubric_data = {}
+    for lvl in range(1, level + 1):
+        val = request.form.get(f'rubric_{lvl}', '').strip()
+        if val:
+            rubric_data[str(lvl)] = val
+
     db.session.add(PerformanceIndicator(
         student_outcome_id=so_id,
         pi_code=pi_code,
         pi_description=pi_description,
         level=level,
+        rubric=rubric_data or None,
     ))
     db.session.commit()
     flash(f'PI "{pi_code}" berhasil ditambahkan ke SO "{so.so_code}".', 'success')
@@ -245,8 +252,15 @@ def pi_edit(id):
         else:
             pi.pi_code = pi_code
 
+    rubric_data = {}
+    for lvl in range(1, level + 1):
+        val = request.form.get(f'rubric_{lvl}', '').strip()
+        if val:
+            rubric_data[str(lvl)] = val
+
     pi.pi_description = pi_description
     pi.level = level
+    pi.rubric = rubric_data or None
     db.session.commit()
     flash(f'PI "{pi.pi_code}" berhasil diperbarui.', 'success')
     return redirect(url_for('so_pi.index', prodi_id=so.prodi_id))
