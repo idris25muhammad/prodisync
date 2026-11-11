@@ -778,31 +778,32 @@ def _build_so_pi_and_clo(rps):
                 lvl_key = str(lvl_num)
                 raw_text = (pi_rubric.get(lvl_key) or pi_rubric.get(lvl_num) or '').strip()
 
-                if raw_text:
-                    if ';' in raw_text:
-                        items = [it.strip() for it in raw_text.split(';') if it.strip()]
-                        cells[lvl_num] = {
-                            'type': 'bullets',
-                            'items': items,
-                            'bullet_items': items,
-                            'text': raw_text,
-                        }
+                if lvl_num <= pi_level:
+                    if raw_text:
+                        if ';' in raw_text:
+                            items = [it.strip() for it in raw_text.split(';') if it.strip()]
+                            cells[lvl_num] = {
+                                'type': 'bullets',
+                                'items': items,
+                                'bullet_items': items,
+                                'text': raw_text,
+                            }
+                        else:
+                            cells[lvl_num] = {
+                                'type': 'text',
+                                'text': raw_text,
+                            }
                     else:
-                        cells[lvl_num] = {
-                            'type': 'text',
-                            'text': raw_text,
-                        }
-                else:
-                    if lvl_num == pi_level:
                         cells[lvl_num] = {
                             'type': 'check',
                             'text': '✓',
                         }
-                    else:
-                        cells[lvl_num] = {
-                            'type': 'empty',
-                            'text': '',
-                        }
+                else:
+                    # Level setelah pi_level selalu diberi tanda '-' (baik null atau ada isi)
+                    cells[lvl_num] = {
+                        'type': 'dash',
+                        'text': '-',
+                    }
 
             rubric_rows.append({
                 'clo_code'      : clo['code'],

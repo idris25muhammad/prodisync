@@ -940,11 +940,11 @@
                                                         </ul>
                                                     {% elif cell.type == 'text' %}
                                                         <span class="rubric-text">{{ cell.text }}</span>
-                                                    {% elif cell.type == 'check' %}
+                                                    {% elif cell.type in ('check', 'dash') %}
                                                         {{ cell.text }}
                                                     {% endif %}
                                                 {% else %}
-                                                    {{ '\u2713' if row.level == lvl.level else '' }}
+                                                    {{ '\u2713' if lvl.level <= row.level else '-' }}
                                                 {% endif %}
                                             </td>
                                             {% endfor %}
