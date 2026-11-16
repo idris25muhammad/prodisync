@@ -4,16 +4,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | ProdiSync</title>
+    <title>Log In | ProdiSync</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        sans: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
                     }
                 }
             }
@@ -21,149 +21,133 @@
     </script>
 </head>
 
-<body
-    class="bg-slate-950 h-screen w-screen font-sans text-slate-200 flex items-center justify-center p-4 sm:p-6 relative overflow-hidden">
+<body class="min-h-screen bg-[#F3F4F6] font-sans text-slate-900 flex items-center justify-center p-4 sm:p-6 lg:p-8">
 
-    <!-- Ambient Background Blurs -->
-    <div
-        class="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-blue-600/20 rounded-full filter blur-[120px] mix-blend-screen pointer-events-none">
-    </div>
-    <div
-        class="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-indigo-600/20 rounded-full filter blur-[120px] mix-blend-screen pointer-events-none">
-    </div>
+    <!-- Main Container Card -->
+    <div class="w-full max-w-6xl bg-white rounded-3xl shadow-xl p-4 sm:p-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
 
-    <!-- Top Center Logos (Polibatam & RKS side-by-side without container) -->
-    <div class="fixed top-6 left-1/2 transform -translate-x-1/2 flex items-center gap-4 sm:gap-6 z-50">
-        <img src="{{ url_for('static', filename='images/logo_polibatam.webp') }}" alt="Logo Polibatam"
-            class="h-9 sm:h-11 object-contain drop-shadow-md">
-        <img src="{{ url_for('static', filename='images/rks_logo.png') }}" alt="Logo RKS"
-            class="h-9 sm:h-16 object-contain drop-shadow-md">
-    </div>
+            <!-- KOLOM KIRI: Form Login Minimalis -->
+            <div class="flex flex-col justify-between p-4 sm:p-8 lg:p-10 min-h-[560px]">
 
-    <!-- Main Flex Layout Container (Form on Left, Mascot on Right) -->
-    <div
-        class="relative w-full max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-center gap-6 md:gap-12 z-20">
-
-        <!-- LEFT SIDE: Login Column (Title outside container + Form Card) -->
-        <div class="w-full max-w-[380px] sm:max-w-[400px] flex flex-col items-center z-20 order-1">
-
-            <!-- Title & Subtitle (Outside container) -->
-            <div class="text-center mb-5">
-                <h1 class="text-3xl sm:text-[34px] font-bold mb-1 tracking-tight">
-                    <span class="text-white">Prodi</span><span class="text-blue-500">Sync</span>
-                </h1>
-                <p class="text-slate-400 text-xs sm:text-sm">Sistem Manajemen Program Studi</p>
-            </div>
-
-            <!-- Login Form Card (Kotak Tanpa Lekukan) -->
-            <div
-                class="w-full bg-slate-900/90 backdrop-blur-xl rounded-none shadow-2xl border border-slate-800 p-6 sm:p-8 relative">
-
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                {% for category, message in messages %}
-                <div
-                    class="bg-red-500/10 text-red-400 border border-red-500/20 p-2.5 text-xs rounded-xl mb-4 text-center font-medium">
-                    {{ message }}
+                <!-- Top-left Brand (Solid SVG Icon + App Name) -->
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-[#3730A3] flex items-center justify-center text-white shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+                            <path d="M11.7 2.805a.75.75 0 01.6 0A60.65 60.65 0 0122.83 8.72a.75.75 0 01-.231 1.337 49.949 49.949 0 00-9.902 3.912l-.003.002-.34.18a.75.75 0 01-.707 0A50.009 50.009 0 007.5 12.174v-.224c0-.131.067-.248.172-.311a54.614 54.614 0 014.653-2.52.75.75 0 00-.65-1.352 56.129 56.129 0 00-4.78 2.589 1.858 1.858 0 00-.859 1.228 49.803 49.803 0 00-4.634-1.527.75.75 0 01-.231-1.337A60.653 60.653 0 0111.7 2.805z" />
+                            <path d="M13.06 15.473a48.45 48.45 0 017.666-3.282c.134 1.414.22 2.843.255 4.285a.75.75 0 01-.46.71 47.878 47.878 0 00-8.105 4.342.75.75 0 01-.832 0 47.877 47.877 0 00-8.104-4.342.75.75 0 01-.461-.71c.035-1.442.121-2.87.255-4.286A48.4 48.4 0 016 13.18v1.27a1.5 1.5 0 00-.14 2.508c-.09.38-.222.753-.397 1.11.452.213.901.434 1.346.661a6.729 6.729 0 00.551-1.608 1.5 1.5 0 00.14-2.67v-.645a48.549 48.549 0 013.44 1.668 2.25 2.25 0 002.12 0z" />
+                        </svg>
+                    </div>
+                    <span class="text-lg font-bold tracking-tight">
+                        <span class="text-blue-500">Prodi</span><span class="text-[#3730A3]">Sync</span>
+                    </span>
                 </div>
-                {% endfor %}
-                {% endif %}
-                {% endwith %}
 
-                <form method="POST" class="space-y-4">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <!-- Email/Username -->
-                    <div class="relative group">
-                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                            <svg class="h-[18px] w-[18px] text-slate-500 group-focus-within:text-blue-500 transition-colors"
-                                fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                            </svg>
-                        </div>
-                        <input type="text" name="username"
-                            class="w-full pl-11 pr-4 py-3 bg-slate-950/50 border border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all text-sm text-white placeholder:text-slate-500"
-                            placeholder="Email atau Username" required autocomplete="username">
+                <!-- Center Form Area -->
+                <div class="w-full max-w-sm mx-auto my-10">
+                    <div class="mb-8">
+                        <h1 class="font-bold text-3xl text-slate-900 tracking-tight">Selamat Datang</h1>
+                        <p class="text-sm text-slate-500 mt-2">Masuk untuk mengelola kurikulum, SO-PI, dan RPS/SLP program studi.</p>
                     </div>
 
-                    <!-- Password -->
-                    <div class="relative group">
-                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                            <svg class="h-[18px] w-[18px] text-yellow-500/80 group-focus-within:text-yellow-400 transition-colors"
-                                fill="currentColor" viewBox="0 0 24 24">
-                                <path
-                                    d="M12 2C9.243 2 7 4.243 7 7v3H6a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2v-8a2 2 0 00-2-2h-1V7c0-2.757-2.243-5-5-5zM9 7c0-1.654 1.346-3 3-3s3 1.346 3 3v3H9V7zm4 10.723V20h-2v-2.277a1.993 1.993 0 01.5-3.608 2 2 0 011.5 3.608z" />
-                            </svg>
-                        </div>
-                        <input type="password" name="password" id="password"
-                            class="w-full pl-11 pr-11 py-3 bg-slate-950/50 border border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all text-sm text-white placeholder:text-slate-500"
-                            placeholder="Password" required>
-                        <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center">
-                            <button type="button" onclick="togglePassword()"
-                                class="text-slate-500 hover:text-slate-300 focus:outline-none transition-colors">
-                                <svg id="eye-icon" class="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Button -->
-                    <button type="submit"
-                        class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl transition-all mt-2 text-sm shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_25px_rgba(37,99,235,0.5)] transform hover:-translate-y-0.5 active:translate-y-0">
-                        Masuk
-                    </button>
-
-                </form>
-            </div>
-        </div>
-
-        <!-- RIGHT SIDE: Mascot & Call Box (Hidden on Mobile/Tablet, visible on Desktop md+) -->
-        <div class="hidden md:flex flex-col items-start text-left relative z-20 order-2 group">
-
-            <!-- Call Box / Speech Bubble (Gradient Blue Navy & Orange) -->
-            <div class="mb-4 relative transform rotate-1 transition-all duration-300 w-[250px] sm:w-[280px]">
-                <div
-                    class="bg-gradient-to-br from-slate-950 via-blue-950 to-orange-500 text-white text-lg sm:text-xl font-black tracking-tight p-6 sm:p-7 rounded-[2rem] shadow-[0_20px_50px_rgba(249,115,22,0.35)] border border-orange-500/30 flex flex-col justify-between gap-3 relative">
-                    <p class="leading-snug">Kelola Kurikulum & RPS lebih mudah dan terorganisir!</p>
-                    <div class="flex justify-end">
-                        <span class="text-3xl leading-none text-orange-400 font-bold">&rsaquo;</span>
-                    </div>
-
-                    <!-- Pointer Arrow pointing down toward mascot -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
                     <div
-                        class="absolute -bottom-2.5 left-1/2 md:left-14 transform -translate-x-1/2 md:translate-x-0 w-5 h-5 bg-orange-500 border-b border-r border-orange-400/50 rotate-45 rounded-sm">
+                        class="bg-red-50 text-red-600 border border-red-200 px-3.5 py-2.5 text-xs rounded-lg mb-5 font-medium">
+                        {{ message }}
                     </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <form method="POST" class="space-y-5">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                        <!-- Input Username -->
+                        <div>
+                            <label for="username" class="block text-sm font-medium text-slate-700 mb-1.5">
+                                Username
+                            </label>
+                            <input type="text" id="username" name="username"
+                                class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all"
+                                placeholder="Masukkan username atau email" required autocomplete="username">
+                        </div>
+
+                        <!-- Input Password -->
+                        <div>
+                            <label for="password" class="block text-sm font-medium text-slate-700 mb-1.5">
+                                Password
+                            </label>
+                            <div class="relative">
+                                <input type="password" id="password" name="password"
+                                    class="w-full pl-3.5 pr-11 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all"
+                                    placeholder="Masukkan password" required autocomplete="current-password">
+                                <button type="button" onclick="togglePassword()"
+                                    class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
+                                    aria-label="Tampilkan atau sembunyikan password">
+                                    <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+                                        <path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" />
+                                        <path fill-rule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A10.004 10.004 0 0110 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0110 17c-4.257 0-7.893-2.66-9.336-6.41zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit"
+                            class="w-full bg-[#3730A3] hover:bg-indigo-700 text-white font-semibold py-2.5 px-4 rounded-lg text-sm transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2">
+                            Log In
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Footer -->
+                <div class="flex items-center justify-between text-xs text-slate-400 pt-4">
+                    <span>&copy; 2026 ProdiSync.</span>
+                    <a href="#" class="hover:text-slate-600 transition-colors">Privacy Policy</a>
                 </div>
             </div>
 
-            <!-- Mascot Image (Animasi saat di-hover saja) -->
+            <!-- KOLOM KANAN: Panel Visual Biru -->
             <div
-                class="w-[140px] sm:w-[170px] md:w-[190px] group-hover:animate-bounce hover:scale-105 transition-transform duration-300 cursor-pointer">
-                <img src="{{ url_for('static', filename='images/rks_mascott.png') }}" alt="RKS Mascott"
-                    class="w-full h-auto object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.5)]">
-            </div>
-        </div>
+                class="hidden lg:flex flex-col justify-between bg-gradient-to-br from-[#3730A3] to-[#4338CA] rounded-2xl p-10 xl:p-12 text-white relative overflow-hidden">
 
+                <!-- Subtle Geometric Background Pattern -->
+                <div class="absolute inset-0 opacity-10 pointer-events-none">
+                    <svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <pattern id="geo-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" stroke-width="1" />
+                            </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#geo-grid)" />
+                    </svg>
+                </div>
+                <div class="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-white/10 pointer-events-none"></div>
+                <div class="absolute -bottom-28 -left-20 w-80 h-80 rounded-full bg-indigo-400/10 pointer-events-none"></div>
+
+                <!-- Headline & Subtitle -->
+                <div class="relative z-10 max-w-md">
+                    <h2 class="text-3xl font-bold leading-tight tracking-tight">
+                        Kelola Kurikulum &amp; RPS/SLP Lebih Terstruktur
+                    </h2>
+                    <p class="text-indigo-100/80 text-sm mt-3 leading-relaxed">
+                        Pantau pemetaan CPL, penyusunan RPS/SLP, hingga rubrik asesmen program studi dalam satu platform terpadu.
+                    </p>
+                </div>
+
+                <!-- Layered Local Images -->
+                <div class="relative z-10 mt-10 mb-4 pr-4">
+                    <img src="{{ url_for('static', filename='images/tampilan1.jpg') }}" alt="Tampilan Dashboard ProdiSync"
+                        class="w-full rounded-xl shadow-2xl border border-white/10 object-cover">
+                    <img src="{{ url_for('static', filename='images/tampilan2.jpg') }}" alt="Tampilan Detail ProdiSync"
+                        class="absolute -bottom-6 -right-4 w-48 xl:w-56 bg-white rounded-xl shadow-2xl border-2 border-white/90 object-cover">
+                </div>
+            </div>
+
+        </div>
     </div>
-
-    <!-- Footer (Matching base.html style with Made with ❤️ ID) -->
-    <footer
-        class="fixed bottom-0 left-0 right-0 border-t border-slate-800/80 bg-slate-950/80 backdrop-blur-md px-6 py-3.5 z-50">
-        <div
-            class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center text-xs text-slate-400 gap-2 sm:gap-0">
-            <p>&copy; 2026 ProdiSync. All rights reserved.</p>
-            <div class="flex items-center space-x-6">
-                <span>Made with <span class="text-red-500 font-bold">&hearts;</span> ID</span>
-                <a href="#" class="hover:text-slate-200 transition-colors">Dokumentasi</a>
-                <a href="#" class="hover:text-slate-200 transition-colors">Bantuan</a>
-            </div>
-        </div>
-    </footer>
 
     <script>
         function togglePassword() {
@@ -173,13 +157,14 @@
             if (passwordInput.type === 'password') {
                 passwordInput.type = 'text';
                 eyeIcon.innerHTML = `
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                    <path fill-rule="evenodd" d="M3.28 2.22a.75.75 0 00-1.06 1.06l14.5 14.5a.75.75 0 101.06-1.06l-1.745-1.745a10.029 10.029 0 003.3-4.38 1.651 1.651 0 000-1.185A10.004 10.004 0 009.999 3a9.956 9.956 0 00-4.744 1.194L3.28 2.22zM7.752 6.69l1.092 1.092a2.5 2.5 0 013.374 3.373l1.091 1.092a4 4 0 00-5.557-5.557z" clip-rule="evenodd" />
+                    <path d="M10.748 13.93l2.523 2.523a9.987 9.987 0 01-3.27.547c-4.258 0-7.894-2.66-9.337-6.41a1.651 1.651 0 010-1.186A10.007 10.007 0 012.839 6.02L6.07 9.252a4 4 0 004.678 4.678z" />
                 `;
             } else {
                 passwordInput.type = 'password';
                 eyeIcon.innerHTML = `
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    <path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" />
+                    <path fill-rule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A10.004 10.004 0 0110 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0110 17c-4.257 0-7.893-2.66-9.336-6.41zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
                 `;
             }
         }
