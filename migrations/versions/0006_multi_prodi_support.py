@@ -43,11 +43,13 @@ def upgrade():
     )
 
     # 2. Seed baris default prodi 1 (RKS)
+    has_user_1 = conn.execute(sa.text("SELECT 1 FROM user WHERE id = 1 LIMIT 1")).first() is not None
+    kaprodi_val = 1 if has_user_1 else None
     conn.execute(sa.text("""
         INSERT INTO prodi (id, kode, nama, jenjang, kaprodi_id, is_aktif)
-        VALUES (1, 'RKS', 'Rekayasa Keamanan Siber', 'D4', 1, 1)
+        VALUES (1, 'RKS', 'Rekayasa Keamanan Siber', 'D4', :kaprodi_id, 1)
         ON DUPLICATE KEY UPDATE nama = VALUES(nama)
-    """))
+    """), {'kaprodi_id': kaprodi_val})
 
     # Relasi kaprodi_id di prodi ke user.id
     op.create_foreign_key('fk_prodi_kaprodi_id_user', 'prodi', 'user', ['kaprodi_id'], ['id'])
