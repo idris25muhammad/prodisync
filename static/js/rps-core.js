@@ -605,7 +605,9 @@ function appendRow(containerId, htmlContent) {
                     <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
                 </svg>
             </button>
-        </div>`;
+        </div>
+        <input type="hidden" name="tp_rubric[]" class="tp-rubric-input" value="{}">
+        <div class="md:col-span-12 tp-rubric-wrapper"></div>`;
     container.appendChild(div);
 
     syncTPSelections();
@@ -633,7 +635,7 @@ window.addTP = function () {
                 <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">SO-PI</label>
                 <div class="relative">
                     <input type="text" name="so_pi[]" readonly onclick="openSopiModal(this)" placeholder="Pilih SO-PI..."
-                        class="w-full p-2 pr-8 border rounded text-sm dark:bg-slate-800 dark:border-slate-600 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                        class="tp-sopi-display w-full p-2 pr-8 border rounded text-sm dark:bg-slate-800 dark:border-slate-600 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
                     <svg class="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 </div>
             </div>

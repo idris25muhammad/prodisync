@@ -70,10 +70,10 @@
                         {% if can_edit_cpl %}
                         <input type="text" name="so_pi[]" value="{{ tp.sopi }}" readonly onclick="openSopiModal(this)"
                             placeholder="Pilih SO-PI..."
-                            class="w-full p-2 pr-8 border rounded text-sm dark:bg-slate-800 dark:border-slate-600 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                            class="tp-sopi-display w-full p-2 pr-8 border rounded text-sm dark:bg-slate-800 dark:border-slate-600 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
                         {% else %}
                         <input type="text" value="{{ tp.sopi }}" readonly
-                            class="w-full p-2 pr-8 border rounded text-sm dark:bg-slate-800 dark:border-slate-600 bg-slate-100 dark:bg-slate-700/50 cursor-not-allowed">
+                            class="tp-sopi-display w-full p-2 pr-8 border rounded text-sm dark:bg-slate-800 dark:border-slate-600 bg-slate-100 dark:bg-slate-700/50 cursor-not-allowed">
                         {% endif %}
                         <svg class="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                     </div>
@@ -91,6 +91,8 @@
                 </button>
             </div>
             {% endif %}
+            <input type="hidden" {% if can_edit_cpl %}name="tp_rubric[]"{% endif %} class="tp-rubric-input" value="{{ (tp.rubric or {}) | tojson | e }}">
+            <div class="md:col-span-12 tp-rubric-wrapper"></div>
         </div>
         {% endfor %}
         {% else %}
@@ -117,7 +119,7 @@
                     <div class="relative">
                         <input type="text" name="so_pi[]" value="" readonly onclick="openSopiModal(this)"
                             placeholder="Pilih SO-PI..."
-                            class="w-full p-2 pr-8 border rounded text-sm dark:bg-slate-800 dark:border-slate-600 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                            class="tp-sopi-display w-full p-2 pr-8 border rounded text-sm dark:bg-slate-800 dark:border-slate-600 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
                         <svg class="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                     </div>
                 </div>
@@ -132,6 +134,8 @@
                     </svg>
                 </button>
             </div>
+            <input type="hidden" name="tp_rubric[]" class="tp-rubric-input" value="{}">
+            <div class="md:col-span-12 tp-rubric-wrapper"></div>
         </div>
         {% else %}
         <p class="text-xs text-slate-400 italic p-3">Belum ada Tujuan Pembelajaran (CPL). Kontak tim kurikulum.</p>
@@ -184,20 +188,233 @@
 </div>
 
 <script>
+    const CAN_EDIT_CPL = {{ 'true' if can_edit_cpl else 'false' }};
     let currentSopiInput = null;
     let sopiDataCache = null;
+    let piMetaMap = null;
+    let levelLabelMap = null;
+
+    function escapeRubricHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function parseSopiCodes(raw) {
+        const codes = [];
+        (raw || '').split(',').forEach(part => {
+            part = part.trim();
+            if (!part) return;
+            const idx = part.indexOf('-');
+            const piCode = (idx !== -1 ? part.slice(idx + 1) : part).trim();
+            if (piCode && !codes.includes(piCode)) {
+                codes.push(piCode);
+            }
+        });
+        return codes;
+    }
 
     async function loadSopiData() {
         if (sopiDataCache) return sopiDataCache;
         try {
             const response = await fetch("{{ url_for('rps.api_so_pi', rps_id=(rps.id if rps is defined else matkul.id)) }}");
             sopiDataCache = await response.json();
+            piMetaMap = {};
+            levelLabelMap = {};
+            (sopiDataCache.proficiency_levels || []).forEach(l => {
+                levelLabelMap[l.level] = l.label;
+            });
+            (sopiDataCache.student_outcome || []).forEach(so => {
+                (so.performance_indicator || []).forEach(pi => {
+                    piMetaMap[pi.pi_code] = {
+                        so_code: so.so_code,
+                        pi_code: pi.pi_code,
+                        pi_description: pi.pi_description,
+                        level: pi.level || 1,
+                    };
+                });
+            });
             return sopiDataCache;
         } catch (e) {
             console.error("Gagal memuat data SO-PI", e);
             return null;
         }
     }
+
+    function getRowRubricData(tpRow) {
+        const inp = tpRow.querySelector('.tp-rubric-input');
+        if (!inp || !inp.value) return {};
+        try {
+            const parsed = JSON.parse(inp.value);
+            return (parsed && typeof parsed === 'object') ? parsed : {};
+        } catch (e) {
+            return {};
+        }
+    }
+
+    function countFilledRubricSlots(piCodes, rubricData) {
+        let filled = 0;
+        let total = 0;
+        piCodes.forEach(code => {
+            const meta = piMetaMap ? piMetaMap[code] : null;
+            const piLevel = meta ? (parseInt(meta.level, 10) || 1) : 1;
+            total += piLevel;
+            const piRub = rubricData[code] || {};
+            for (let lvl = 1; lvl <= piLevel; lvl++) {
+                const v = (piRub[String(lvl)] || piRub[lvl] || '').trim();
+                if (v) filled++;
+            }
+        });
+        return { filled, total };
+    }
+
+    function syncRowRubricFromInputs(tpRow) {
+        const inp = tpRow.querySelector('.tp-rubric-input');
+        const wrapper = tpRow.querySelector('.tp-rubric-wrapper');
+        if (!inp || !wrapper) return;
+
+        const data = {};
+        wrapper.querySelectorAll('textarea[data-pi][data-lvl]').forEach(ta => {
+            const pi = ta.getAttribute('data-pi');
+            const lvl = ta.getAttribute('data-lvl');
+            const val = ta.value.trim();
+            if (val) {
+                if (!data[pi]) data[pi] = {};
+                data[pi][lvl] = val;
+            }
+        });
+        inp.value = JSON.stringify(data);
+
+        const badge = wrapper.querySelector('.tp-rubric-badge');
+        const sopiEl = tpRow.querySelector('.tp-sopi-display');
+        const piCodes = parseSopiCodes(sopiEl ? sopiEl.value : '');
+        if (badge) {
+            const stats = countFilledRubricSlots(piCodes, data);
+            badge.textContent = stats.filled > 0
+                ? `${stats.filled}/${stats.total} level terisi`
+                : 'Default centang (✓)';
+        }
+    }
+
+    window.toggleTpRubricPanel = function (btn) {
+        const tpRow = btn.closest('.tp-row');
+        if (!tpRow) return;
+        const body = tpRow.querySelector('.tp-rubric-body');
+        if (!body) return;
+        const isOpen = !body.classList.contains('hidden');
+        body.classList.toggle('hidden', isOpen);
+        tpRow.dataset.rubricOpen = isOpen ? '0' : '1';
+        btn.textContent = isOpen ? (CAN_EDIT_CPL ? 'Atur Rubrik' : 'Lihat Rubrik') : 'Tutup';
+    };
+
+    window.renderTpRubric = async function (tpRow) {
+        if (!tpRow) return;
+        const wrapper = tpRow.querySelector('.tp-rubric-wrapper');
+        if (!wrapper) return;
+
+        await loadSopiData();
+        const sopiEl = tpRow.querySelector('.tp-sopi-display');
+        const piCodes = parseSopiCodes(sopiEl ? sopiEl.value : '');
+
+        if (!piCodes.length) {
+            wrapper.innerHTML = '';
+            return;
+        }
+
+        const rubricData = getRowRubricData(tpRow);
+        const stats = countFilledRubricSlots(piCodes, rubricData);
+        const isOpen = tpRow.dataset.rubricOpen === '1';
+
+        let cardsHtml = '';
+        piCodes.forEach(piCode => {
+            const meta = piMetaMap ? piMetaMap[piCode] : null;
+            const piLevel = meta ? (parseInt(meta.level, 10) || 1) : 1;
+            const piDesc = meta ? meta.pi_description : '';
+            const piRub = rubricData[piCode] || {};
+
+            let levelInputsHtml = '';
+            for (let lvl = 1; lvl <= piLevel; lvl++) {
+                const lvlLabel = (levelLabelMap && levelLabelMap[lvl]) ? levelLabelMap[lvl] : `Level ${lvl}`;
+                const val = piRub[String(lvl)] || piRub[lvl] || '';
+
+                if (CAN_EDIT_CPL) {
+                    levelInputsHtml += `
+                    <div class="bg-white dark:bg-slate-900/70 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700/80">
+                        <div class="flex items-center justify-between gap-2 mb-1">
+                            <span class="text-[11px] font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                                <span class="px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 text-[10px] font-extrabold">Lv ${lvl}</span>
+                            </span>
+                            <span class="text-[10px] text-slate-400 truncate text-right" title="${escapeRubricHtml(lvlLabel)}">${escapeRubricHtml(lvlLabel)}</span>
+                        </div>
+                        <textarea data-pi="${escapeRubricHtml(piCode)}" data-lvl="${lvl}" rows="2"
+                            placeholder="Kriteria asesmen Lv ${lvl} (opsional). Gunakan ';' untuk pemisah bullet point."
+                            class="tp-rubric-textarea w-full p-2 border rounded text-xs leading-relaxed dark:bg-slate-800 dark:border-slate-600 focus:ring-1 focus:ring-blue-500">${escapeRubricHtml(val)}</textarea>
+                    </div>`;
+                } else {
+                    levelInputsHtml += `
+                    <div class="bg-white dark:bg-slate-900/70 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700/80">
+                        <div class="flex items-center justify-between gap-2 mb-1">
+                            <span class="px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 text-[10px] font-extrabold">Lv ${lvl}</span>
+                            <span class="text-[10px] text-slate-400 truncate text-right" title="${escapeRubricHtml(lvlLabel)}">${escapeRubricHtml(lvlLabel)}</span>
+                        </div>
+                        <div class="text-xs text-slate-700 dark:text-slate-300">${val ? escapeRubricHtml(val) : '<span class="italic text-slate-400">Default centang (✓)</span>'}</div>
+                    </div>`;
+                }
+            }
+
+            cardsHtml += `
+            <div class="bg-slate-50/80 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-700 p-3 space-y-2.5">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <span class="px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs font-extrabold shrink-0">${escapeRubricHtml(piCode)}</span>
+                        <span class="px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold shrink-0">Target Lv ${piLevel}</span>
+                        <span class="text-xs text-slate-500 dark:text-slate-400 truncate" title="${escapeRubricHtml(piDesc)}">${escapeRubricHtml(piDesc)}</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                    ${levelInputsHtml}
+                </div>
+            </div>`;
+        });
+
+        wrapper.innerHTML = `
+        <div class="mt-2 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50/50 dark:bg-slate-800/20 overflow-hidden">
+            <div class="px-3 py-2 flex flex-wrap items-center justify-between gap-2 bg-slate-100/70 dark:bg-slate-800/60">
+                <div class="flex items-center gap-2">
+                    <span class="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Rubrik Asesmen (${piCodes.length} PI)</span>
+                    <span class="tp-rubric-badge px-2 py-0.5 rounded-full text-[10px] font-semibold ${stats.filled > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-slate-200/80 text-slate-600 dark:bg-slate-700 dark:text-slate-300'}">
+                        ${stats.filled > 0 ? `${stats.filled}/${stats.total} level terisi` : 'Default centang (✓)'}
+                    </span>
+                </div>
+                <div class="flex items-center gap-3">
+                    ${CAN_EDIT_CPL ? '<span class="hidden sm:inline text-[10px] text-slate-400">Opsional • pisahkan butir dengan <code class="font-bold text-blue-600 dark:text-blue-400">;</code></span>' : ''}
+                    <button type="button" onclick="toggleTpRubricPanel(this)"
+                        class="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-600 transition-colors">
+                        ${isOpen ? 'Tutup' : (CAN_EDIT_CPL ? 'Atur Rubrik' : 'Lihat Rubrik')}
+                    </button>
+                </div>
+            </div>
+            <div class="tp-rubric-body p-3 space-y-3 ${isOpen ? '' : 'hidden'}">
+                ${cardsHtml}
+            </div>
+        </div>`;
+
+        if (CAN_EDIT_CPL) {
+            wrapper.querySelectorAll('.tp-rubric-textarea').forEach(ta => {
+                ta.addEventListener('input', () => syncRowRubricFromInputs(tpRow));
+            });
+        }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('#tp-container .tp-row').forEach(row => {
+            renderTpRubric(row);
+        });
+    });
 
     async function openSopiModal(inputEl) {
         currentSopiInput = inputEl;
@@ -265,6 +482,10 @@
         const selected = Array.from(checkboxes).map(cb => cb.value);
 
         currentSopiInput.value = selected.join(', ');
+        const tpRow = currentSopiInput.closest('.tp-row');
+        if (tpRow) {
+            renderTpRubric(tpRow);
+        }
 
         closeSopiModal();
     }

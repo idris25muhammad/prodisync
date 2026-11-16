@@ -4,6 +4,7 @@ from extensions import db
 from models import RPS, MataKuliah, User, TahunAjaran, Prodi
 from sqlalchemy import or_, func
 from utils.decorators import kaprodi_required, kurikulum_required
+import json
 import os
 import re
 import time
@@ -319,19 +320,46 @@ def back_to_draft(id):
 
 # ── Helper: Parse form ke model RPS ──────────────────────────────────────────
 def _parse_tp_form(rps):
-    """Bagian Tim Kurikulum: Tujuan Pembelajaran (CPL)."""
-    tp_teks = request.form.getlist('tp_teks[]')
-    so_pi   = request.form.getlist('so_pi[]')
-    levels  = request.form.getlist('tp_level[]')
-    rps.tp_data = [
-        {
-            'no'   : i + 1,
+    """Bagian Tim Kurikulum: Tujuan Pembelajaran (CPL) beserta rubrik asesmen per PI."""
+    tp_teks    = request.form.getlist('tp_teks[]')
+    so_pi      = request.form.getlist('so_pi[]')
+    levels     = request.form.getlist('tp_level[]')
+    tp_rubrics = request.form.getlist('tp_rubric[]')
+
+    new_tp_data = []
+    for i in range(len(tp_teks)):
+        if not tp_teks[i].strip():
+            continue
+        sopi_val = so_pi[i] if i < len(so_pi) else ''
+        rubric_dict = {}
+        if i < len(tp_rubrics) and tp_rubrics[i].strip():
+            try:
+                parsed = json.loads(tp_rubrics[i])
+                if isinstance(parsed, dict):
+                    valid_pi_codes = set(_parse_sopi_codes(sopi_val))
+                    for pi_code, lvl_map in parsed.items():
+                        if pi_code in valid_pi_codes and isinstance(lvl_map, dict):
+                            cleaned = {
+                                str(k): str(v).strip()
+                                for k, v in lvl_map.items()
+                                if str(v).strip()
+                            }
+                            if cleaned:
+                                rubric_dict[pi_code] = cleaned
+            except (ValueError, TypeError):
+                pass
+
+        entry = {
+            'no'   : len(new_tp_data) + 1,
             'teks' : tp_teks[i],
-            'sopi' : so_pi[i],
-            'level': int(levels[i]) if levels[i].isdigit() else 1
+            'sopi' : sopi_val,
+            'level': int(levels[i]) if i < len(levels) and levels[i].isdigit() else 1,
         }
-        for i in range(len(tp_teks)) if tp_teks[i].strip()
-    ]
+        if rubric_dict:
+            entry['rubric'] = rubric_dict
+        new_tp_data.append(entry)
+
+    rps.tp_data = new_tp_data
 
 
 def _parse_detail_form(rps):
@@ -462,7 +490,6 @@ def _load_so_pi_data(prodi_id=None):
                 'description': pi.pi_description,
                 'so_code'    : so.so_code,
                 'level'      : pi.level,
-                'rubric'     : pi.rubric or {},
             }
             so_pi_rows.append({
                 'so_code'        : so.so_code,
@@ -470,7 +497,6 @@ def _load_so_pi_data(prodi_id=None):
                 'pi_code'        : pi.pi_code,
                 'pi_description' : pi.pi_description,
                 'level'          : pi.level,
-                'rubric'         : pi.rubric or {},
             })
 
     for row in so_pi_rows:
@@ -730,6 +756,7 @@ def _build_so_pi_and_clo(rps):
         pi_codes = _parse_sopi_codes(tp.get('sopi'))
         pi_infos = [ref['pi_map'][c] for c in pi_codes if c in ref['pi_map']]
         first = pi_infos[0] if pi_infos else {}
+        tp_rubric = tp.get('rubric') if isinstance(tp.get('rubric'), dict) else {}
         clo_list.append({
             'code'             : f"CLO-{tp.get('no', i + 1)}",
             'description'      : tp.get('teks', ''),
@@ -745,7 +772,7 @@ def _build_so_pi_and_clo(rps):
                     'so_code'    : ref['pi_map'][c]['so_code'],
                     'description': ref['pi_map'][c]['description'],
                     'level'      : ref['pi_map'][c]['level'],
-                    'rubric'     : ref['pi_map'][c].get('rubric') or {},
+                    'rubric'     : tp_rubric.get(c) if isinstance(tp_rubric.get(c), dict) else {},
                 }
                 for c in pi_codes if c in ref['pi_map']
             ],
@@ -782,12 +809,18 @@ def _build_so_pi_and_clo(rps):
                     if raw_text:
                         if ';' in raw_text:
                             items = [it.strip() for it in raw_text.split(';') if it.strip()]
-                            cells[lvl_num] = {
-                                'type': 'bullets',
-                                'items': items,
-                                'bullet_items': items,
-                                'text': raw_text,
-                            }
+                            if items:
+                                cells[lvl_num] = {
+                                    'type': 'bullets',
+                                    'items': items,
+                                    'bullet_items': items,
+                                    'text': raw_text,
+                                }
+                            else:
+                                cells[lvl_num] = {
+                                    'type': 'check',
+                                    'text': '✓',
+                                }
                         else:
                             cells[lvl_num] = {
                                 'type': 'text',
@@ -949,15 +982,38 @@ def _build_course_json(rps):
     tp_data = rps.tp_data or []
     kriteria = rps.kriteria_penilaian or []
 
+    ref = _load_so_pi_data()
+
     # CPL list (dari Tujuan Pembelajaran / CLO)
     cpls = []
     for tp in tp_data:
-        so_codes = [so for so, _ in _parse_sopi_pairs(tp.get('sopi'))]
+        pairs = _parse_sopi_pairs(tp.get('sopi'))
+        so_codes = [so for so, _ in pairs]
+        tp_rubric = tp.get('rubric') if isinstance(tp.get('rubric'), dict) else {}
+
+        rubric_out = None
+        if tp_rubric:
+            rubric_map = {}
+            for _, pi_code in pairs:
+                pi_info = ref['pi_map'].get(pi_code)
+                pi_level = pi_info['level'] if pi_info else 1
+                pi_rub = tp_rubric.get(pi_code) if isinstance(tp_rubric.get(pi_code), dict) else {}
+                if pi_rub:
+                    rubric_map[pi_code] = {
+                        str(lvl): (pi_rub.get(str(lvl)) or pi_rub.get(lvl) or None)
+                        for lvl in range(1, pi_level + 1)
+                    }
+                else:
+                    rubric_map[pi_code] = None
+            if any(v is not None for v in rubric_map.values()):
+                rubric_out = rubric_map
+
         cpls.append({
-            'code'            : f"CPL{tp.get('no')}",
-            'description'     : tp.get('teks', ''),
+            'code'             : f"CPL{tp.get('no')}",
+            'description'      : tp.get('teks', ''),
             'proficiency_level': tp.get('level', 1),
-            'so_codes'        : sorted(set(so_codes)),
+            'so_codes'         : sorted(set(so_codes)),
+            'assessment_rubric': rubric_out,
         })
 
     # Kelompokkan sub-komponen per komponen (urut kemunculan pertama)
