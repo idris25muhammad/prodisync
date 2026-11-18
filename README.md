@@ -16,6 +16,7 @@ Dibangun dengan **Flask 3.0** (Python), **MySQL 8.0**, **SQLAlchemy ORM**, dan *
 | **Workflow Approval RPS** | Dosen submit &rarr; Tim Kurikulum / KPS approve/reject (dengan alasan). Approved RPS terkunci dari edit. KPS/Tim Kurikulum bisa revisi kembali ke draft. |
 | **Progress Pengisian RPS** | Perhitungan progres proporsional: weekly plan per minggu, evaluasi per minggu, kriteria penilaian per persentase. |
 | **Preview & Print PDF / Export JSON** | Render PDF A4 (xhtml2pdf) dengan cetak browser serta ekspor format JSON terstandarisasi setelah approved. |
+| **REST API SO-PI & Rubrik + Share API** | Endpoint REST API read-only (`/api/v1/*`) dengan autentikasi `X-API-Key` untuk data SO-PI, mata kuliah, dan rubrik asesmen, serta halaman **Share API** (`/share-api`) khusus Kajur untuk mengelola key konsumen. |
 | **Katalog Mata Kuliah** | Daftar MK lengkap per program studi dengan filter kurikulum, pencarian, dan integrasi RPS. |
 | **Kurikulum Terintegrasi** | Peta kurikulum + aturan prasyarat mata kuliah. |
 | **Dashboard Pimpinan & Dosen** | Statistik status workflow (Approved / Submitted / Assigned / Rejected), progress RPS per MK, distribusi per dosen, agenda terdekat, serta filter prodi untuk Kajur. |

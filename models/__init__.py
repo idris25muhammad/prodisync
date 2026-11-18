@@ -8,3 +8,4 @@ from .pengumuman   import Pengumuman
 from .arsip_dokumen import ArsipDokumen
 from .agenda        import Agenda
 from .so_pi         import StudentOutcome, PerformanceIndicator, ProficiencyLevel, so_sort_key
+from .api_client    import ApiClient

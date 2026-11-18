@@ -264,6 +264,13 @@
                                             </svg>
                                             <span class="text-sm">Program Studi</span>
                                         </a>
+                                        <a href="{{ url_for('share_api.index') }}"
+                                            class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-indigo-600 dark:text-indigo-400 font-bold">
+                                            <svg class="w-5 h-5 stroke-current opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                                            </svg>
+                                            <span class="text-sm">Share API</span>
+                                        </a>
                                         {% endif %}
 
                                         {% if current_user.is_kaprodi or current_user.is_kajur %}
@@ -521,6 +528,12 @@
                         <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Pengguna &
                             Informasi</p>
                         <div class="grid grid-cols-2 gap-2">
+                            {% if current_user.can_manage_prodi %}
+                            <a href="{{ url_for('share_api.index') }}"
+                                class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 block text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                                Share API
+                            </a>
+                            {% endif %}
                             {% if current_user.is_kaprodi %}
                             <a href="{{ url_for('user.list') }}"
                                 class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 block text-xs font-bold text-slate-800 dark:text-white">

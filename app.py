@@ -1,8 +1,8 @@
-from flask import Flask, url_for
+from flask import Flask, url_for, request, jsonify
 from config import Config
 from extensions import db, login_manager, migrate, csrf
 from models import User, TahunAjaran, Panduan, MataKuliah, RPS, Pengumuman, ArsipDokumen, Agenda
-from models import StudentOutcome, PerformanceIndicator, ProficiencyLevel
+from models import StudentOutcome, PerformanceIndicator, ProficiencyLevel, ApiClient
 from werkzeug.security import generate_password_hash
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
@@ -43,7 +43,8 @@ def create_app():
 
     from routes import (
         auth_bp, dashboard_bp, matakuliah_bp, rps_bp, user_bp,
-        kurikulum_bp, tahun_ajaran_bp, panduan_bp, pengumuman_bp, arsip_bp, agenda_bp, so_pi_bp, prodi_bp
+        kurikulum_bp, tahun_ajaran_bp, panduan_bp, pengumuman_bp, arsip_bp, agenda_bp, so_pi_bp, prodi_bp,
+        api_v1_bp, share_api_bp
     )
     app.register_blueprint(user_bp)
     app.register_blueprint(auth_bp)
@@ -58,6 +59,30 @@ def create_app():
     app.register_blueprint(agenda_bp)
     app.register_blueprint(so_pi_bp)
     app.register_blueprint(prodi_bp)
+    app.register_blueprint(api_v1_bp)
+    app.register_blueprint(share_api_bp)
+    csrf.exempt(api_v1_bp)
+
+    def _is_api_request():
+        return request.path.startswith('/api/')
+
+    @app.errorhandler(404)
+    def handle_404(e):
+        if _is_api_request():
+            return jsonify({'error': {'code': 'not_found', 'message': 'Endpoint tidak ditemukan.'}}), 404
+        return e
+
+    @app.errorhandler(405)
+    def handle_405(e):
+        if _is_api_request():
+            return jsonify({'error': {'code': 'method_not_allowed', 'message': 'Method HTTP tidak diizinkan (hanya GET).'}}), 405
+        return e
+
+    @app.errorhandler(500)
+    def handle_500(e):
+        if _is_api_request():
+            return jsonify({'error': {'code': 'internal_error', 'message': 'Terjadi kesalahan internal server.'}}), 500
+        return e
 
     # Cegah browser menyimpan halaman HTML (cache / back-forward cache)
     # agar setelah logout/ganti user, tombol Back tidak menampilkan

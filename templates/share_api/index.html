@@ -1,0 +1,280 @@
+{% extends 'base.html' %}
+
+{% block title %}Share API — Kelola Akses REST API{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    {# ── Header ── #}
+    <div class="flex justify-between items-center flex-wrap gap-4">
+        <div>
+            <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white">Share API</h1>
+            <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">
+                Kelola API Key untuk sistem internal organisasi (Aplikasi Rubrik Asesmen, dsb.) agar dapat membaca data SO-PI &amp; Mata Kuliah secara aman.
+            </p>
+        </div>
+        <button onclick="openAddModal()"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-blue-600/20 transition-all hover:scale-105 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Buat API Key Baru
+        </button>
+    </div>
+
+    {# ── Banner Sekali Tampil untuk API Key Baru ── #}
+    {% if new_api_key %}
+    <div class="bg-emerald-50 dark:bg-emerald-950/40 border-2 border-emerald-400 dark:border-emerald-700 rounded-2xl p-5 shadow-sm">
+        <div class="flex items-start justify-between gap-4 flex-wrap">
+            <div class="space-y-2 flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                    <span class="px-2.5 py-0.5 rounded-full bg-emerald-600 text-white text-[11px] font-extrabold uppercase tracking-wider">Simpan Sekarang</span>
+                    <h3 class="font-extrabold text-slate-900 dark:text-white text-base">
+                        API Key untuk "{{ new_api_key.name }}" berhasil {{ new_api_key.action }}
+                    </h3>
+                </div>
+                <p class="text-xs text-slate-600 dark:text-slate-300">
+                    Key ini hanya ditampilkan <strong>satu kali</strong>. Salin dan simpan di konfigurasi aplikasi konsumen Anda.
+                </p>
+                <div class="flex items-center gap-2 flex-wrap mt-2">
+                    <code id="newKeyCode"
+                        class="px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-emerald-300 dark:border-emerald-800 font-mono text-xs sm:text-sm font-bold text-slate-800 dark:text-emerald-300 select-all break-all">{{ new_api_key.key }}</code>
+                    <button type="button" onclick="copyText('newKeyCode', this)"
+                        class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shrink-0">
+                        Copy Key
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {# ── Tabel Daftar API Client ── #}
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <h2 class="font-extrabold text-base text-slate-800 dark:text-white">Daftar Sistem Konsumen ({{ clients|length }})</h2>
+            <span class="text-xs text-slate-400">Autentikasi via header <code class="font-mono text-blue-600 dark:text-blue-400">X-API-Key</code></span>
+        </div>
+
+        {% if clients %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-sm">
+                <thead>
+                    <tr class="bg-slate-50 dark:bg-slate-800/60 text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
+                        <th class="px-6 py-3.5 font-bold">Sistem / Aplikasi</th>
+                        <th class="px-4 py-3.5 font-bold">Key Prefix</th>
+                        <th class="px-4 py-3.5 font-bold">Status</th>
+                        <th class="px-4 py-3.5 font-bold">Terakhir Dipakai</th>
+                        <th class="px-4 py-3.5 font-bold text-right">Total Request</th>
+                        <th class="px-6 py-3.5 font-bold text-right">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                    {% for c in clients %}
+                    <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/30 transition-colors">
+                        <td class="px-6 py-4">
+                            <p class="font-bold text-slate-900 dark:text-white">{{ c.name }}</p>
+                            {% if c.description %}
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{ c.description }}</p>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-4">
+                            <code class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 font-mono text-xs text-slate-700 dark:text-slate-300">{{ c.key_prefix }}…</code>
+                        </td>
+                        <td class="px-4 py-4">
+                            {% if c.is_active %}
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full text-xs font-bold">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                Aktif
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-full text-xs font-semibold">
+                                Nonaktif
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-4 text-xs text-slate-600 dark:text-slate-400">
+                            {% if c.last_used_at %}
+                            <div>{{ c.last_used_at.strftime('%d %b %Y %H:%M') }}</div>
+                            <div class="text-[11px] text-slate-400 font-mono">{{ c.last_used_ip or '-' }}</div>
+                            {% else %}
+                            <span class="text-slate-400">Belum pernah</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-4 text-right font-mono font-bold text-slate-700 dark:text-slate-200">
+                            {{ c.request_count }}
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="inline-flex items-center justify-end gap-1.5 flex-wrap">
+                                <button type="button"
+                                    onclick='openEditModal({{ c.id }}, {{ c.name|tojson }}, {{ (c.description or "")|tojson }})'
+                                    class="px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all">
+                                    Edit
+                                </button>
+                                <form method="POST" action="{{ url_for('share_api.regenerate', id=c.id) }}" class="inline"
+                                    onsubmit="return confirm('Regenerate key untuk {{ c.name }}? Key lama akan langsung berhenti bekerja.')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit"
+                                        class="px-2.5 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-900/30 hover:bg-amber-100 text-amber-700 dark:text-amber-300 text-xs font-bold transition-all">
+                                        Regenerate
+                                    </button>
+                                </form>
+                                <form method="POST" action="{{ url_for('share_api.toggle', id=c.id) }}" class="inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit"
+                                        class="px-2.5 py-1.5 rounded-lg {% if c.is_active %}bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300{% else %}bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300{% endif %} text-xs font-bold transition-all">
+                                        {{ 'Nonaktifkan' if c.is_active else 'Aktifkan' }}
+                                    </button>
+                                </form>
+                                <form method="POST" action="{{ url_for('share_api.delete', id=c.id) }}" class="inline"
+                                    onsubmit="return confirm('Hapus API client {{ c.name }} secara permanen?')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit"
+                                        class="px-2.5 py-1.5 rounded-lg bg-red-50 dark:bg-red-900/30 hover:bg-red-100 text-red-600 dark:text-red-400 text-xs font-bold transition-all">
+                                        Hapus
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-10 text-center text-slate-500 dark:text-slate-400 text-sm">
+            Belum ada API Key terdaftar. Klik <strong>Buat API Key Baru</strong> untuk menghubungkan Aplikasi Rubrik Asesmen atau sistem internal lainnya.
+        </div>
+        {% endif %}
+    </div>
+
+    {# ── Panel Panduan Endpoint & Contoh curl ── #}
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+            <div>
+                <h2 class="font-extrabold text-base text-slate-800 dark:text-white">Panduan Integrasi REST API (v1 — Read-Only)</h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Semua endpoint hanya menerima method <code class="font-mono font-bold">GET</code> dengan header <code class="font-mono font-bold">X-API-Key</code>.
+                </p>
+            </div>
+            <span class="px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-mono text-xs font-bold">
+                Base URL: {{ base_api_url }}
+            </span>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 text-xs">
+            <div class="space-y-2">
+                <p class="font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider text-[11px]">Endpoint SO-PI &amp; Master</p>
+                <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-3.5 space-y-2 font-mono border border-slate-100 dark:border-slate-800">
+                    <div><span class="text-emerald-600 font-bold">GET</span> /ping <span class="font-sans text-slate-500">— cek koneksi &amp; key</span></div>
+                    <div><span class="text-emerald-600 font-bold">GET</span> /prodi <span class="font-sans text-slate-500">— daftar prodi &amp; TA aktif</span></div>
+                    <div><span class="text-emerald-600 font-bold">GET</span> /proficiency-levels <span class="font-sans text-slate-500">— level 1–5 IABEE</span></div>
+                    <div><span class="text-emerald-600 font-bold">GET</span> /prodi/{{ sample_kode }}/so?include=pi <span class="font-sans text-slate-500">— daftar SO + PI</span></div>
+                    <div><span class="text-emerald-600 font-bold">GET</span> /prodi/{{ sample_kode }}/so/SO1 <span class="font-sans text-slate-500">— detail 1 SO</span></div>
+                    <div><span class="text-emerald-600 font-bold">GET</span> /prodi/{{ sample_kode }}/pi <span class="font-sans text-slate-500">— daftar PI flat</span></div>
+                    <div><span class="text-emerald-600 font-bold">GET</span> /prodi/{{ sample_kode }}/so-pi <span class="font-sans text-slate-500">— ekspor lengkap SO-PI + level</span></div>
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <p class="font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider text-[11px]">Endpoint Mata Kuliah &amp; Rubrik Asesmen</p>
+                <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-3.5 space-y-2 font-mono border border-slate-100 dark:border-slate-800">
+                    <div><span class="text-emerald-600 font-bold">GET</span> /prodi/{{ sample_kode }}/matakuliah <span class="font-sans text-slate-500">— katalog MK + ringkasan SO-PI RPS</span></div>
+                    <div><span class="text-emerald-600 font-bold">GET</span> /prodi/{{ sample_kode }}/matakuliah/{kode_mk}/rubrik <span class="font-sans text-slate-500">— payload lengkap rubrik 1 MK</span></div>
+                    <div><span class="text-emerald-600 font-bold">GET</span> /prodi/{{ sample_kode }}/rubrik-courses <span class="font-sans text-slate-500">— bulk sync seluruh MK approved</span></div>
+                </div>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                    Query opsional MK/Rubrik: <code class="font-mono">?rps_status=approved|all</code>, <code class="font-mono">?ta=2025/2026 Ganjil</code>, <code class="font-mono">?semester=1</code>.
+                </p>
+            </div>
+        </div>
+
+        <div>
+            <div class="flex items-center justify-between mb-1.5">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Contoh Pemanggilan (curl)</span>
+                <button type="button" onclick="copyText('curlExample', this)"
+                    class="text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400">Copy curl</button>
+            </div>
+            <pre id="curlExample" class="bg-slate-900 text-slate-100 rounded-xl p-4 font-mono text-xs overflow-x-auto">curl -s -H "X-API-Key: {{ new_api_key.key if new_api_key else 'psk_xxxxxxxx_yyyyyyyy' }}" "{{ base_api_url }}/prodi/{{ sample_kode }}/so-pi"</pre>
+        </div>
+    </div>
+</div>
+
+{# ── Modal Tambah API Client ── #}
+<div id="addModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" onclick="closeModals()">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between">
+            <h3 class="text-lg font-extrabold text-slate-900 dark:text-white">Buat API Key Baru</h3>
+            <button type="button" onclick="closeModals()" class="text-slate-400 hover:text-slate-600 font-bold text-lg">&times;</button>
+        </div>
+        <form method="POST" action="{{ url_for('share_api.create') }}" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Nama Aplikasi Konsumen *</label>
+                <input type="text" name="name" required placeholder="Contoh: Aplikasi Rubrik Asesmen"
+                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Keterangan (Opsional)</label>
+                <input type="text" name="description" placeholder="Sinkronisasi data SO-PI & rubrik mata kuliah"
+                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button type="button" onclick="closeModals()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold">Batal</button>
+                <button type="submit" class="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold">Generate Key</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ── Modal Edit API Client ── #}
+<div id="editModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" onclick="closeModals()">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between">
+            <h3 class="text-lg font-extrabold text-slate-900 dark:text-white">Edit API Client</h3>
+            <button type="button" onclick="closeModals()" class="text-slate-400 hover:text-slate-600 font-bold text-lg">&times;</button>
+        </div>
+        <form id="editForm" method="POST" action="" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Nama Aplikasi Konsumen *</label>
+                <input type="text" id="editName" name="name" required
+                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Keterangan (Opsional)</label>
+                <input type="text" id="editDesc" name="description"
+                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button type="button" onclick="closeModals()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold">Batal</button>
+                <button type="submit" class="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openAddModal() {
+        document.getElementById('addModal').classList.remove('hidden');
+    }
+    function openEditModal(id, name, desc) {
+        var form = document.getElementById('editForm');
+        form.action = "{{ url_for('share_api.edit', id=0) }}".replace('/0/edit', '/' + id + '/edit');
+        document.getElementById('editName').value = name || '';
+        document.getElementById('editDesc').value = desc || '';
+        document.getElementById('editModal').classList.remove('hidden');
+    }
+    function closeModals() {
+        document.getElementById('addModal').classList.add('hidden');
+        document.getElementById('editModal').classList.add('hidden');
+    }
+    function copyText(elId, btn) {
+        var text = document.getElementById(elId).innerText.trim();
+        navigator.clipboard.writeText(text).then(function() {
+            var orig = btn.innerText;
+            btn.innerText = 'Tersalin!';
+            setTimeout(function() { btn.innerText = orig; }, 1500);
+        });
+    }
+</script>
+{% endblock %}

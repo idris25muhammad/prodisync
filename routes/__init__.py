@@ -11,3 +11,5 @@ from .arsip        import bp as arsip_bp
 from .agenda       import bp as agenda_bp
 from .so_pi        import bp as so_pi_bp
 from .prodi        import bp as prodi_bp
+from .api_v1       import bp as api_v1_bp
+from .share_api    import bp as share_api_bp
